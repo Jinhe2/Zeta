@@ -1,0 +1,159 @@
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# Environment
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# IDE
+# =========================
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# =========================
+# Java
+# =========================
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+
+# =========================
+# Node.js
+# =========================
+node_modules/
+dist/
+build/
+coverage/
+
+# pnpm
+.pnpm-store/
+
+# npm cache
+.npm/
+
+# yarn
+.yarn/
+.yarn-cache/
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# =========================
+# Docker
+# =========================
+.docker/
+
+# =========================
+# Temporary files
+# =========================
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+
+# =========================
+# Runtime
+# =========================
+*.pid
+*.seed
+*.pid.lock
+
+# =========================
+# Package archives
+# =========================
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+
+# =========================
+# Security
+# =========================
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+*.keystore
+
+# =========================
+# Upload / Generated Files
+# =========================
+uploads/
+storage/
+generated/
+
+# =========================
+# Database
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# Test Reports
+# =========================
+surefire-reports/
+test-output/
+reports/
+
+# =========================
+# Mac
+# =========================
+.AppleDouble
+.LSOverride
+
+# =========================
+# Linux
+# =========================
+*~
+
+
+TestMonitor/
+mannual/
+read.md

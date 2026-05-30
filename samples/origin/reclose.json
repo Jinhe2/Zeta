@@ -1,0 +1,436 @@
+{
+    "connections": [
+        {
+            "from": "input_5",
+            "to": "gate_1",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_6",
+            "to": "gate_1",
+            "toInputIndex": 1
+        },
+        {
+            "from": "input_8",
+            "to": "gate_2",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_13",
+            "to": "gate_2",
+            "toInputIndex": 1
+        },
+        {
+            "from": "input_12",
+            "to": "gate_2",
+            "toInputIndex": 2
+        },
+        {
+            "from": "input_9",
+            "to": "gate_3",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_14",
+            "to": "gate_3",
+            "toInputIndex": 1
+        },
+        {
+            "from": "input_11",
+            "to": "gate_3",
+            "toInputIndex": 2
+        },
+        {
+            "from": "input_10",
+            "to": "gate_4",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_11",
+            "to": "gate_4",
+            "toInputIndex": 1
+        },
+        {
+            "from": "input_13",
+            "to": "gate_4",
+            "toInputIndex": 2
+        },
+        {
+            "from": "input_15",
+            "to": "gate_5",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_16",
+            "to": "gate_5",
+            "toInputIndex": 1
+        },
+        {
+            "from": "input_14",
+            "to": "gate_5",
+            "toInputIndex": 2
+        },
+        {
+            "from": "input_12",
+            "to": "gate_5",
+            "toInputIndex": 3
+        },
+        {
+            "from": "gate_1",
+            "to": "gate_6",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_7",
+            "to": "gate_6",
+            "toInputIndex": 1
+        },
+        {
+            "from": "input_1",
+            "to": "gate_7",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_2",
+            "to": "gate_7",
+            "toInputIndex": 1
+        },
+        {
+            "from": "input_3",
+            "to": "gate_7",
+            "toInputIndex": 2
+        },
+        {
+            "from": "input_4",
+            "to": "gate_7",
+            "toInputIndex": 3
+        },
+        {
+            "from": "gate_6",
+            "to": "gate_7",
+            "toInputIndex": 4
+        },
+        {
+            "from": "input_8",
+            "to": "gate_8",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_9",
+            "to": "gate_8",
+            "toInputIndex": 1
+        },
+        {
+            "from": "input_10",
+            "to": "gate_8",
+            "toInputIndex": 2
+        },
+        {
+            "from": "gate_8",
+            "to": "gate_9",
+            "toInputIndex": 0
+        },
+        {
+            "from": "gate_2",
+            "to": "gate_9",
+            "toInputIndex": 1
+        },
+        {
+            "from": "gate_3",
+            "to": "gate_9",
+            "toInputIndex": 2
+        },
+        {
+            "from": "gate_4",
+            "to": "gate_9",
+            "toInputIndex": 3
+        },
+        {
+            "from": "gate_7",
+            "to": "gate_10",
+            "toInputIndex": 0
+        },
+        {
+            "from": "gate_9",
+            "to": "gate_10",
+            "toInputIndex": 1
+        },
+        {
+            "from": "gate_10",
+            "to": "timer_1",
+            "toInputIndex": 0
+        },
+        {
+            "from": "timer_1",
+            "to": "output_1",
+            "toInputIndex": 0
+        }
+    ],
+    "description": "",
+    "gates": [
+        {
+            "id": "gate_1",
+            "inputs": [
+                "input_5",
+                "input_6"
+            ],
+            "type": "AND"
+        },
+        {
+            "id": "gate_2",
+            "inputs": [
+                "input_8",
+                "input_13",
+                "input_12"
+            ],
+            "type": "AND"
+        },
+        {
+            "id": "gate_3",
+            "inputs": [
+                "input_9",
+                "input_14",
+                "input_11"
+            ],
+            "type": "AND"
+        },
+        {
+            "id": "gate_4",
+            "inputs": [
+                "input_10",
+                "input_11",
+                "input_13"
+            ],
+            "type": "AND"
+        },
+        {
+            "id": "gate_5",
+            "inputs": [
+                "input_15",
+                "input_16",
+                "input_14",
+                "input_12"
+            ],
+            "type": "AND"
+        },
+        {
+            "id": "gate_6",
+            "inputs": [
+                "gate_1",
+                "input_7"
+            ],
+            "type": "OR"
+        },
+        {
+            "id": "gate_7",
+            "inputs": [
+                "input_1",
+                "input_2",
+                "input_3",
+                "input_4",
+                "gate_6"
+            ],
+            "type": "AND"
+        },
+        {
+            "id": "gate_8",
+            "inputs": [
+                {
+                    "inverted": true,
+                    "node": "input_8"
+                },
+                {
+                    "inverted": true,
+                    "node": "input_9"
+                },
+                {
+                    "inverted": true,
+                    "node": "input_10"
+                }
+            ],
+            "type": "AND"
+        },
+        {
+            "id": "gate_9",
+            "inputs": [
+                "gate_8",
+                "gate_2",
+                "gate_3",
+                "gate_4"
+            ],
+            "type": "OR"
+        },
+        {
+            "id": "gate_10",
+            "inputs": [
+                "gate_7",
+                "gate_9"
+            ],
+            "type": "AND"
+        }
+    ],
+    "inputs": [
+        {
+            "channelRef": "17: 重合闸充电完成",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_1",
+            "name": "重合闸充电满",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "5: A相电流",
+            "channelType": "ANALOG",
+            "comparison": "LT",
+            "id": "input_2",
+            "name": "A相无流",
+            "thresholdValue": 0.05,
+            "unit": "A"
+        },
+        {
+            "channelRef": "6: B相电流",
+            "channelType": "ANALOG",
+            "comparison": "LT",
+            "id": "input_3",
+            "name": "B相无流",
+            "thresholdValue": 0.05,
+            "unit": "A"
+        },
+        {
+            "channelRef": "7: C相电流",
+            "channelType": "ANALOG",
+            "comparison": "LT",
+            "id": "input_4",
+            "name": "C相无流",
+            "thresholdValue": 0.05,
+            "unit": "A"
+        },
+        {
+            "baseValue": 1,
+            "channelType": "CONTROL",
+            "comparison": "EQ",
+            "id": "input_5",
+            "name": "TWJ启动重合闸",
+            "thresholdRef": "setting_1"
+        },
+        {
+            "channelRef": "8: TWJ",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_6",
+            "name": "跳位开入",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "157: 跳闸固定",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_7",
+            "name": "跳闸固定",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "942: 检线无压母有压投退标志",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_8",
+            "name": "检线无压母有压",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "943: 检线有压母无压投退标志",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_9",
+            "name": "检线有压母无压",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "944: 检线无压母无压投退标志",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_10",
+            "name": "检线无压母无压",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "938: 检母无压条件确认满足",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_11",
+            "name": "检母无压条件满足",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "940: 检母有压条件确认满足",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_12",
+            "name": "检母有压条件满足",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "939: 检线无压条件确认满足",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_13",
+            "name": "检线无压条件满足",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "941: 检线有压条件确认满足",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_14",
+            "name": "检线有压条件满足",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "945: 检同期投退标志",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_15",
+            "name": "检同期方式投入",
+            "thresholdValue": 1
+        },
+        {
+            "channelRef": "937: 检同期条件确认满足",
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_16",
+            "name": "检同期条件满足",
+            "thresholdValue": 1
+        }
+    ],
+    "name": "保护逻辑配置",
+    "outputs": [
+        {
+            "channelRef": "976: 重合闸动作",
+            "id": "output_1",
+            "input": "timer_1",
+            "name": "重合闸动作"
+        }
+    ],
+    "settings": [
+        {
+            "id": "setting_1",
+            "name": "TWJ启动重合闸控制字",
+            "sourceRef": "PROT/LinRREC1/OpnStrTPR.setVal"
+        },
+        {
+            "id": "setting_2",
+            "name": "重合闸时间",
+            "sourceRef": "PROT/LinRREC1/TPRecTmms.setVal"
+        }
+    ],
+    "timers": [
+        {
+            "delayRef": "setting_2",
+            "delayType": "GT",
+            "id": "timer_1",
+            "input": "gate_10",
+            "name": "重合闸时间"
+        }
+    ],
+    "version": "1.0"
+}

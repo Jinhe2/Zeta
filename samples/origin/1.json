@@ -1,0 +1,103 @@
+{
+    "connections": [
+        {
+            "from": "input_4",
+            "to": "gate_2",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_5",
+            "to": "gate_2",
+            "toInputIndex": 1
+        },
+        {
+            "from": "input_2",
+            "to": "gate_2",
+            "toInputIndex": 2
+        },
+        {
+            "from": "gate_1",
+            "to": "output_1",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_1",
+            "to": "gate_1",
+            "toInputIndex": 0
+        },
+        {
+            "from": "input_3",
+            "to": "gate_1",
+            "toInputIndex": 1
+        },
+        {
+            "from": "gate_2",
+            "to": "gate_1",
+            "toInputIndex": 2
+        }
+    ],
+    "description": "",
+    "gates": [
+        {
+            "id": "gate_1",
+            "inputs": [
+                {
+                    "inverted": true,
+                    "node": "input_1"
+                },
+                "input_3",
+                "gate_2"
+            ],
+            "type": "AND"
+        },
+        {
+            "id": "gate_2",
+            "inputs": [
+                "input_4",
+                "input_5",
+                "input_2"
+            ],
+            "type": "OR"
+        }
+    ],
+    "inputs": [
+        {
+            "channelType": "DIGITAL",
+            "id": "input_1",
+            "name": "光纤同步正常"
+        },
+        {
+            "channelType": "DIGITAL",
+            "comparison": "EQ",
+            "id": "input_2",
+            "name": "本侧保护电流启动",
+            "thresholdValue": 0
+        },
+        {
+            "channelType": "DIGITAL",
+            "id": "input_3",
+            "name": "本侧任一差动投入"
+        },
+        {
+            "channelType": "DIGITAL",
+            "id": "input_4",
+            "name": "电压辅助启动"
+        },
+        {
+            "channelType": "DIGITAL",
+            "id": "input_5",
+            "name": "跳位固定"
+        }
+    ],
+    "name": "保护逻辑配置",
+    "outputs": [
+        {
+            "id": "output_1",
+            "input": "gate_1",
+            "name": "本侧差动允许"
+        }
+    ],
+    "settings": [],
+    "timers": [],
+    "version": "1.0"
+}

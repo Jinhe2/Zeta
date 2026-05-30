@@ -1,0 +1,145 @@
+{
+  "version": "1.0",
+  "name": "过流I段保护逻辑",
+  "description": "过流I段保护控制逻辑框图配置",
+  "displayState": {
+    "IN_CTL_OVERCURRENT_I": "1",
+    "IN_IA_GT_SET": "0.5",
+    "IN_NEG_LOCK": "1",
+    "IN_DIR_A": "0",
+    "IN_PT_FAULT": "0",
+    "IN_CTL_VOLT": "0",
+    "IN_CTL_DIR": "1"
+  },
+  "settings": [
+    {
+      "id": "SET_OC_I_THRESHOLD",
+      "name": "过流I段电流定值",
+      "sourceType": "SCD",
+      "sourceRef": "Protection/Overcurrent/SettingGroup1",
+      "dataPoint": "OC_I_Threshold",
+      "dataType": "FLOAT",
+      "unit": "A",
+      "defaultValue": 0.8
+    },
+    {
+      "id": "SET_OC_I_DELAY",
+      "name": "过流I段时间定值",
+      "sourceType": "SCD",
+      "sourceRef": "Protection/Overcurrent/SettingGroup1",
+      "dataPoint": "OC_I_Delay",
+      "dataType": "FLOAT",
+      "unit": "s",
+      "defaultValue": 0.5
+    }
+  ],
+  "inputs": [
+    {
+      "id": "IN_CTL_OVERCURRENT_I",
+      "name": "过流I段保护控制字投入",
+      "channelRef": "DIG101",
+      "channelType": "DIGITAL",
+      "unit": "无"
+    },
+    {
+      "id": "IN_IA_GT_SET",
+      "name": "Ia>过流I段定值",
+      "channelRef": "ANLG001",
+      "channelType": "ANALOG",
+      "unit": "A",
+      "thresholdRef": "SET_OC_I_THRESHOLD",
+      "comparison": "GT"
+    },
+    {
+      "id": "IN_NEG_LOCK",
+      "name": "负压闭锁动作",
+      "channelRef": "DIG102",
+      "channelType": "DIGITAL",
+      "unit": "无"
+    },
+    {
+      "id": "IN_DIR_A",
+      "name": "A相方向元件动作",
+      "channelRef": "DIG103",
+      "channelType": "DIGITAL",
+      "unit": "无"
+    },
+    {
+      "id": "IN_PT_FAULT",
+      "name": "PT断线",
+      "channelRef": "DIG104",
+      "channelType": "DIGITAL",
+      "unit": "无"
+    },
+    {
+      "id": "IN_CTL_VOLT",
+      "name": "过流I段经电压控制字投入",
+      "channelRef": "DIG105",
+      "channelType": "DIGITAL",
+      "unit": "无"
+    },
+    {
+      "id": "IN_CTL_DIR",
+      "name": "过流I段经方向控制字投入",
+      "channelRef": "DIG106",
+      "channelType": "DIGITAL",
+      "unit": "无"
+    }
+  ],
+  "gates": [
+    {
+      "id": "GATE_AND1",
+      "type": "AND",
+      "inputs": ["IN_CTL_OVERCURRENT_I", "IN_IA_GT_SET"],
+      "inverted": false
+    },
+    {
+      "id": "GATE_OR1",
+      "type": "OR",
+      "inputs": ["IN_CTL_VOLT", "IN_CTL_DIR"],
+      "inverted": false
+    },
+    {
+      "id": "GATE_AND2",
+      "type": "AND",
+      "inputs": ["IN_PT_FAULT", "GATE_OR1"],
+      "inverted": false
+    },
+    {
+      "id": "GATE_AND3",
+      "type": "AND",
+      "inputs": ["GATE_AND1", "IN_NEG_LOCK", "IN_DIR_A", "GATE_AND2"],
+      "inverted": true
+    }
+  ],
+  "timers": [
+    {
+      "id": "TIMER_DELAY",
+      "name": "时间定值",
+      "delayRef": "SET_OC_I_DELAY",
+      "input": "GATE_AND3"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "OUT_OVERCURRENT_I",
+      "name": "过流I段动作",
+      "input": "TIMER_DELAY",
+      "channelRef": "DIG201"
+    }
+  ],
+  "connections": [
+    {"from": "IN_CTL_OVERCURRENT_I", "to": "GATE_AND1", "toInputIndex": 0},
+    {"from": "IN_IA_GT_SET", "to": "GATE_AND1", "toInputIndex": 1},
+    {"from": "GATE_AND1", "to": "GATE_AND3", "toInputIndex": 0},
+    {"from": "IN_NEG_LOCK", "to": "GATE_AND3", "toInputIndex": 1},
+    {"from": "IN_DIR_A", "to": "GATE_AND3", "toInputIndex": 2},
+    {"from": "IN_PT_FAULT", "to": "GATE_AND2", "toInputIndex": 0},
+    {"from": "IN_CTL_VOLT", "to": "GATE_OR1", "toInputIndex": 0},
+    {"from": "IN_CTL_DIR", "to": "GATE_OR1", "toInputIndex": 1},
+    {"from": "GATE_OR1", "to": "GATE_AND2", "toInputIndex": 1},
+    {"from": "GATE_AND2", "to": "GATE_AND3", "toInputIndex": 3},
+    {"from": "GATE_AND3", "to": "TIMER_DELAY", "toInputIndex": 0},
+    {"from": "TIMER_DELAY", "to": "OUT_OVERCURRENT_I", "toInputIndex": 0}
+  ]
+}

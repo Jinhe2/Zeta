@@ -1,0 +1,37 @@
+:root {
+  --bg: #1a2332;
+  --surface: #243044;
+  --text: #e8edf4;
+  --text-muted: #8fa3bf;
+  --wire: #7ab4e0;
+  --wire-highlight: #ff6b35;
+  --input-bg: #4a7ebb;
+  --gate-bg: #c9a227;
+  --timer-bg: #f8bbd9;
+  --output-bg: #4caf50;
+  --border: #3a4f6a;
+  --error: #ff6b6b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}

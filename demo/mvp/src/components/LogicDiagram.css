@@ -1,0 +1,160 @@
+.diagram-viewport {
+  position: relative;
+  overflow: auto;
+  background: var(--bg);
+  border: 3px solid var(--engine-accent, var(--border));
+  border-radius: 6px;
+  min-height: 400px;
+}
+
+.diagram-viewport--legacy { --engine-accent: #9e9e9e; }
+.diagram-viewport--v1 { --engine-accent: #4a7ebb; }
+.diagram-viewport--v2 { --engine-accent: #4caf50; }
+.diagram-viewport--v3 { --engine-accent: #e6a919; }
+
+.diagram-overlay-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  opacity: 0.18;
+  pointer-events: none;
+  user-select: none;
+  color: var(--engine-accent, #fff);
+}
+
+.diagram-stats-bar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #b0bec5;
+  pointer-events: none;
+}
+
+.diagram-watermark {
+  fill: var(--engine-accent, #fff);
+  opacity: 0.12;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  pointer-events: none;
+  user-select: none;
+}
+
+.diagram-canvas {
+  display: block;
+  min-width: 100%;
+}
+
+.diagram-empty,
+.diagram-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.diagram-error {
+  color: var(--error);
+}
+
+/* Node styles */
+.node-bg {
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 1;
+}
+
+.input-bg {
+  fill: var(--input-bg);
+}
+
+.gate-bg {
+  fill: url(#gate-gradient);
+  fill: var(--gate-bg);
+}
+
+.timer-bg {
+  fill: var(--timer-bg);
+}
+
+.output-bg {
+  fill: var(--output-bg);
+}
+
+.node.selected .node-bg {
+  stroke: var(--wire-highlight);
+  stroke-width: 2;
+}
+
+.node-text {
+  fill: #fff;
+  font-size: 12px;
+}
+
+.node-threshold,
+.node-value,
+.node-ref {
+  fill: rgba(255, 255, 255, 0.85);
+}
+
+.node-id {
+  fill: rgba(255, 255, 255, 0.65);
+  font-size: 9px;
+}
+
+.gate-symbol {
+  fill: #1a1a1a;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.gate-id {
+  fill: rgba(0, 0, 0, 0.55);
+  font-size: 9px;
+}
+
+.invert-dot {
+  fill: var(--bg);
+  stroke: var(--wire);
+  stroke-width: 1.5;
+}
+
+/* Wire styles */
+.wire-path {
+  stroke: var(--wire);
+}
+
+.wire.highlighted .wire-path {
+  stroke: var(--wire-highlight);
+}
+
+.wire-dot {
+  fill: var(--wire);
+}
+
+.wire-ring {
+  fill: none;
+  stroke: var(--wire);
+  stroke-width: 1;
+}
+
+.wire.highlighted .wire-dot {
+  fill: var(--wire-highlight);
+}
+
+.wire.highlighted .wire-ring {
+  stroke: var(--wire-highlight);
+}

@@ -1,0 +1,111 @@
+.v4-graph-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  background: #12182a;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(124, 77, 255, 0.25);
+}
+
+.v4-flow-pane {
+  flex: 1;
+  min-height: 320px;
+  width: 100%;
+  position: relative;
+}
+
+.v4-flow-pane .react-flow {
+  width: 100%;
+  height: 100%;
+}
+
+.v4-flow-pane .react-flow__node {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  overflow: visible !important;
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.v4-flow-pane .react-flow__node.v4-rf-node--selected .v4-node {
+  border-color: #ffd54f;
+  box-shadow: 0 0 0 2px rgba(255, 213, 79, 0.55), 0 0 12px rgba(255, 213, 79, 0.35);
+}
+
+.v4-flow-pane .react-flow__node.v4-rf-node--related .v4-node {
+  border-color: rgba(255, 213, 79, 0.75);
+  box-shadow: 0 0 0 1px rgba(255, 213, 79, 0.35);
+}
+
+.v4-flow-pane .react-flow__node.v4-rf-node--dimmed .v4-node {
+  opacity: 0.3;
+}
+
+.v4-graph-view .react-flow__background {
+  background: #12182a;
+}
+
+.v4-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #b39ddb;
+  background: rgba(124, 77, 255, 0.12);
+  border-bottom: 1px solid rgba(124, 77, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.v4-stats-bar .v4-stats-error {
+  color: #ef5350;
+}
+
+.v4-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.v4-zoom-controls button {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid rgba(124, 77, 255, 0.45);
+  border-radius: 4px;
+  background: rgba(18, 24, 42, 0.9);
+  color: #ce93d8;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.v4-zoom-controls button:hover {
+  background: rgba(124, 77, 255, 0.25);
+  border-color: rgba(124, 77, 255, 0.7);
+}
+
+.v4-stats-bar span {
+  white-space: nowrap;
+}
+
+.v4-stats-bar .v4-engine-tag {
+  color: #ce93d8;
+  font-weight: 600;
+}
+
+.v4-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b39ddb;
+  font-size: 14px;
+}

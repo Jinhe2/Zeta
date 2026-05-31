@@ -1,0 +1,81 @@
+{
+  "description": "",
+  "inputs": [
+    {
+      "channelType": "DIGITAL",
+      "id": "input_1",
+      "name": "光纤同步正常"
+    },
+    {
+      "channelType": "DIGITAL",
+      "comparison": "EQ",
+      "id": "input_2",
+      "name": "本侧保护电流启动",
+      "thresholdValue": 0
+    },
+    {
+      "channelType": "DIGITAL",
+      "id": "input_3",
+      "name": "本侧任一差动投入"
+    },
+    {
+      "channelType": "DIGITAL",
+      "id": "input_4",
+      "name": "电压辅助启动"
+    },
+    {
+      "channelType": "DIGITAL",
+      "id": "input_5",
+      "name": "跳位固定"
+    }
+  ],
+  "name": "保护逻辑配置",
+  "outputs": [
+    {
+      "id": "output_1",
+      "input": "gate_1",
+      "name": "本侧差动允许"
+    }
+  ],
+  "settings": [],
+  "timers": [],
+  "version": "1.0",
+  "gates": [
+    {
+      "id": "gate_1",
+      "inputs": [
+        {
+          "node": "input_1",
+          "inverted": true
+        },
+        {
+          "node": "input_3",
+          "inverted": false
+        },
+        {
+          "node": "gate_2",
+          "inverted": false
+        }
+      ],
+      "type": "AND"
+    },
+    {
+      "id": "gate_2",
+      "inputs": [
+        {
+          "node": "input_4",
+          "inverted": false
+        },
+        {
+          "node": "input_5",
+          "inverted": false
+        },
+        {
+          "node": "input_2",
+          "inverted": false
+        }
+      ],
+      "type": "OR"
+    }
+  ]
+}

@@ -110,6 +110,33 @@
   box-sizing: border-box;
 }
 
+.v4-node__state {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.v4-node__state--ok {
+  background: #2e7d32;
+  color: #e8f5e9;
+  border: 1px solid #66bb6a;
+}
+
+.v4-node__state--fail {
+  background: #c62828;
+  color: #ffebee;
+  border: 1px solid #ef5350;
+}
+
 .v4-handle {
   width: 1px;
   height: 1px;

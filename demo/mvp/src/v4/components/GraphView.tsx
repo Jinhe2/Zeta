@@ -32,6 +32,10 @@ const edgeTypes = {
 
 export interface GraphViewProps {
   data: GraphData
+  /** 是否展示布局引擎等开发信息，学员界面应设为 false */
+  showDevInfo?: boolean
+  /** 断面节点状态：nodeId → 是否满足；为 null 时不展示断面状态 */
+  nodeStates?: Record<string, boolean> | null
 }
 
 function ZoomControls() {
@@ -56,7 +60,15 @@ function ZoomControls() {
   )
 }
 
-function GraphFlow({ result }: { result: ReactFlowLayoutResult }) {
+function GraphFlow({
+  result,
+  showDevInfo,
+  nodeStates,
+}: {
+  result: ReactFlowLayoutResult
+  showDevInfo: boolean
+  nodeStates?: Record<string, boolean> | null
+}) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -78,20 +90,28 @@ function GraphFlow({ result }: { result: ReactFlowLayoutResult }) {
       const isSelected = node.id === selectedId
       const isDimmed = selectedId != null && !relatedIds.has(node.id)
       const isRelated = selectedId != null && relatedIds.has(node.id) && !isSelected
+      const sectionSatisfied =
+        nodeStates != null && node.id in nodeStates ? nodeStates[node.id] : null
       const className = [
         isSelected ? 'v4-rf-node--selected' : '',
         isRelated ? 'v4-rf-node--related' : '',
         isDimmed ? 'v4-rf-node--dimmed' : '',
+        sectionSatisfied === true ? 'v4-rf-node--section-ok' : '',
+        sectionSatisfied === false ? 'v4-rf-node--section-fail' : '',
       ]
         .filter(Boolean)
         .join(' ')
       return {
         ...node,
         className,
+        data: {
+          ...(node.data ?? {}),
+          sectionSatisfied,
+        },
         zIndex: isSelected ? 2 : isRelated ? 1 : 0,
       }
     })
-  }, [result.nodes, selectedId, relatedIds])
+  }, [result.nodes, selectedId, relatedIds, nodeStates])
 
   const displayEdges = useMemo((): Edge[] => {
     return result.edges.map((edge) => {
@@ -118,13 +138,23 @@ function GraphFlow({ result }: { result: ReactFlowLayoutResult }) {
   return (
     <>
       <div className="v4-stats-bar">
-        <span className="v4-engine-tag">ELK Layout</span>
-        <span>节点 {result.stats.nodeCount}</span>
-        <span>连线 {result.stats.edgeCount}</span>
-        <span>
-          画布 {Math.round(result.stats.width)}×{Math.round(result.stats.height)}
-        </span>
-        <span>布局 {result.stats.layoutMs.toFixed(1)}ms</span>
+        {showDevInfo ? (
+          <>
+            <span className="v4-engine-tag">ELK Layout</span>
+            <span>节点 {result.stats.nodeCount}</span>
+            <span>连线 {result.stats.edgeCount}</span>
+            <span>
+              画布 {Math.round(result.stats.width)}×{Math.round(result.stats.height)}
+            </span>
+            <span>布局 {result.stats.layoutMs.toFixed(1)}ms</span>
+          </>
+        ) : (
+          <>
+            <span className="v4-stats-label">逻辑框图</span>
+            <span>节点 {result.stats.nodeCount}</span>
+            <span>连线 {result.stats.edgeCount}</span>
+          </>
+        )}
         <ZoomControls />
       </div>
 
@@ -151,7 +181,11 @@ function GraphFlow({ result }: { result: ReactFlowLayoutResult }) {
   )
 }
 
-export default function GraphView({ data }: GraphViewProps) {
+export default function GraphView({
+  data,
+  showDevInfo = true,
+  nodeStates = null,
+}: GraphViewProps) {
   const [result, setResult] = useState<ReactFlowLayoutResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -184,17 +218,22 @@ export default function GraphView({ data }: GraphViewProps) {
     <div className="v4-graph-view">
       {(loading || error) && (
         <div className="v4-stats-bar">
-          <span className="v4-engine-tag">ELK Layout</span>
-          {loading && <span>布局计算中…</span>}
+          {showDevInfo && <span className="v4-engine-tag">ELK Layout</span>}
+          {!showDevInfo && loading && <span className="v4-stats-label">逻辑框图</span>}
+          {loading && <span>{showDevInfo ? '布局计算中…' : '正在加载…'}</span>}
           {error && <span className="v4-stats-error">错误：{error}</span>}
         </div>
       )}
 
-      {loading && <div className="v4-loading">ELK 正在计算节点与连线位置…</div>}
+      {loading && (
+        <div className="v4-loading">
+          {showDevInfo ? 'ELK 正在计算节点与连线位置…' : '正在生成逻辑框图…'}
+        </div>
+      )}
 
       {!loading && result && (
         <ReactFlowProvider>
-          <GraphFlow result={result} />
+          <GraphFlow result={result} showDevInfo={showDevInfo} nodeStates={nodeStates} />
         </ReactFlowProvider>
       )}
     </div>

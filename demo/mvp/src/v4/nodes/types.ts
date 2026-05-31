@@ -7,5 +7,7 @@ export interface V4NodeData {
   inverted?: boolean
   delayValue?: string | number
   channelRef?: string
+  /** 断面状态：true 满足，false 不满足，null/undefined 未选择断面 */
+  sectionSatisfied?: boolean | null
   [key: string]: unknown
 }

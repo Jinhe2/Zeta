@@ -47,6 +47,22 @@
   opacity: 0.3;
 }
 
+.v4-flow-pane .react-flow__node.v4-rf-node--section-ok .v4-node {
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.65);
+}
+
+.v4-flow-pane .react-flow__node.v4-rf-node--section-fail .v4-node {
+  opacity: 0.72;
+  filter: saturate(0.45);
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.55);
+}
+
+.v4-flow-pane .react-flow__node.v4-rf-node--section-ok.v4-rf-node--selected .v4-node,
+.v4-flow-pane .react-flow__node.v4-rf-node--section-fail.v4-rf-node--selected .v4-node {
+  opacity: 1;
+  filter: none;
+}
+
 .v4-graph-view .react-flow__background {
   background: #12182a;
 }
@@ -97,6 +113,11 @@
 }
 
 .v4-stats-bar .v4-engine-tag {
+  color: #ce93d8;
+  font-weight: 600;
+}
+
+.v4-stats-bar .v4-stats-label {
   color: #ce93d8;
   font-weight: 600;
 }

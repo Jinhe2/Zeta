@@ -1,0 +1,5 @@
+jwt:
+  secret: "rEdseCreT2025xL!"
+  expiration:
+    access: 3600
+    refresh: 86400

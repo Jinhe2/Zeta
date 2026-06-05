@@ -1,0 +1,17 @@
+spring:
+  data:
+    redis:
+      repositories:
+        enabled: false
+      host: r-bp1lsbm2y1hbkk4mu5pd.redis.rds.aliyuncs.com
+      port: 6379
+      password: Cn3x2321
+      database: 0
+      timeout: 10s
+      lettuce:
+        shutdown-timeout: 3s
+        pool:
+          min-idle: 2
+          max-idle: 100
+          max-active: 8
+          max-wait: -1ms

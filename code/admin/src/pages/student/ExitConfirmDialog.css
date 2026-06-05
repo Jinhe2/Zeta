@@ -1,0 +1,76 @@
+.exit-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.exit-dialog__mask {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  background: rgba(4, 10, 18, 0.72);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.exit-dialog__panel {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  padding: 28px 32px 24px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, #1a2f48 0%, #122438 100%);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+}
+
+.exit-dialog__message {
+  margin: 0 0 24px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.6;
+  text-align: center;
+  color: #f0f6fc;
+}
+
+.exit-dialog__actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.exit-dialog__btn {
+  min-width: 108px;
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.15s;
+}
+
+.exit-dialog__btn:hover {
+  filter: brightness(1.08);
+}
+
+.exit-dialog__btn:active {
+  transform: scale(0.98);
+}
+
+.exit-dialog__btn--confirm {
+  background: linear-gradient(180deg, #e53935 0%, #c62828 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(229, 57, 53, 0.35);
+}
+
+.exit-dialog__btn--cancel {
+  background: linear-gradient(180deg, #43a047 0%, #2e7d32 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(67, 160, 71, 0.35);
+}

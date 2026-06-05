@@ -1,0 +1,8 @@
+target/
+data/
+*.log
+
+# 本地环境配置（含账号密码，勿提交）
+src/main/resources/dev/mysql.yml
+src/main/resources/dev/redis.yml
+src/main/resources/dev/jwt.yml

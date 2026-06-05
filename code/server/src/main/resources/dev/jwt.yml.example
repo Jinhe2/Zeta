@@ -1,0 +1,5 @@
+jwt:
+  secret: "change-me-to-a-long-random-secret"
+  expiration:
+    access: 3600
+    refresh: 86400

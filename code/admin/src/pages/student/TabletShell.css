@@ -1,0 +1,64 @@
+.tablet-shell {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, #0c1522 0%, #121f30 100%);
+  color: #e8f0f8;
+}
+
+.tablet-shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 20, 35, 0.6);
+}
+
+.tablet-shell__header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.tablet-shell__back,
+.tablet-shell__logout {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: #cfe8ff;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.tablet-shell__main {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+}
+
+.tablet-shell__placeholder {
+  max-width: 480px;
+  margin: 80px auto;
+  padding: 40px;
+  text-align: center;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tablet-shell__placeholder h2 {
+  margin: 0 0 12px;
+  color: #fff;
+}
+
+.tablet-shell__placeholder p {
+  margin: 0;
+  color: #90a4ae;
+  line-height: 1.6;
+}

@@ -1,0 +1,213 @@
+/* ── Tab 内容通用 ── */
+.profile-panel {
+  height: 100%;
+}
+
+.profile-section h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #8ec5f8;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.profile-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(94, 179, 255, 0.2);
+  background: rgba(10, 22, 38, 0.6);
+}
+
+.profile-stat-card__value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #5eb3ff;
+  line-height: 1;
+}
+
+.profile-stat-card__label {
+  font-size: 12px;
+  color: #90a4ae;
+  text-align: center;
+}
+
+.profile-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-timeline li {
+  position: relative;
+  padding: 10px 0 10px 18px;
+  font-size: 14px;
+  color: #b0c8de;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profile-timeline li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #5eb3ff;
+}
+
+/* 历史记录 */
+.profile-history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 22, 38, 0.5);
+}
+
+.profile-history-item + .profile-history-item {
+  margin-top: 8px;
+}
+
+.profile-history-item__main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.profile-history-item__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e8f0f8;
+}
+
+.profile-history-item__time {
+  font-size: 12px;
+  color: #78909c;
+}
+
+.profile-history-item__duration {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #8ec5f8;
+}
+
+/* 学习成绩 */
+.profile-scores-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.profile-scores-table th,
+.profile-scores-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-scores-table th {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8ec5f8;
+  background: rgba(10, 22, 38, 0.5);
+}
+
+.profile-scores-table td {
+  color: #b0c8de;
+}
+
+.profile-scores-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.profile-score {
+  display: inline-block;
+  min-width: 36px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.profile-score--high {
+  color: #a5d6a7;
+  background: rgba(56, 142, 60, 0.25);
+}
+
+.profile-score--mid {
+  color: #ffe082;
+  background: rgba(230, 140, 30, 0.2);
+}
+
+.profile-score--low {
+  color: #ef9a9a;
+  background: rgba(229, 57, 53, 0.2);
+}
+
+/* 荣誉成就 */
+.profile-honors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.profile-honor-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(94, 179, 255, 0.25);
+  background: rgba(10, 22, 38, 0.55);
+  text-align: center;
+}
+
+.profile-honor-card--locked {
+  opacity: 0.55;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.profile-honor-card__icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.profile-honor-card__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.profile-honor-card__desc {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #90a4ae;
+}
+
+@media (max-width: 768px) {
+  .profile-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

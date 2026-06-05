@@ -1,0 +1,58 @@
+.panorama-list__intro {
+  margin: 0 0 20px;
+  color: #90a4ae;
+  font-size: 14px;
+}
+
+.panorama-list__status {
+  text-align: center;
+  padding: 40px;
+  color: #90a4ae;
+}
+
+.panorama-list__status--error {
+  color: #ff8a80;
+}
+
+.panorama-list__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.panorama-list__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(94, 179, 255, 0.25);
+  background: rgba(20, 40, 65, 0.6);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.panorama-list__card:hover {
+  border-color: rgba(94, 179, 255, 0.55);
+  transform: translateY(-2px);
+}
+
+.panorama-list__category {
+  font-size: 11px;
+  color: #8ec5f8;
+  text-transform: uppercase;
+}
+
+.panorama-list__card h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #fff;
+}
+
+.panorama-list__card p {
+  margin: 0;
+  font-size: 13px;
+  color: #90a4ae;
+  line-height: 1.5;
+}

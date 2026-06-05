@@ -4,9 +4,9 @@ spring:
       repositories:
         enabled: false
   redis:
-    host: r-bp1lsbm2y1hbkk4mu5pd.redis.rds.aliyuncs.com
+    host: YOUR_REDIS_HOST
     port: 6379
-    password: Cn3x2321
+    password: your_password
     database: 0
     timeout: 10s
     lettuce:

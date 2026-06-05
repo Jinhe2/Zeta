@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 480" fill="none">
+  <defs>
+    <linearGradient id="cabinetBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3d5568"/>
+      <stop offset="100%" stop-color="#2a3d4d"/>
+    </linearGradient>
+    <linearGradient id="doorPanel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a6275"/>
+      <stop offset="100%" stop-color="#354959"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7ec8ff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#3d8fd9" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+
+  <!-- OÜF -->
+  <rect x="28" y="20" width="304" height="440" rx="6" fill="url(#cabinetBody)" stroke="#6a8aa0" stroke-width="3"/>
+  <rect x="36" y="28" width="288" height="424" rx="4" fill="#243442" stroke="#567a90" stroke-width="1.5"/>
+
+  <!-- vÆ: -->
+  <rect x="52" y="42" width="256" height="36" rx="3" fill="#1a2a38" stroke="#5a7a90" stroke-width="1"/>
+  <text x="180" y="65" text-anchor="middle" fill="#cfe8ff" font-size="14" font-family="system-ui, sans-serif" font-weight="700">ç5Ý¤OÜ</text>
+
+  <!-- æè -->
+  <rect x="52" y="92" width="118" height="330" rx="3" fill="url(#doorPanel)" stroke="#6a8aa0" stroke-width="2"/>
+  <rect x="62" y="108" width="98" height="120" rx="2" fill="url(#glass)" stroke="#5eb3ff" stroke-width="1.2"/>
+  <circle cx="78" cy="250" r="5" fill="#81c784"/>
+  <circle cx="78" cy="270" r="5" fill="#ffb74d"/>
+  <circle cx="78" cy="290" r="5" fill="#ef5350"/>
+  <rect x="62" y="310" width="98" height="96" rx="2" fill="#1e3040" stroke="#4a6a80" stroke-width="1"/>
+  <line x1="72" y1="330" x2="150" y2="330" stroke="#4a6a80" stroke-width="1"/>
+  <line x1="72" y1="350" x2="150" y2="350" stroke="#4a6a80" stroke-width="1"/>
+  <line x1="72" y1="370" x2="130" y2="370" stroke="#4a6a80" stroke-width="1"/>
+  <rect x="158" y="250" width="6" height="48" rx="2" fill="#8aa0b0"/>
+
+  <!-- óè -->
+  <rect x="190" y="92" width="118" height="330" rx="3" fill="url(#doorPanel)" stroke="#6a8aa0" stroke-width="2"/>
+  <rect x="200" y="108" width="98" height="72" rx="2" fill="#1e3040" stroke="#4a6a80" stroke-width="1"/>
+  <text x="249" y="135" text-anchor="middle" fill="#90a4ae" font-size="10" font-family="system-ui, sans-serif">Í\b</text>
+  <rect x="200" y="192" width="98" height="214" rx="2" fill="url(#glass)" stroke="#5eb3ff" stroke-width="1.2"/>
+  <rect x="214" y="210" width="28" height="18" rx="2" fill="#388e3c" opacity="0.7"/>
+  <rect x="252" y="210" width="28" height="18" rx="2" fill="#e53935" opacity="0.7"/>
+  <rect x="214" y="240" width="66" height="8" rx="2" fill="#4a6a80"/>
+  <rect x="214" y="258" width="66" height="8" rx="2" fill="#4a6a80"/>
+  <rect x="214" y="276" width="50" height="8" rx="2" fill="#4a6a80"/>
+  <rect x="196" y="250" width="6" height="48" rx="2" fill="#8aa0b0"/>
+
+  <!-- •§ -->
+  <rect x="40" y="430" width="280" height="22" rx="2" fill="#1a2835" stroke="#567a90" stroke-width="1"/>
+  <text x="180" y="445" text-anchor="middle" fill="#78909c" font-size="10" font-family="system-ui, sans-serif">OÜ•§</text>
+</svg>

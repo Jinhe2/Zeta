@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 200" fill="none">
+  <defs>
+    <linearGradient id="deviceBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a5568"/>
+      <stop offset="100%" stop-color="#2d3748"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a3a52"/>
+      <stop offset="100%" stop-color="#0f2438"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="16" y="12" width="248" height="176" rx="6" fill="url(#deviceBody)" stroke="#718096" stroke-width="2"/>
+  <rect x="24" y="20" width="232" height="160" rx="4" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+
+  <!-- Ån‹÷ -->
+  <text x="140" y="38" text-anchor="middle" fill="#a0aec0" font-size="9" font-family="system-ui, sans-serif">¿ïÝ¤K§Ån</text>
+
+  <!-- ²vb -->
+  <rect x="40" y="48" width="200" height="72" rx="3" fill="url(#screen)" stroke="#5eb3ff" stroke-width="1.2"/>
+  <text x="52" y="68" fill="#81c784" font-size="9" font-family="ui-monospace, monospace">ÐL</text>
+  <text x="52" y="84" fill="#90caf9" font-size="8" font-family="ui-monospace, monospace">Ia: 125.3 A</text>
+  <text x="52" y="98" fill="#90caf9" font-size="8" font-family="ui-monospace, monospace">Ib: 124.8 A</text>
+  <text x="52" y="112" fill="#90caf9" font-size="8" font-family="ui-monospace, monospace">Uab: 10.52 kV</text>
+  <rect x="170" y="58" width="58" height="52" rx="2" fill="#243447" stroke="#4a6275" stroke-width="1"/>
+  <polyline points="178,98 190,82 202,88 214,70 226,78" fill="none" stroke="#5eb3ff" stroke-width="1.5"/>
+
+  <!-- :o -->
+  <circle cx="56" cy="138" r="5" fill="#43a047"/>
+  <text x="68" y="142" fill="#a0aec0" font-size="8" font-family="system-ui, sans-serif">ÐL</text>
+  <circle cx="110" cy="138" r="5" fill="#e53935"/>
+  <text x="122" y="142" fill="#a0aec0" font-size="8" font-family="system-ui, sans-serif">¨\</text>
+  <circle cx="164" cy="138" r="5" fill="#ffb300"/>
+  <text x="176" y="142" fill="#a0aec0" font-size="8" font-family="system-ui, sans-serif">Jf</text>
+
+  <!-- Í\	® -->
+  <rect x="56" y="152" width="28" height="14" rx="2" fill="#4a5568" stroke="#718096" stroke-width="1"/>
+  <rect x="96" y="152" width="28" height="14" rx="2" fill="#4a5568" stroke="#718096" stroke-width="1"/>
+  <rect x="136" y="152" width="28" height="14" rx="2" fill="#4a5568" stroke="#718096" stroke-width="1"/>
+  <rect x="176" y="152" width="28" height="14" rx="2" fill="#4a5568" stroke="#718096" stroke-width="1"/>
+  <text x="70" y="162" text-anchor="middle" fill="#cbd5e0" font-size="7" font-family="system-ui, sans-serif">‘</text>
+  <text x="110" y="162" text-anchor="middle" fill="#cbd5e0" font-size="7" font-family="system-ui, sans-serif">“</text>
+  <text x="150" y="162" text-anchor="middle" fill="#cbd5e0" font-size="7" font-family="system-ui, sans-serif">n¤</text>
+  <text x="190" y="162" text-anchor="middle" fill="#cbd5e0" font-size="7" font-family="system-ui, sans-serif">R</text>
+</svg>

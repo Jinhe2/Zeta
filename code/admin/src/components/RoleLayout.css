@@ -1,0 +1,59 @@
+.role-layout {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0f1420;
+}
+
+.role-layout__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(74, 126, 187, 0.1);
+  flex-wrap: wrap;
+}
+
+.role-layout__eyebrow {
+  margin: 0 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64b5f6;
+}
+
+.role-layout__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.role-layout__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-layout__user {
+  font-size: 13px;
+  color: #b0bec5;
+}
+
+.role-layout__btn {
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e8edf4;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.role-layout__main {
+  flex: 1;
+  padding: 24px;
+  overflow: auto;
+}

@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ct-training-server
+  profiles:
+    active: dev
+
+
+
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+zeta:
+  cors:
+    allowed-origins: http://localhost:5173,http://127.0.0.1:5173

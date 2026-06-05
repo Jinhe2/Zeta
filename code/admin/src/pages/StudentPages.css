@@ -1,0 +1,182 @@
+.student-intro {
+  max-width: 720px;
+  margin-bottom: 28px;
+}
+
+.student-intro h2 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.student-intro p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #90a4ae;
+}
+
+.student-status {
+  color: #90a4ae;
+  text-align: center;
+  padding: 40px;
+}
+
+.student-status--error {
+  color: #ff8a80;
+}
+
+.protection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.protection-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(129, 199, 132, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.protection-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(129, 199, 132, 0.6);
+}
+
+.protection-card__category {
+  font-size: 11px;
+  font-weight: 600;
+  color: #81c784;
+  text-transform: uppercase;
+}
+
+.protection-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #fff;
+}
+
+.protection-card__desc {
+  margin: 0;
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #90a4ae;
+}
+
+.protection-card__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.protection-card__stats span {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(129, 199, 132, 0.15);
+  color: #a5d6a7;
+}
+
+.protection-card__action {
+  font-size: 13px;
+  font-weight: 600;
+  color: #81c784;
+}
+
+.tablet-shell.diagram-page .diagram-page__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  padding: 0;
+}
+
+.diagram-page__error {
+  padding: 10px 16px;
+  background: rgba(255, 107, 107, 0.15);
+  color: #ff8a80;
+  font-size: 13px;
+}
+
+.diagram-page__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.diagram-page__workspace {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.diagram-canvas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(124, 77, 255, 0.25);
+  background: #12182a;
+  overflow: hidden;
+}
+
+.diagram-canvas__header {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #b39ddb;
+  background: rgba(124, 77, 255, 0.12);
+  border-bottom: 1px solid rgba(124, 77, 255, 0.2);
+}
+
+.diagram-canvas__area {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+  color: #b0bec5;
+}
+
+.diagram-canvas__placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #90a4ae;
+}
+
+.diagram-canvas__hint {
+  font-size: 13px;
+  color: #78909c;
+}
+
+.diagram-canvas__states {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+}
+
+.diagram-canvas__states .ok {
+  color: #a5d6a7;
+}
+
+.diagram-canvas__states .fail {
+  color: #ef9a9a;
+}

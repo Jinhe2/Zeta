@@ -136,11 +136,162 @@ export const api = {
     return request('/api/protection-logics')
   },
 
+  getKnowledgeTree() {
+    return request('/api/knowledge/tree')
+  },
+
+  listKnowledgeDeviceCognitionItems(deviceId) {
+    return request(`/api/knowledge/devices/${deviceId}/cognition-items`)
+  },
+
   getProtectionLogic(id) {
     return request(`/api/protection-logics/${id}`)
   },
 
   getSections(id) {
     return request(`/api/protection-logics/${id}/sections`)
+  },
+
+  listUsers(role) {
+    if (!role) {
+      return Promise.reject(new Error('缺少用户角色参数'))
+    }
+    return request(`/api/users?role=${encodeURIComponent(role)}`)
+  },
+
+  getUser(id) {
+    return request(`/api/users/${id}`)
+  },
+
+  createUser(payload) {
+    return request('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  updateUser(id, payload) {
+    return request(`/api/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  resetUserPassword(id, password) {
+    return request(`/api/users/${id}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ password }),
+    })
+  },
+
+  deleteUser(id) {
+    return request(`/api/users/${id}`, { method: 'DELETE' })
+  },
+
+  listCabinets() {
+    return request('/api/cabinets')
+  },
+
+  getCabinet(id) {
+    return request(`/api/cabinets/${id}`)
+  },
+
+  createCabinet(payload) {
+    return request('/api/cabinets', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  updateCabinet(id, payload) {
+    return request(`/api/cabinets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteCabinet(id) {
+    return request(`/api/cabinets/${id}`, { method: 'DELETE' })
+  },
+
+  listCabinetDevices(cabinetId) {
+    return request(`/api/cabinets/${cabinetId}/devices`)
+  },
+
+  createCabinetDevice(cabinetId, payload) {
+    return request(`/api/cabinets/${cabinetId}/devices`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  getDevice(id) {
+    return request(`/api/devices/${id}`)
+  },
+
+  updateDevice(id, payload) {
+    return request(`/api/devices/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteDevice(id) {
+    return request(`/api/devices/${id}`, { method: 'DELETE' })
+  },
+
+  listDeviceProtectionLogics(deviceId) {
+    return request(`/api/devices/${deviceId}/protection-logics`)
+  },
+
+  createDeviceProtectionLogic(deviceId, payload) {
+    return request(`/api/devices/${deviceId}/protection-logics`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  updateProtectionLogicAdmin(id, payload) {
+    return request(`/api/admin/protection-logics/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteProtectionLogicAdmin(id) {
+    return request(`/api/admin/protection-logics/${id}`, { method: 'DELETE' })
+  },
+
+  listDeviceCognitionItems(deviceId) {
+    return request(`/api/devices/${deviceId}/cognition-items`)
+  },
+
+  createDeviceCognitionItem(deviceId, payload) {
+    return request(`/api/devices/${deviceId}/cognition-items`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  updateDeviceCognitionItem(id, payload) {
+    return request(`/api/admin/device-cognition-items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteDeviceCognitionItem(id) {
+    return request(`/api/admin/device-cognition-items/${id}`, { method: 'DELETE' })
+  },
+
+  getProtectionLogicConfig(id) {
+    return request(`/api/admin/protection-logics/${id}/config`)
+  },
+
+  updateProtectionLogicConfig(id, configJson) {
+    return request(`/api/admin/protection-logics/${id}/config`, {
+      method: 'PUT',
+      body: JSON.stringify({ configJson }),
+    })
   },
 }

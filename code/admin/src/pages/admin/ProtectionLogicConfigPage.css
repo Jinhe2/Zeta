@@ -1,0 +1,129 @@
+.logic-config-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.logic-config-page__content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.logic-config-page__content > .logic-visual-editor {
+  flex: 1;
+  min-height: 0;
+}
+
+.logic-config-page__tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.logic-config-page__tab {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #b0bec5;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.logic-config-page__tab--active {
+  background: rgba(74, 126, 187, 0.35);
+  border-color: rgba(100, 181, 246, 0.4);
+  color: #fff;
+}
+
+.logic-config-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.logic-config-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.logic-config-page__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.logic-config-page__editor-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0d1117;
+}
+
+.logic-config-page__editor-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  color: #90a4ae;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.logic-config-page__dirty {
+  color: #ffb74d;
+}
+
+.logic-config-page__invalid {
+  color: #ef9a9a;
+}
+
+.logic-config-page__editor {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: 14px 16px;
+  border: none;
+  resize: none;
+  background: #0d1117;
+  color: #e8edf4;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+.logic-config-page__editor:focus {
+  outline: none;
+}
+
+.logic-config-page__preview {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+}
+
+.logic-config-page__preview .config-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+@media (max-width: 960px) {
+  .logic-config-page__workspace {
+    grid-template-columns: 1fr;
+  }
+}

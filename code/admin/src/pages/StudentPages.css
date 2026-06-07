@@ -145,8 +145,22 @@
 .diagram-canvas__area {
   flex: 1;
   overflow: auto;
-  padding: 20px;
+  padding: 12px;
   color: #b0bec5;
+}
+
+.diagram-canvas__preview {
+  min-height: 420px;
+  height: 100%;
+}
+
+.diagram-canvas__preview.v4-graph-view {
+  border: none;
+  border-radius: 0;
+}
+
+.diagram-canvas__preview .v4-flow-pane {
+  min-height: 380px;
 }
 
 .diagram-canvas__placeholder {

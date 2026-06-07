@@ -18,6 +18,12 @@ public class ProtectionLogic {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "device_id",
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private Device device;
+
     @Column(nullable = false, unique = true, length = 64)
     private String code;
 
@@ -29,6 +35,9 @@ public class ProtectionLogic {
 
     @Column(nullable = false, length = 32)
     private String category;
+
+    @Column(nullable = false)
+    private Integer sortOrder = 0;
 
     /** 完整逻辑配置 JSON */
     @Lob

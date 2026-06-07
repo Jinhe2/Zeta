@@ -1,0 +1,14 @@
+{
+  "name": "@zeta/diagram",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@xyflow/react": "^12.11.0",
+    "elkjs": "^0.11.1"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

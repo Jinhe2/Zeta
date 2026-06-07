@@ -14,7 +14,14 @@ import ChangePasswordPage from './pages/student/ChangePasswordPage'
 import CoachModePage from './pages/student/CoachModePage'
 import CabinetCognitionPage from './pages/student/CabinetCognitionPage'
 import TeacherPage from './pages/TeacherPage'
-import AdminDashboardPage from './pages/AdminDashboardPage'
+import AdminLayout from './components/AdminLayout'
+import UsersPage from './pages/admin/UsersPage'
+import AdminPlaceholderPage from './pages/admin/AdminPlaceholderPage'
+import CabinetsPage from './pages/admin/CabinetsPage'
+import CabinetDevicesPage from './pages/admin/CabinetDevicesPage'
+import DeviceProtectionLogicsPage from './pages/admin/DeviceProtectionLogicsPage'
+import DeviceCognitionItemsPage from './pages/admin/DeviceCognitionItemsPage'
+import ProtectionLogicConfigPage from './pages/admin/ProtectionLogicConfigPage'
 
 function LegacyDiagramRedirect() {
   const { id } = useParams()
@@ -138,10 +145,46 @@ export default function App() {
             path="/admin"
             element={
               <RequireAuth role="ADMIN">
-                <AdminDashboardPage />
+                <AdminLayout />
               </RequireAuth>
             }
-          />
+          >
+            <Route index element={<Navigate to="/admin/users/students" replace />} />
+            <Route path="users" element={<Navigate to="/admin/users/students" replace />} />
+            <Route path="users/:roleKey" element={<UsersPage />} />
+            <Route path="cabinets" element={<CabinetsPage />} />
+            <Route path="cabinets/:cabinetId/devices" element={<CabinetDevicesPage />} />
+            <Route
+              path="cabinets/:cabinetId/devices/:deviceId/protection-logics/:logicId/config"
+              element={<ProtectionLogicConfigPage />}
+            />
+            <Route
+              path="cabinets/:cabinetId/devices/:deviceId/cognition-items"
+              element={<DeviceCognitionItemsPage />}
+            />
+            <Route
+              path="cabinets/:cabinetId/devices/:deviceId/protection-logics"
+              element={<DeviceProtectionLogicsPage />}
+            />
+            <Route
+              path="protection-logics"
+              element={
+                <AdminPlaceholderPage
+                  title="保护逻辑配置"
+                  description="保护逻辑的增删改查与发布管理功能开发中。"
+                />
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <AdminPlaceholderPage
+                  title="系统设置"
+                  description="系统参数与运行配置功能开发中。"
+                />
+              }
+            />
+          </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -1,11 +1,52 @@
-const DEVICE_PARAGRAPHS = [
-  '屏柜内核心设备为继电保护测控装置，通常面板安装，正面包含液晶显示区、运行/动作/告警指示灯及本地操作按键。',
-  '通过液晶界面可查看模拟量、开关量状态、定值区信息及装置自检结果；指示灯用于快速判断装置运行与故障情况。',
-  '装置背面或侧方设有交流电压、电流、开入开出等接线端子，通过屏柜内电缆与端子排、断路器辅助接点相连。',
-  '学习设备认知时，应能识别装置型号、额定参数、通信接口位置，并理解装置在屏柜中的安装层级与检修空间要求。',
-]
+import { useEffect, useState } from 'react'
+import { api } from '../../../api/client'
+
+const DEFAULT_DEVICE_CODE = 'device-line-a'
+
+function findDeviceId(tree, deviceCode) {
+  for (const cabinet of tree?.cabinets ?? []) {
+    for (const device of cabinet.devices ?? []) {
+      if (device.code === deviceCode) {
+        return device.id
+      }
+    }
+  }
+  const firstCabinet = tree?.cabinets?.[0]
+  return firstCabinet?.devices?.[0]?.id ?? null
+}
 
 export default function DeviceCognitionContent() {
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError(null)
+      try {
+        const tree = await api.getKnowledgeTree()
+        const deviceId = findDeviceId(tree, DEFAULT_DEVICE_CODE)
+        if (!deviceId) {
+          throw new Error('未找到设备认知数据')
+        }
+        const data = await api.listKnowledgeDeviceCognitionItems(deviceId)
+        if (!cancelled) setItems(data)
+      } catch (err) {
+        if (!cancelled) setError(err.message)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <div className="cabinet-section cabinet-section--device">
       <div className="cabinet-section__media cabinet-section__media--cabinet">
@@ -26,11 +67,16 @@ export default function DeviceCognitionContent() {
 
       <div className="cabinet-section__text cabinet-section__text--device">
         <h2 className="cabinet-section__title">设备认知</h2>
-        {DEVICE_PARAGRAPHS.map((paragraph) => (
-          <p key={paragraph} className="cabinet-section__paragraph">
-            {paragraph}
-          </p>
-        ))}
+        {loading && <p className="cabinet-section__paragraph">正在加载…</p>}
+        {error && <p className="cabinet-section__paragraph cabinet-section__paragraph--error">{error}</p>}
+        {!loading &&
+          !error &&
+          items.map((item) => (
+            <div key={item.id} className="cabinet-section__cognition-item">
+              {item.title && <h3 className="cabinet-section__cognition-title">{item.title}</h3>}
+              <p className="cabinet-section__paragraph">{item.content}</p>
+            </div>
+          ))}
       </div>
     </div>
   )

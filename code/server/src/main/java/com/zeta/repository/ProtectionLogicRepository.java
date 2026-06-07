@@ -8,7 +8,17 @@ import java.util.Optional;
 
 public interface ProtectionLogicRepository extends JpaRepository<ProtectionLogic, Long> {
 
-    List<ProtectionLogic> findByEnabledTrueOrderByIdAsc();
+    List<ProtectionLogic> findByEnabledTrueOrderBySortOrderAscIdAsc();
+
+    List<ProtectionLogic> findByDeviceIdAndEnabledTrueOrderBySortOrderAscIdAsc(Long deviceId);
+
+    List<ProtectionLogic> findByDeviceIdOrderBySortOrderAscIdAsc(Long deviceId);
 
     Optional<ProtectionLogic> findByCode(String code);
+
+    boolean existsByCode(String code);
+
+    List<ProtectionLogic> findByDeviceIsNull();
+
+    long countByDeviceId(Long deviceId);
 }

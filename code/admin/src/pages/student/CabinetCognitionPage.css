@@ -306,6 +306,25 @@
   margin-bottom: 0;
 }
 
+.cabinet-section__paragraph--error {
+  color: #ef9a9a;
+}
+
+.cabinet-section__cognition-item {
+  margin-bottom: 16px;
+}
+
+.cabinet-section__cognition-item:last-child {
+  margin-bottom: 0;
+}
+
+.cabinet-section__cognition-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #81d4fa;
+}
+
 /* 设备认知：左屏柜图，右上设备图，右下文字 */
 .cabinet-section--device {
   grid-template-columns: 1fr 1fr;

@@ -1,0 +1,13 @@
+.admin-placeholder__title {
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.admin-placeholder__desc {
+  margin: 0;
+  font-size: 14px;
+  color: #90a4ae;
+  line-height: 1.6;
+}

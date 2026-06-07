@@ -26,7 +26,7 @@ public class ProtectionLogicService {
 
     public List<ProtectionLogicSummaryResponse> listSummaries() {
         List<ProtectionLogicSummaryResponse> result = new ArrayList<>();
-        for (ProtectionLogic logic : repository.findByEnabledTrueOrderByIdAsc()) {
+        for (ProtectionLogic logic : repository.findByEnabledTrueOrderBySortOrderAscIdAsc()) {
             result.add(toSummary(logic));
         }
         return result;

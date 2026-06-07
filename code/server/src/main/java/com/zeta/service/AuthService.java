@@ -59,6 +59,14 @@ public class AuthService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户不存在"));
     }
 
+    public User requireRole(String authorization, UserRole role) {
+        User user = requireUser(authorization);
+        if (user.getRole() != role) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无权访问该资源");
+        }
+        return user;
+    }
+
     public void logout(String refreshToken) {
         if (refreshToken != null) {
             refreshTokenStore.revoke(refreshToken);

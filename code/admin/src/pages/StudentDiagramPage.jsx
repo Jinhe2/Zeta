@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ZetaGraphView } from '@zeta/diagram'
 import { api } from '../api/client'
 import SectionSelector from '../components/SectionSelector'
 import ConfigPanel from '../components/ConfigPanel'
@@ -95,18 +96,15 @@ export default function StudentDiagramPage() {
                   )}
                 </div>
                 <div className="diagram-canvas__area">
-                  <p>逻辑框图渲染区域</p>
-                  <p className="diagram-canvas__hint">
-                    待接入框图渲染组件；当前断面节点状态已由后端返回，可在右侧配置面板查看。
-                  </p>
-                  {nodeStates && (
-                    <ul className="diagram-canvas__states">
-                      {Object.entries(nodeStates).map(([nodeId, ok]) => (
-                        <li key={nodeId} className={ok ? 'ok' : 'fail'}>
-                          {nodeId}：{ok ? '满足' : '不满足'}
-                        </li>
-                      ))}
-                    </ul>
+                  {detail?.config ? (
+                    <ZetaGraphView
+                      config={detail.config}
+                      showDevInfo={false}
+                      nodeStates={nodeStates}
+                      className="diagram-canvas__preview"
+                    />
+                  ) : (
+                    <p className="diagram-canvas__placeholder">暂无框图配置</p>
                   )}
                 </div>
               </>

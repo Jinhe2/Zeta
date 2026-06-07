@@ -3,7 +3,8 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import './AdminLayout.css'
 
-const NAV_ITEMS = [
+/** 业务模块（持续迭代） */
+const BUSINESS_NAV = [
   {
     id: 'users',
     label: '用户管理',
@@ -13,10 +14,12 @@ const NAV_ITEMS = [
       { to: '/admin/users/admins', label: '管理员' },
     ],
   },
-  { to: '/admin/cabinets', label: '屏柜管理' },
-  { to: '/admin/protection-logics', label: '保护逻辑' },
+  { to: '/admin/display', label: '屏柜展示维护' },
   { to: '/admin/settings', label: '系统设置' },
 ]
+
+/** 屏柜系统数据（只读） */
+const SCREEN_NAV = { to: '/admin/screen/cabinets', label: '屏柜数据' }
 
 function NavGroup({ item }) {
   const location = useLocation()
@@ -31,7 +34,9 @@ function NavGroup({ item }) {
   }, [isChildActive])
 
   return (
-    <div className={`admin-layout__nav-group${expanded ? ' admin-layout__nav-group--expanded' : ''}`}>
+    <div
+      className={`admin-layout__nav-group${expanded ? ' admin-layout__nav-group--expanded' : ''}`}
+    >
       <button
         type="button"
         className={`admin-layout__nav-toggle${isChildActive ? ' admin-layout__nav-toggle--active' : ''}`}
@@ -73,7 +78,8 @@ export default function AdminLayout() {
           <h1 className="admin-layout__title">管理后台</h1>
         </div>
         <nav className="admin-layout__nav">
-          {NAV_ITEMS.map((item) =>
+          <p className="admin-layout__nav-section">业务</p>
+          {BUSINESS_NAV.map((item) =>
             item.children ? (
               <NavGroup key={item.id} item={item} />
             ) : (
@@ -90,6 +96,18 @@ export default function AdminLayout() {
               </NavLink>
             ),
           )}
+
+          <p className="admin-layout__nav-section">屏柜</p>
+          <NavLink
+            to={SCREEN_NAV.to}
+            className={({ isActive }) =>
+              `admin-layout__nav-link admin-layout__nav-link--root${
+                isActive ? ' admin-layout__nav-link--active' : ''
+              }`
+            }
+          >
+            {SCREEN_NAV.label}
+          </NavLink>
         </nav>
       </aside>
 

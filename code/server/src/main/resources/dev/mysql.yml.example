@@ -1,8 +1,20 @@
-spring:
+# 双数据源连接配置（复制为 mysql.yml 后填入连接信息）
+#
+# business → ct-screen-monitor  业务库（读写）：用户、认知展示、业务流程
+# screen   → ct-screen           屏柜库（只读）：屏柜/设备/保护逻辑，由屏柜系统维护
+#
+# DDL、只读策略等见 application-dev.yml 中 zeta.datasource.*
+# 开发 MySQL 8.0 / 生产 MariaDB 10.5.8，方言 MariaDB103Dialect
+
+zeta:
   datasource:
-    url: jdbc:mysql://YOUR_MYSQL_HOST:3306/YOUR_DATABASE?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-    username: your_username
-    password: your_password
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    database-platform: org.hibernate.dialect.MySQL8Dialect
+    business:
+      url: jdbc:mysql://127.0.0.1:3306/ct-screen-monitor?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+      username: your_username
+      password: your_password
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    screen:
+      url: jdbc:mysql://127.0.0.1:3306/ct-screen?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+      username: your_username
+      password: your_password
+      driver-class-name: com.mysql.cj.jdbc.Driver

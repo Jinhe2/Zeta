@@ -1,6 +1,27 @@
+# 开发环境：导入本地敏感配置（见 dev/*.yml.example）
 spring:
   config:
     import:
-      - optional:classpath:dev/redis.yml
       - optional:classpath:dev/mysql.yml
+      - optional:classpath:dev/redis.yml
       - optional:classpath:dev/jwt.yml
+
+zeta:
+  cors:
+    allowed-origins: http://localhost:5173,http://127.0.0.1:5173
+
+  datasource:
+    business:
+      ddl-auto: update
+      show-sql: false
+    screen:
+      ddl-auto: none
+      read-only: false
+      show-sql: false
+
+  screen-queue:
+    enabled: false
+    inbound-key: ct:screen:business:inbound
+    outbound-key: ct:business:screen:outbound
+    poll-timeout-seconds: 5
+    poll-interval-ms: 2000

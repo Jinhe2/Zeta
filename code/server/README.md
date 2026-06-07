@@ -1,57 +1,79 @@
-# Zeta Server
+# Zeta Server（业务系统）
 
-Java 8 + Spring Boot 2.7 + JPA + MySQL + Redis 后端服务。
+Java 8 + Spring Boot 2.7 业务 API。连接 **ct-screen-monitor**（读写）与 **ct-screen**（只读），经 Redis 队列与屏柜系统交互。
 
-## 技术栈
+## 代码组织（按实体分包）
 
-- Spring Boot 2.7.18
-- Spring Data JPA + MySQL
-- Spring Data Redis（登录 Token 存储）
-- REST API
+每个实体目录包含 **Entity → Repository → Service → Controller** 及该实体相关的请求/响应 DTO。
+
+```
+com.zeta.business/
+├── user/              用户
+├── auth/              登录鉴权、JWT
+├── devicedisplay/     设备展示条目
+└── cabinetdisplay/    屏柜展示条目
+
+com.zeta.screen/
+├── cabinet/           屏柜（只读）
+├── ieddevice/         IED 装置（只读）
+├── logicdiagram/      保护逻辑框图（只读）
+└── knowledge/         知识结构聚合 API
+
+com.zeta.config/       数据源、JPA、Redis 配置
+com.zeta.web/          全局异常、工具类
+com.zeta.integration.queue/  Redis 队列
+```
+
+## 系统边界
+
+| 模块包 | 数据库 | 说明 |
+|--------|--------|------|
+| `com.zeta.business.*` | ct-screen-monitor | 用户、屏柜/设备展示、业务流程 |
+| `com.zeta.screen.*` | ct-screen（只读） | 屏柜/设备/保护逻辑查询与学员展示 |
+| `com.zeta.integration.queue.*` | Redis | 屏柜系统 ↔ 业务系统消息队列 |
+
+屏柜系统负责 IDE 设备、保护逻辑、录播、数值召回等；本服务**不修改** ct-screen 表结构与数据（生产环境账号应仅 SELECT）。实体映射见项目根 `schema.sql`。
 
 ## 环境配置
 
-开发配置按模块拆分，由 `application-dev.yml` 导入：
-
 ```
-src/main/resources/dev/
-├── mysql.yml      # 数据源（复制 mysql.yml.example）
-├── redis.yml      # Redis（复制 redis.yml.example）
-└── jwt.yml        # JWT 参数（预留，复制 jwt.yml.example）
-```
-
-首次配置：
-
-```bash
-cd src/main/resources/dev
-cp mysql.yml.example mysql.yml
-cp redis.yml.example redis.yml
-cp jwt.yml.example jwt.yml
-# 编辑各文件填入实际连接信息
+application.yml       # 基础项：端口、应用名、激活 profile
+application-dev.yml   # 开发环境 zeta.* 行为配置
+dev/mysql.yml         # 双数据源连接（复制 mysql.yml.example，勿提交）
+dev/redis.yml
+dev/jwt.yml
 ```
 
-`dev/*.yml` 已加入 `.gitignore`，请勿将账号密码提交到仓库。
+### 配置分层
+
+| 文件 | 内容 |
+|------|------|
+| `application.yml` | `server.*`、`spring.application.name`、`spring.profiles.active` |
+| `application-dev.yml` | CORS、数据源策略（ddl-auto / read-only）、Redis 队列 |
+| `dev/mysql.yml` | `zeta.datasource.business` 与 `zeta.datasource.screen` 的 url / 账号 |
+
+### mysql.yml 示例（仅连接信息）
+
+```yaml
+zeta:
+  datasource:
+    business:
+      url: jdbc:mysql://.../ct-screen-monitor?...
+      username: ...
+      password: ...
+    screen:
+      url: jdbc:mysql://.../ct-screen?...
+      username: ...
+      password: ...
+```
+
+方言使用 **MariaDB103Dialect**，兼容 MySQL 8 开发与 MariaDB 10.5.8 生产。
 
 ## 启动
 
 ```bash
 mvn spring-boot:run
 ```
-
-默认 `spring.profiles.active=dev`，服务地址：`http://localhost:8080`
-
-### 知识结构升级（旧库迁移）
-
-若从旧版本升级，启动时报 `protection_logics` 的 `device_id` 外键错误，说明库中已有保护逻辑数据尚未关联设备。可任选其一：
-
-1. **推荐**：执行修复脚本后重启
-   ```bash
-   mysql -u用户 -p 数据库名 < scripts/fix-protection-logics-fk.sql
-   mvn spring-boot:run
-   ```
-   启动后 `DataInitializer` 会自动将未关联设备的保护逻辑挂到默认设备。
-
-2. **开发环境清空**：删除 `protection_logics`、`devices`、`cabinets` 表后重启，由种子数据重新注入。
 
 ## 测试账号
 
@@ -61,58 +83,41 @@ mvn spring-boot:run
 | teacher | 123456 | TEACHER |
 | admin | 123456 | ADMIN |
 
-首次启动会自动初始化用户与保护逻辑样本数据。
+业务库首次启动自动初始化用户；展示条目在 ct-screen 存在对应屏柜/设备时写入业务库。
 
-## 鉴权
+## Redis 队列（骨架）
 
-采用 **JWT 双 Token**：
+| 方向 | 默认 Key |
+|------|----------|
+| 屏柜 → 业务 | `ct:screen:business:inbound` |
+| 业务 → 屏柜 | `ct:business:screen:outbound` |
 
-| Token | 说明 | 存储 |
-|-------|------|------|
-| accessToken | 短期访问令牌（JWT） | 前端 localStorage，请求头 `Authorization: Bearer` |
-| refreshToken | 长期刷新令牌 | Redis + 前端 localStorage |
+消息体见 `ScreenQueueMessage`（`type` + `payload`）。具体 type 约定待屏柜侧协议确定后补充。
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/auth/login` | 登录，返回 accessToken + refreshToken |
-| POST | `/api/auth/refresh` | 刷新令牌（body: `{ refreshToken }`） |
-| POST | `/api/auth/logout` | 注销（body: `{ refreshToken }`） |
-| GET | `/api/auth/me` | 当前用户（Bearer accessToken） |
-| POST | `/api/auth/change-password` | 修改当前用户密码 |
-| GET | `/api/users?role=STUDENT/TEACHER/ADMIN` | 按角色查询用户列表（仅 ADMIN，`role` 必填） |
-| POST | `/api/users` | 创建用户（仅 ADMIN） |
-| GET | `/api/users/{id}` | 用户详情（仅 ADMIN） |
-| PUT | `/api/users/{id}` | 更新用户显示名与角色（仅 ADMIN） |
-| PUT | `/api/users/{id}/password` | 重置用户密码（仅 ADMIN） |
-| DELETE | `/api/users/{id}` | 删除用户（仅 ADMIN，不可删自己） |
-| GET | `/api/cabinets` | 屏柜列表（仅 ADMIN，含停用） |
-| POST | `/api/cabinets` | 创建屏柜（仅 ADMIN） |
-| GET | `/api/cabinets/{id}` | 屏柜详情（仅 ADMIN） |
-| PUT | `/api/cabinets/{id}` | 更新屏柜（仅 ADMIN） |
-| DELETE | `/api/cabinets/{id}` | 删除屏柜（仅 ADMIN，无下属设备时） |
-| GET | `/api/cabinets/{id}/devices` | 屏柜下设备列表（仅 ADMIN） |
-| POST | `/api/cabinets/{id}/devices` | 在屏柜下创建设备（仅 ADMIN） |
-| GET | `/api/devices/{id}` | 设备详情（仅 ADMIN） |
-| PUT | `/api/devices/{id}` | 更新设备（仅 ADMIN） |
-| DELETE | `/api/devices/{id}` | 删除设备（仅 ADMIN，无下属保护逻辑时） |
-| GET | `/api/devices/{id}/protection-logics` | 设备下保护逻辑列表（仅 ADMIN） |
-| POST | `/api/devices/{id}/protection-logics` | 在设备下创建保护逻辑（仅 ADMIN） |
-| PUT | `/api/admin/protection-logics/{id}` | 更新保护逻辑（仅 ADMIN） |
-| DELETE | `/api/admin/protection-logics/{id}` | 删除保护逻辑（仅 ADMIN） |
-| GET | `/api/devices/{id}/cognition-items` | 设备认知条目列表（仅 ADMIN） |
-| POST | `/api/devices/{id}/cognition-items` | 创建设备认知条目（仅 ADMIN） |
-| PUT | `/api/admin/device-cognition-items/{id}` | 更新设备认知条目（仅 ADMIN） |
-| PUT | `/api/admin/protection-logics/{id}/config` | 更新保护逻辑 JSON 配置（仅 ADMIN） |
-| GET | `/api/admin/protection-logics/{id}/config` | 获取保护逻辑 JSON 配置（仅 ADMIN） |
-| DELETE | `/api/admin/device-cognition-items/{id}` | 删除设备认知条目（仅 ADMIN） |
-| GET | `/api/knowledge/tree` | 知识结构树（屏柜 → 设备 → 保护逻辑） |
-| GET | `/api/knowledge/cabinets` | 屏柜列表 |
-| GET | `/api/knowledge/cabinets/{id}` | 屏柜详情（含设备） |
-| GET | `/api/knowledge/cabinets/{id}/devices` | 屏柜下设备列表 |
-| GET | `/api/knowledge/devices/{id}` | 设备详情（含保护逻辑） |
-| GET | `/api/knowledge/devices/{id}/protection-logics` | 设备下保护逻辑列表 |
-| GET | `/api/protection-logics` | 保护逻辑列表（扁平，兼容学员全景） |
-| GET | `/api/protection-logics/{id}` | 保护逻辑详情 |
-| GET | `/api/protection-logics/{id}/sections` | 实验断面列表 |
+## API 概览
 
-JWT 参数见 `dev/jwt.yml`（`jwt.expiration.access` / `jwt.expiration.refresh`，单位秒）。
+### 业务（ct-screen-monitor）
+
+- `/api/auth/*` — 鉴权
+- `/api/users/*` — 用户管理（ADMIN）
+- `/api/cabinets/{id}/display-items` — 屏柜展示条目 CRUD（ADMIN，id 为屏柜库 cabinet 主键）
+- `/api/devices/{id}/display-items` — 设备展示条目 CRUD（ADMIN，id 为屏柜库 device 主键）
+- `/api/knowledge/devices/{id}/display-items` — 学员可读展示条目
+
+### 屏柜只读（ct-screen）
+
+- `/api/knowledge/*` — 知识结构树
+- `/api/protection-logics/*` — 保护逻辑详情与断面
+
+## 跨库引用
+
+`device_display_items.screen_device_id` 引用 ct-screen 设备主键，无外键。创建展示条目前会只读校验屏柜库中设备是否存在。
+
+## 本地开发（无屏柜系统）
+
+1. 创建库 `ct-screen-monitor`、`ct-screen`
+2. 配置 `dev/mysql.yml`（双库连接）
+3. 在 ct-screen 中准备屏柜/设备/逻辑数据（由屏柜系统维护）
+4. 启动服务
+
+收到屏柜侧 SQL 后，将 ct-screen 实体与 Repository 对齐即可，业务侧只读层无需改库。

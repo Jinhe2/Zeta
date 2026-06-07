@@ -32,7 +32,7 @@ export default function DeviceCognitionContent() {
         if (!deviceId) {
           throw new Error('未找到设备认知数据')
         }
-        const data = await api.listKnowledgeDeviceCognitionItems(deviceId)
+        const data = await api.listKnowledgeDeviceDisplayItems(deviceId)
         if (!cancelled) setItems(data)
       } catch (err) {
         if (!cancelled) setError(err.message)

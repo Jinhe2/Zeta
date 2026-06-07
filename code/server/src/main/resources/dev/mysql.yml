@@ -1,8 +1,13 @@
-spring:
+# 本地/开发环境双数据源连接（勿提交，已在 .gitignore）
+zeta:
   datasource:
-    url: jdbc:mysql://rm-bp14h54qbkc8wfv6cjo.mysql.rds.aliyuncs.com:3306/ct-screen-monitor?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-    username: ct
-    password: CT2026dev
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    database-platform: org.hibernate.dialect.MySQL8Dialect
+    business:
+      url: jdbc:mysql://rm-bp14h54qbkc8wfv6cjo.mysql.rds.aliyuncs.com:3306/ct-screen-monitor?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+      username: ct
+      password: CT2026dev
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    screen:
+      url: jdbc:mysql://rm-bp14h54qbkc8wfv6cjo.mysql.rds.aliyuncs.com:3306/ct-screen?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+      username: ct
+      password: CT2026dev
+      driver-class-name: com.mysql.cj.jdbc.Driver

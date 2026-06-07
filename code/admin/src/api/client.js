@@ -140,8 +140,28 @@ export const api = {
     return request('/api/knowledge/tree')
   },
 
-  listKnowledgeDeviceCognitionItems(deviceId) {
-    return request(`/api/knowledge/devices/${deviceId}/cognition-items`)
+  listKnowledgeCabinets() {
+    return request('/api/knowledge/cabinets')
+  },
+
+  getKnowledgeCabinet(id) {
+    return request(`/api/knowledge/cabinets/${id}`)
+  },
+
+  getKnowledgeDevice(id) {
+    return request(`/api/knowledge/devices/${id}`)
+  },
+
+  listKnowledgeDeviceProtectionLogics(deviceId) {
+    return request(`/api/knowledge/devices/${deviceId}/protection-logics`)
+  },
+
+  listKnowledgeDeviceDisplayItems(deviceId) {
+    return request(`/api/knowledge/devices/${deviceId}/display-items`)
+  },
+
+  listKnowledgeCabinetDisplayItems(cabinetId) {
+    return request(`/api/knowledge/cabinets/${cabinetId}/display-items`)
   },
 
   getProtectionLogic(id) {
@@ -188,110 +208,47 @@ export const api = {
     return request(`/api/users/${id}`, { method: 'DELETE' })
   },
 
-  listCabinets() {
-    return request('/api/cabinets')
+  listCabinetDisplayItems(cabinetId) {
+    return request(`/api/cabinets/${cabinetId}/display-items`)
   },
 
-  getCabinet(id) {
-    return request(`/api/cabinets/${id}`)
-  },
-
-  createCabinet(payload) {
-    return request('/api/cabinets', {
+  createCabinetDisplayItem(cabinetId, payload) {
+    return request(`/api/cabinets/${cabinetId}/display-items`, {
       method: 'POST',
       body: JSON.stringify(payload),
     })
   },
 
-  updateCabinet(id, payload) {
-    return request(`/api/cabinets/${id}`, {
+  updateCabinetDisplayItem(id, payload) {
+    return request(`/api/admin/cabinet-display-items/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     })
   },
 
-  deleteCabinet(id) {
-    return request(`/api/cabinets/${id}`, { method: 'DELETE' })
+  deleteCabinetDisplayItem(id) {
+    return request(`/api/admin/cabinet-display-items/${id}`, { method: 'DELETE' })
   },
 
-  listCabinetDevices(cabinetId) {
-    return request(`/api/cabinets/${cabinetId}/devices`)
+  listDeviceDisplayItems(deviceId) {
+    return request(`/api/devices/${deviceId}/display-items`)
   },
 
-  createCabinetDevice(cabinetId, payload) {
-    return request(`/api/cabinets/${cabinetId}/devices`, {
+  createDeviceDisplayItem(deviceId, payload) {
+    return request(`/api/devices/${deviceId}/display-items`, {
       method: 'POST',
       body: JSON.stringify(payload),
     })
   },
 
-  getDevice(id) {
-    return request(`/api/devices/${id}`)
-  },
-
-  updateDevice(id, payload) {
-    return request(`/api/devices/${id}`, {
+  updateDeviceDisplayItem(id, payload) {
+    return request(`/api/admin/device-display-items/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     })
   },
 
-  deleteDevice(id) {
-    return request(`/api/devices/${id}`, { method: 'DELETE' })
-  },
-
-  listDeviceProtectionLogics(deviceId) {
-    return request(`/api/devices/${deviceId}/protection-logics`)
-  },
-
-  createDeviceProtectionLogic(deviceId, payload) {
-    return request(`/api/devices/${deviceId}/protection-logics`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
-  },
-
-  updateProtectionLogicAdmin(id, payload) {
-    return request(`/api/admin/protection-logics/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    })
-  },
-
-  deleteProtectionLogicAdmin(id) {
-    return request(`/api/admin/protection-logics/${id}`, { method: 'DELETE' })
-  },
-
-  listDeviceCognitionItems(deviceId) {
-    return request(`/api/devices/${deviceId}/cognition-items`)
-  },
-
-  createDeviceCognitionItem(deviceId, payload) {
-    return request(`/api/devices/${deviceId}/cognition-items`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
-  },
-
-  updateDeviceCognitionItem(id, payload) {
-    return request(`/api/admin/device-cognition-items/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    })
-  },
-
-  deleteDeviceCognitionItem(id) {
-    return request(`/api/admin/device-cognition-items/${id}`, { method: 'DELETE' })
-  },
-
-  getProtectionLogicConfig(id) {
-    return request(`/api/admin/protection-logics/${id}/config`)
-  },
-
-  updateProtectionLogicConfig(id, configJson) {
-    return request(`/api/admin/protection-logics/${id}/config`, {
-      method: 'PUT',
-      body: JSON.stringify({ configJson }),
-    })
+  deleteDeviceDisplayItem(id) {
+    return request(`/api/admin/device-display-items/${id}`, { method: 'DELETE' })
   },
 }

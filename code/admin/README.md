@@ -1,37 +1,28 @@
-# Zeta Admin
+# Zeta Admin（业务系统前端）
 
-管理后台 Web 应用，统一承载学员、教师、管理员界面，按登录角色进入不同功能。
+## 管理端目录
 
-## 技术栈
+```
+src/pages/admin/
+├── business/     业务模块：用户、屏柜展示维护…
+└── screen/       屏柜数据（只读）：列举 ct-screen 屏柜/设备/逻辑
+```
 
-- Vite
-- React（JavaScript）
-- React Router
+侧边栏分为 **业务** 与 **屏柜** 两个区块。
+
+## 路由
+
+| 路径 | 模块 |
+|------|------|
+| `/admin/users/*` | business |
+| `/admin/display/*` | business（展示条目维护） |
+| `/admin/screen/cabinets/*` | screen（只读 catalog） |
+
+兼容重定向：`/admin/presentation/*` → `/admin/display`
 
 ## 启动
 
-先启动后端，再启动本前端：
-
 ```bash
-# 终端 1
 cd ../server && mvn spring-boot:run
-
-# 终端 2
-npm install
-npm run dev
+npm install && npm run dev
 ```
-
-访问 `http://localhost:5173/login`，使用用户名 + 密码登录。
-
-## 角色路由
-
-| 角色 | 路径 | 说明 |
-|------|------|------|
-| 学员 | `/student` | 保护逻辑列表、逻辑框图、断面 |
-| 教师 | `/teacher` | 教学功能（待扩展） |
-| 管理员 | `/admin` | 系统管理（待扩展） |
-
-## 说明
-
-- 逻辑框图渲染组件待从 `demo/mvp` 迁移或复用
-- 当前已对接后端登录与保护逻辑 API

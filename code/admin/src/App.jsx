@@ -15,17 +15,42 @@ import CoachModePage from './pages/student/CoachModePage'
 import CabinetCognitionPage from './pages/student/CabinetCognitionPage'
 import TeacherPage from './pages/TeacherPage'
 import AdminLayout from './components/AdminLayout'
-import UsersPage from './pages/admin/UsersPage'
-import AdminPlaceholderPage from './pages/admin/AdminPlaceholderPage'
-import CabinetsPage from './pages/admin/CabinetsPage'
-import CabinetDevicesPage from './pages/admin/CabinetDevicesPage'
-import DeviceProtectionLogicsPage from './pages/admin/DeviceProtectionLogicsPage'
-import DeviceCognitionItemsPage from './pages/admin/DeviceCognitionItemsPage'
-import ProtectionLogicConfigPage from './pages/admin/ProtectionLogicConfigPage'
+import UsersPage from './pages/admin/business/UsersPage'
+import AdminPlaceholderPage from './pages/admin/business/AdminPlaceholderPage'
+import DisplayHubPage from './pages/admin/business/display/DisplayHubPage'
+import CabinetDisplayItemsPage from './pages/admin/business/display/CabinetDisplayItemsPage'
+import DeviceDisplayItemsPage from './pages/admin/business/display/DeviceDisplayItemsPage'
+import CabinetCatalogListPage from './pages/admin/screen/catalog/CabinetCatalogListPage'
+import CabinetCatalogDetailPage from './pages/admin/screen/catalog/CabinetCatalogDetailPage'
+import CatalogDeviceDetailPage from './pages/admin/screen/catalog/CatalogDeviceDetailPage'
 
 function LegacyDiagramRedirect() {
   const { id } = useParams()
   return <Navigate to={`/student/modes/panorama/${id}`} replace />
+}
+
+function LegacyPresentationRedirect() {
+  return <Navigate to="/admin/display" replace />
+}
+
+function LegacyCognitionItemsRedirect() {
+  const { cabinetId, deviceId } = useParams()
+  if (deviceId) {
+    return <Navigate to={`/admin/display/devices/${deviceId}/items`} replace />
+  }
+  if (cabinetId) {
+    return <Navigate to={`/admin/display/cabinets/${cabinetId}/items`} replace />
+  }
+  return <Navigate to="/admin/display" replace />
+}
+
+function LegacyAdminCabinetsRedirect() {
+  return <Navigate to="/admin/screen/cabinets" replace />
+}
+
+function LegacyCabinetDevicesRedirect() {
+  const { cabinetId } = useParams()
+  return <Navigate to={`/admin/screen/cabinets/${cabinetId}`} replace />
 }
 
 export default function App() {
@@ -129,7 +154,6 @@ export default function App() {
             }
           />
 
-          {/* 旧路由兼容 */}
           <Route path="/student/diagram/:id" element={<LegacyDiagramRedirect />} />
 
           <Route
@@ -152,28 +176,26 @@ export default function App() {
             <Route index element={<Navigate to="/admin/users/students" replace />} />
             <Route path="users" element={<Navigate to="/admin/users/students" replace />} />
             <Route path="users/:roleKey" element={<UsersPage />} />
-            <Route path="cabinets" element={<CabinetsPage />} />
-            <Route path="cabinets/:cabinetId/devices" element={<CabinetDevicesPage />} />
+
+            <Route path="display" element={<DisplayHubPage />} />
             <Route
-              path="cabinets/:cabinetId/devices/:deviceId/protection-logics/:logicId/config"
-              element={<ProtectionLogicConfigPage />}
+              path="display/cabinets/:cabinetId/items"
+              element={<CabinetDisplayItemsPage />}
             />
             <Route
-              path="cabinets/:cabinetId/devices/:deviceId/cognition-items"
-              element={<DeviceCognitionItemsPage />}
+              path="display/devices/:deviceId/items"
+              element={<DeviceDisplayItemsPage />}
+            />
+
+            <Route path="presentation" element={<LegacyPresentationRedirect />} />
+            <Route path="presentation/devices" element={<LegacyPresentationRedirect />} />
+            <Route
+              path="presentation/cabinets/:cabinetId/cognition-items"
+              element={<LegacyCognitionItemsRedirect />}
             />
             <Route
-              path="cabinets/:cabinetId/devices/:deviceId/protection-logics"
-              element={<DeviceProtectionLogicsPage />}
-            />
-            <Route
-              path="protection-logics"
-              element={
-                <AdminPlaceholderPage
-                  title="保护逻辑配置"
-                  description="保护逻辑的增删改查与发布管理功能开发中。"
-                />
-              }
+              path="presentation/devices/:deviceId/cognition-items"
+              element={<LegacyCognitionItemsRedirect />}
             />
             <Route
               path="settings"
@@ -184,6 +206,19 @@ export default function App() {
                 />
               }
             />
+
+            <Route path="screen/cabinets" element={<CabinetCatalogListPage />} />
+            <Route path="screen/cabinets/:cabinetId/devices" element={<LegacyCabinetDevicesRedirect />} />
+            <Route
+              path="screen/cabinets/:cabinetId/devices/:deviceId"
+              element={<CatalogDeviceDetailPage />}
+            />
+            <Route path="screen/cabinets/:cabinetId" element={<CabinetCatalogDetailPage />} />
+
+            <Route path="cabinets/*" element={<LegacyAdminCabinetsRedirect />} />
+            <Route path="screen-legacy/*" element={<LegacyAdminCabinetsRedirect />} />
+            <Route path="screen/archive/*" element={<LegacyAdminCabinetsRedirect />} />
+            <Route path="protection-logics" element={<Navigate to="/admin/screen/cabinets" replace />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

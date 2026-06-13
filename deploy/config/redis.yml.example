@@ -1,0 +1,20 @@
+# 复制到 /opt/zeta/config/redis.yml
+
+spring:
+  data:
+    redis:
+      repositories:
+        enabled: false
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password: change-me
+    database: 0
+    timeout: 10s
+    lettuce:
+      shutdown-timeout: 3s
+      pool:
+        min-idle: 2
+        max-idle: 100
+        max-active: 8
+        max-wait: -1ms

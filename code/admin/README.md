@@ -4,7 +4,7 @@
 
 ```
 src/pages/admin/
-├── business/     业务模块：用户、屏柜展示维护…
+├── business/     业务模块：用户、屏柜认知…
 └── screen/       屏柜数据（只读）：列举 ct-screen 屏柜/设备/逻辑
 ```
 
@@ -15,7 +15,9 @@ src/pages/admin/
 | 路径 | 模块 |
 |------|------|
 | `/admin/users/*` | business |
-| `/admin/display/*` | business（展示条目维护） |
+| `/admin/display` | 屏柜列表 |
+| `/admin/display/cabinets/:id` | 屏柜认知条目列表 + 下属设备 |
+| `/admin/display/cabinets/:cabinetId/devices/:deviceId/items` | 设备认知条目 |
 | `/admin/screen/cabinets/*` | screen（只读 catalog） |
 
 兼容重定向：`/admin/presentation/*` → `/admin/display`

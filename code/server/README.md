@@ -37,11 +37,12 @@ com.zeta.integration.queue/  Redis 队列
 ## 环境配置
 
 ```
-application.yml       # 基础项：端口、应用名、激活 profile
-application-dev.yml   # 开发环境 zeta.* 行为配置
-dev/mysql.yml         # 双数据源连接（复制 mysql.yml.example，勿提交）
-dev/redis.yml
-dev/jwt.yml
+application.yml         # 基础项：端口、应用名、激活 profile
+application-dev.yml     # 开发环境 zeta.* 行为配置
+application-prod.yml    # 生产环境（单机，读 /opt/zeta/config/）
+dev/mysql.yml           # 开发双数据源（复制 mysql.yml.example）
+deploy/config/*.example # 生产配置模板
+deploy/systemd/         # systemd unit
 ```
 
 ### 配置分层
@@ -49,8 +50,9 @@ dev/jwt.yml
 | 文件 | 内容 |
 |------|------|
 | `application.yml` | `server.*`、`spring.application.name`、`spring.profiles.active` |
-| `application-dev.yml` | CORS、数据源策略（ddl-auto / read-only）、Redis 队列 |
-| `dev/mysql.yml` | `zeta.datasource.business` 与 `zeta.datasource.screen` 的 url / 账号 |
+| `application-dev.yml` | CORS、数据源策略、种子数据、上传目录 |
+| `application-prod.yml` | 本机 127.0.0.1、绝对路径 uploads、ddl-auto none、关闭种子 |
+| `dev/mysql.yml` / `/opt/zeta/config/mysql.yml` | 双数据源连接 |
 
 ### mysql.yml 示例（仅连接信息）
 
@@ -72,7 +74,11 @@ zeta:
 ## 启动
 
 ```bash
+# 开发
 mvn spring-boot:run
+
+# 生产（见 deploy/README.md）
+java -jar zeta-server.jar --spring.profiles.active=prod
 ```
 
 ## 测试账号
@@ -100,7 +106,8 @@ mvn spring-boot:run
 
 - `/api/auth/*` — 鉴权
 - `/api/users/*` — 用户管理（ADMIN）
-- `/api/cabinets/{id}/display-items` — 屏柜展示条目 CRUD（ADMIN，id 为屏柜库 cabinet 主键）
+- `/api/cabinets/{id}/display-items` — 屏柜认知条目 CRUD（图片 + 文字描述，ADMIN）
+- `POST /api/admin/cabinet-display-images` — 上传认知图片（ADMIN）
 - `/api/devices/{id}/display-items` — 设备展示条目 CRUD（ADMIN，id 为屏柜库 device 主键）
 - `/api/knowledge/devices/{id}/display-items` — 学员可读展示条目
 

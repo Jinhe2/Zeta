@@ -39,6 +39,8 @@ com.zeta.integration.queue.*
 
 配置分层见 `server/README.md`：`application-dev.yml` 管行为开关，`dev/mysql.yml` 管双库连接。
 
+**生产交付与单机部署**见 [deploy/README.md](../deploy/README.md)；**架构图**见 [deploy/ARCHITECTURE.md](../deploy/ARCHITECTURE.md)。
+
 ## 快速启动
 
 ```bash

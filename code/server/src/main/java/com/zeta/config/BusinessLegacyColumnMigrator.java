@@ -33,6 +33,7 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         renameTableIfNeeded("cabinet_cognition_items", "cabinet_display_items");
         migrateDisplayTable("device_display_items");
         migrateDisplayTable("cabinet_display_items");
+        migrateCabinetDisplayImageUrl();
     }
 
     private void migrateUsers() {
@@ -50,6 +51,18 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         String sql = "RENAME TABLE `" + oldName + "` TO `" + newName + "`";
         if (executeIgnoreError(sql)) {
             log.info("业务库表重命名：{} → {}", oldName, newName);
+        }
+    }
+
+    private void migrateCabinetDisplayImageUrl() {
+        String table = "cabinet_display_items";
+        if (!tableExists(table) || columnExists(table, "image_url")) {
+            return;
+        }
+        String sql = "ALTER TABLE `" + table + "` ADD COLUMN `image_url` VARCHAR(512) NOT NULL "
+                + "DEFAULT '/images/cabinet-structure.svg' COMMENT '认知图片路径' AFTER `title`";
+        if (executeIgnoreError(sql)) {
+            log.info("业务库 {}：新增列 image_url", table);
         }
     }
 

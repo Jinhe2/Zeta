@@ -325,6 +325,29 @@
   color: #81d4fa;
 }
 
+.cabinet-section__item-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.cabinet-section__item-tab {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(100, 181, 246, 0.28);
+  background: rgba(8, 18, 30, 0.45);
+  color: #b0c8de;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cabinet-section__item-tab--active {
+  border-color: rgba(100, 181, 246, 0.65);
+  background: rgba(100, 181, 246, 0.18);
+  color: #e3f2fd;
+}
+
 /* 设备认知：左屏柜图，右上设备图，右下文字 */
 .cabinet-section--device {
   grid-template-columns: 1fr 1fr;

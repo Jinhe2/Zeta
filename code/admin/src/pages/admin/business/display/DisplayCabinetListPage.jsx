@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../../../api/client'
-import '../../business/UsersPage.css'
+import '../UsersPage.css'
 
-/** 只读列举屏柜系统（ct-screen）中的屏柜数据 */
-export default function CabinetCatalogListPage() {
+/** 屏柜认知 — 屏柜列表（第一级） */
+export default function DisplayCabinetListPage() {
   const [cabinets, setCabinets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -29,16 +29,16 @@ export default function CabinetCatalogListPage() {
 
   return (
     <div className="users-page">
-      <h2 className="users-page__title">屏柜数据</h2>
+      <h2 className="users-page__title">屏柜认知</h2>
       <p className="users-page__desc">
-        只读展示屏柜系统（ct-screen）中的屏柜列表。认知内容请在「业务 → 屏柜认知」中维护。
+        屏柜与设备基础数据来自屏柜系统（ct-screen，只读）。选择屏柜后即可维护该屏柜的认知条目。
       </p>
 
       {error && <div className="users-page__error">{error}</div>}
       {loading ? (
         <p className="users-page__loading">加载中…</p>
       ) : cabinets.length === 0 ? (
-        <p className="users-page__empty">暂无屏柜数据，请确认屏柜系统已同步数据且本系统可读 ct-screen。</p>
+        <p className="users-page__empty">暂无屏柜数据，请确认屏柜系统可读。</p>
       ) : (
         <div className="users-page__table-wrap">
           <table className="users-page__table">
@@ -56,12 +56,9 @@ export default function CabinetCatalogListPage() {
                   <td>{cabinet.name}</td>
                   <td>{cabinet.code}</td>
                   <td>{cabinet.description || '—'}</td>
-                  <td className="users-page__actions">
-                    <Link className="users-page__link" to={`/admin/screen/cabinets/${cabinet.id}`}>
-                      查看详情
-                    </Link>
+                  <td>
                     <Link className="users-page__link" to={`/admin/display/cabinets/${cabinet.id}`}>
-                      屏柜认知
+                      进入
                     </Link>
                   </td>
                 </tr>

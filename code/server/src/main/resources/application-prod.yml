@@ -1,0 +1,52 @@
+# 生产环境（单机部署）
+# 敏感连接信息放在 /opt/zeta/config/（见 deploy/config/*.example）
+server:
+  address: 127.0.0.1
+  port: 8080
+
+spring:
+  config:
+    import:
+      - optional:file:/opt/zeta/config/mysql.yml
+      - optional:file:/opt/zeta/config/redis.yml
+      - optional:file:/opt/zeta/config/jwt.yml
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+logging:
+  file:
+    name: /opt/zeta/logs/zeta-server.log
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 14
+
+zeta:
+  # 与 Nginx 对外域名一致；若前后端同域反代，填 https://your-host
+  cors:
+    allowed-origins: https://your-host.example
+
+  upload:
+    storage-dir: /opt/zeta/data/uploads
+    public-path-prefix: /uploads
+
+  seed:
+    enabled: false
+
+  datasource:
+    business:
+      ddl-auto: none
+      show-sql: false
+    screen:
+      ddl-auto: none
+      read-only: true
+      show-sql: false
+
+  screen-queue:
+    enabled: false
+    inbound-key: ct:screen:business:inbound
+    outbound-key: ct:business:screen:outbound
+    poll-timeout-seconds: 5
+    poll-interval-ms: 2000

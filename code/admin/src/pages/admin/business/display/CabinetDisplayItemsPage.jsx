@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api } from '../../../../api/client'
 import '../UsersPage.css'
+import './CabinetDisplayItemsPage.css'
 
 const EMPTY_CREATE = {
   title: '',
+  imageUrl: '',
   content: '',
   sortOrder: 0,
   enabled: true,
@@ -27,6 +29,41 @@ function previewContent(text, max = 48) {
   return oneLine.length > max ? `${oneLine.slice(0, max)}…` : oneLine
 }
 
+function ImageUploadField({ imageUrl, onChange, disabled }) {
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setUploadError('')
+    try {
+      const result = await api.uploadCabinetDisplayImage(file)
+      onChange(result.imageUrl)
+    } catch (err) {
+      setUploadError(err.message || '图片上传失败')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  return (
+    <label className="cabinet-display-items__image-field">
+      认知图片
+      <input type="file" accept="image/*" onChange={handleFileChange} disabled={disabled || uploading} />
+      {uploading && <span className="cabinet-display-items__upload-hint">上传中…</span>}
+      {uploadError && <span className="cabinet-display-items__upload-error">{uploadError}</span>}
+      {imageUrl ? (
+        <img className="cabinet-display-items__preview" src={imageUrl} alt="认知图片预览" />
+      ) : (
+        <span className="cabinet-display-items__upload-hint">请上传一张图片（JPG、PNG、GIF、WebP、SVG）</span>
+      )}
+    </label>
+  )
+}
+
 export default function CabinetDisplayItemsPage() {
   const { cabinetId } = useParams()
   const cabinetIdNum = Number(cabinetId)
@@ -42,7 +79,13 @@ export default function CabinetDisplayItemsPage() {
   const [creating, setCreating] = useState(false)
 
   const [editingItem, setEditingItem] = useState(null)
-  const [editForm, setEditForm] = useState({ title: '', content: '', sortOrder: 0, enabled: true })
+  const [editForm, setEditForm] = useState({
+    title: '',
+    imageUrl: '',
+    content: '',
+    sortOrder: 0,
+    enabled: true,
+  })
   const [saving, setSaving] = useState(false)
 
   const loadData = useCallback(async () => {
@@ -58,7 +101,7 @@ export default function CabinetDisplayItemsPage() {
       setCabinet(cabinetData)
       setItems(itemData)
     } catch (err) {
-      setError(err.message || '加载屏柜展示条目失败')
+      setError(err.message || '加载屏柜认知条目失败')
       setCabinet(null)
       setItems([])
     } finally {
@@ -81,6 +124,10 @@ export default function CabinetDisplayItemsPage() {
 
   const handleCreate = async (e) => {
     e.preventDefault()
+    if (!createForm.imageUrl) {
+      setError('请上传认知图片')
+      return
+    }
     setCreating(true)
     setError('')
     try {
@@ -90,7 +137,7 @@ export default function CabinetDisplayItemsPage() {
       })
       setShowCreate(false)
       setCreateForm(EMPTY_CREATE)
-      flash('展示条目创建成功')
+      flash('认知条目创建成功')
       await loadData()
     } catch (err) {
       setError(err.message || '创建失败')
@@ -103,6 +150,7 @@ export default function CabinetDisplayItemsPage() {
     setEditingItem(item)
     setEditForm({
       title: item.title,
+      imageUrl: item.imageUrl,
       content: item.content,
       sortOrder: item.sortOrder,
       enabled: item.enabled,
@@ -112,6 +160,10 @@ export default function CabinetDisplayItemsPage() {
   const handleUpdate = async (e) => {
     e.preventDefault()
     if (!editingItem) return
+    if (!editForm.imageUrl) {
+      setError('请上传认知图片')
+      return
+    }
     setSaving(true)
     setError('')
     try {
@@ -120,7 +172,7 @@ export default function CabinetDisplayItemsPage() {
         sortOrder: Number(editForm.sortOrder),
       })
       setEditingItem(null)
-      flash('展示条目已更新')
+      flash('认知条目已更新')
       await loadData()
     } catch (err) {
       setError(err.message || '更新失败')
@@ -130,11 +182,11 @@ export default function CabinetDisplayItemsPage() {
   }
 
   const handleDelete = async (item) => {
-    if (!window.confirm(`确定删除展示条目「${item.title}」？`)) return
+    if (!window.confirm(`确定删除认知条目「${item.title}」？`)) return
     setError('')
     try {
       await api.deleteCabinetDisplayItem(item.id)
-      flash('展示条目已删除')
+      flash('认知条目已删除')
       await loadData()
     } catch (err) {
       setError(err.message || '删除失败')
@@ -146,15 +198,15 @@ export default function CabinetDisplayItemsPage() {
       <div className="users-page__header">
         <div>
           <p className="users-page__breadcrumb">
-            <Link to="/admin/display">屏柜展示维护</Link>
+            <Link to="/admin/display">屏柜认知</Link>
             <span> / </span>
-            <span>屏柜展示</span>
+            <span>{cabinet?.name ?? '认知条目'}</span>
           </p>
           <h2 className="users-page__title">
-            {cabinet ? `${cabinet.name} — 展示条目` : '屏柜展示条目'}
+            {cabinet ? `${cabinet.name} — 认知条目` : '屏柜认知条目'}
           </h2>
           <p className="users-page__desc">
-            业务库展示数据，screen_cabinet_id = {cabinetId}。学员端通过知识 API 读取已启用条目。
+            每条认知包含一张图片与一段文字描述（如正视图、侧视图等）。学员端按排序展示已启用条目。
           </p>
         </div>
         <button type="button" className="users-page__btn users-page__btn--primary" onClick={() => setShowCreate(true)}>
@@ -172,67 +224,131 @@ export default function CabinetDisplayItemsPage() {
           屏柜不存在，<Link to="/admin/display">返回列表</Link>。
         </p>
       ) : (
-        <div className="users-page__table-wrap">
-          <table className="users-page__table">
-            <thead>
-              <tr>
-                <th>标题</th>
-                <th>内容摘要</th>
-                <th>排序</th>
-                <th>状态</th>
-                <th>创建时间</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
+        <>
+          {cabinet.description || cabinet.code ? (
+            <p className="users-page__desc">
+              编码：{cabinet.code}
+              {cabinet.description ? ` · ${cabinet.description}` : ''}
+            </p>
+          ) : null}
+
+          <div className="users-page__table-wrap">
+            <table className="users-page__table">
+              <thead>
                 <tr>
-                  <td colSpan={6} className="users-page__empty-cell">
-                    暂无展示条目
-                  </td>
+                  <th>图片</th>
+                  <th>名称</th>
+                  <th>描述摘要</th>
+                  <th>排序</th>
+                  <th>状态</th>
+                  <th>创建时间</th>
+                  <th>操作</th>
                 </tr>
-              ) : (
-                items.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.title}</td>
-                    <td>{previewContent(item.content)}</td>
-                    <td>{item.sortOrder}</td>
-                    <td>{item.enabled ? '启用' : '停用'}</td>
-                    <td>{formatDate(item.createdAt)}</td>
-                    <td className="users-page__actions">
-                      <button type="button" className="users-page__link" onClick={() => openEdit(item)}>
-                        编辑
-                      </button>
-                      <button
-                        type="button"
-                        className="users-page__link users-page__link--danger"
-                        onClick={() => handleDelete(item)}
-                      >
-                        删除
-                      </button>
+              </thead>
+              <tbody>
+                {items.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="users-page__empty-cell">
+                      暂无认知条目
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  items.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <img
+                          className="cabinet-display-items__thumb"
+                          src={item.imageUrl}
+                          alt={item.title}
+                        />
+                      </td>
+                      <td>{item.title}</td>
+                      <td>{previewContent(item.content)}</td>
+                      <td>{item.sortOrder}</td>
+                      <td>{item.enabled ? '启用' : '停用'}</td>
+                      <td>{formatDate(item.createdAt)}</td>
+                      <td className="users-page__actions">
+                        <button type="button" className="users-page__link" onClick={() => openEdit(item)}>
+                          编辑
+                        </button>
+                        <button
+                          type="button"
+                          className="users-page__link users-page__link--danger"
+                          onClick={() => handleDelete(item)}
+                        >
+                          删除
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="cabinet-display-items__devices">
+            <h3 className="users-page__title cabinet-display-items__devices-title">下属设备</h3>
+            <div className="users-page__table-wrap">
+              <table className="users-page__table">
+                <thead>
+                  <tr>
+                    <th>设备名称</th>
+                    <th>编码</th>
+                    <th>描述</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(cabinet.devices ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="users-page__empty-cell">
+                        暂无设备
+                      </td>
+                    </tr>
+                  ) : (
+                    cabinet.devices.map((device) => (
+                      <tr key={device.id}>
+                        <td>{device.name}</td>
+                        <td>{device.code}</td>
+                        <td>{device.description || '—'}</td>
+                        <td>
+                          <Link
+                            className="users-page__link"
+                            to={`/admin/display/cabinets/${cabinetId}/devices/${device.id}/items`}
+                          >
+                            设备认知
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
       {showCreate && (
         <div className="users-page__overlay" onClick={() => setShowCreate(false)}>
           <form className="users-page__dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleCreate}>
-            <h3>新增展示条目</h3>
+            <h3>新增认知条目</h3>
             <label>
-              标题
+              条目名称
               <input
                 value={createForm.title}
                 onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                placeholder="如：正视图、侧视图"
                 required
               />
             </label>
+            <ImageUploadField
+              imageUrl={createForm.imageUrl}
+              onChange={(url) => setCreateForm({ ...createForm, imageUrl: url })}
+              disabled={creating}
+            />
             <label>
-              内容
+              文字描述
               <textarea
                 rows={6}
                 value={createForm.content}
@@ -271,17 +387,22 @@ export default function CabinetDisplayItemsPage() {
       {editingItem && (
         <div className="users-page__overlay" onClick={() => setEditingItem(null)}>
           <form className="users-page__dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleUpdate}>
-            <h3>编辑展示条目</h3>
+            <h3>编辑认知条目</h3>
             <label>
-              标题
+              条目名称
               <input
                 value={editForm.title}
                 onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                 required
               />
             </label>
+            <ImageUploadField
+              imageUrl={editForm.imageUrl}
+              onChange={(url) => setEditForm({ ...editForm, imageUrl: url })}
+              disabled={saving}
+            />
             <label>
-              内容
+              文字描述
               <textarea
                 rows={6}
                 value={editForm.content}

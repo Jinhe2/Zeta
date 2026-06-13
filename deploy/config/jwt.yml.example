@@ -1,0 +1,8 @@
+# 复制到 /opt/zeta/config/jwt.yml
+# 务必使用足够长的随机 secret，勿提交到版本库
+
+jwt:
+  secret: "change-me-to-a-long-random-secret-at-least-32-chars"
+  expiration:
+    access: 3600
+    refresh: 86400

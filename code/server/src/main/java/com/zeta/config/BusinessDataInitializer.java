@@ -12,6 +12,7 @@ import com.zeta.screen.cabinet.CabinetRepository;
 import com.zeta.screen.ieddevice.Device;
 import com.zeta.screen.ieddevice.DeviceRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import java.util.Optional;
  */
 @Component
 @Order(20)
+@ConditionalOnProperty(name = "zeta.seed.enabled", havingValue = "true", matchIfMissing = true)
 public class BusinessDataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
@@ -74,13 +76,16 @@ public class BusinessDataInitializer implements CommandLineRunner {
 
     @Transactional("businessTransactionManager")
     public void seedCabinetDisplayItems(Cabinet cabinet) {
-        upsertCabinetDisplayItem(cabinet.getId(), "屏柜整体结构",
+        upsertCabinetDisplayItem(cabinet.getId(), "正视图",
+                "/images/cabinet-structure.svg",
                 "220kV 线路保护屏为金属封闭式屏柜，自上而下通常划分为交流电压/电流回路区、保护装置安装区、端子排及出线区。",
                 0);
-        upsertCabinetDisplayItem(cabinet.getId(), "二次回路分区",
+        upsertCabinetDisplayItem(cabinet.getId(), "侧视图",
+                "/images/cabinet-structure.svg",
                 "屏内二次回路按功能分区布置：交流采样、开入开出、通信及电源回路应能清晰辨识，便于运维与故障排查。",
                 1);
-        upsertCabinetDisplayItem(cabinet.getId(), "检修与安全",
+        upsertCabinetDisplayItem(cabinet.getId(), "后视图",
+                "/images/cabinet-structure.svg",
                 "认知屏柜时应了解屏门联锁、接地要求及带电检修安全距离，明确装置、端子排与外部设备的对应关系。",
                 2);
     }
@@ -114,12 +119,14 @@ public class BusinessDataInitializer implements CommandLineRunner {
         userRepository.save(user);
     }
 
-    private void upsertCabinetDisplayItem(Long screenCabinetId, String title, String content, int sortOrder) {
+    private void upsertCabinetDisplayItem(
+            Long screenCabinetId, String title, String imageUrl, String content, int sortOrder) {
         CabinetDisplayItem item = cabinetDisplayItemRepository
                 .findByScreenCabinetIdAndTitle(screenCabinetId, title)
                 .orElseGet(CabinetDisplayItem::new);
         item.setScreenCabinetId(screenCabinetId);
         item.setTitle(title);
+        item.setImageUrl(imageUrl);
         item.setContent(content);
         item.setSortOrder(sortOrder);
         item.setEnabled(true);

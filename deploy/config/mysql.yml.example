@@ -1,0 +1,17 @@
+# 复制到 /opt/zeta/config/mysql.yml
+#
+# business → ct-screen-monitor  业务库（读写）
+# screen   → ct-screen           屏柜库（生产请使用仅 SELECT 账号）
+
+zeta:
+  datasource:
+    business:
+      url: jdbc:mysql://127.0.0.1:3306/ct-screen-monitor?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+      username: zeta_business
+      password: change-me
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    screen:
+      url: jdbc:mysql://127.0.0.1:3306/ct-screen?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+      username: zeta_screen_ro
+      password: change-me
+      driver-class-name: com.mysql.cj.jdbc.Driver

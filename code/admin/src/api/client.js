@@ -100,6 +100,27 @@ async function request(path, options = {}, retried = false) {
   return data
 }
 
+async function uploadRequest(path, formData, retried = false) {
+  const headers = {}
+  const accessToken = getAccessToken()
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`
+  }
+
+  const res = await fetch(path, { method: 'POST', headers, body: formData })
+  const data = await parseResponse(res)
+
+  if (res.status === 401 && !retried && getRefreshToken() && !path.includes('/api/auth/')) {
+    await ensureRefreshed()
+    return uploadRequest(path, formData, true)
+  }
+
+  if (!res.ok) {
+    throw new Error(data?.message || `请求失败 (${res.status})`)
+  }
+  return data
+}
+
 export const api = {
   login(username, password) {
     return authRequest('/api/auth/login', {
@@ -228,6 +249,12 @@ export const api = {
 
   deleteCabinetDisplayItem(id) {
     return request(`/api/admin/cabinet-display-items/${id}`, { method: 'DELETE' })
+  },
+
+  uploadCabinetDisplayImage(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return uploadRequest('/api/admin/cabinet-display-images', formData)
   },
 
   listDeviceDisplayItems(deviceId) {

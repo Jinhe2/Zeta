@@ -52,7 +52,7 @@ export default function CatalogDeviceDetailPage() {
       </p>
 
       <h2 className="users-page__title">{device ? device.name : '设备详情'}</h2>
-      <p className="users-page__desc">屏柜系统只读数据。保护逻辑配置编辑请使用「历史实现」归档模块。</p>
+      <p className="users-page__desc">屏柜系统只读数据。业务侧认知内容请通过「屏柜认知」入口编辑。</p>
 
       {error && <div className="users-page__error">{error}</div>}
       {loading ? (
@@ -72,9 +72,9 @@ export default function CatalogDeviceDetailPage() {
             <h3 className="users-page__title" style={{ fontSize: '1.1rem' }}>保护逻辑</h3>
             <Link
               className="users-page__btn users-page__btn--primary"
-              to={`/admin/display/devices/${deviceId}/items`}
+              to={`/admin/display/cabinets/${cabinetId}/devices/${deviceId}/items`}
             >
-              维护设备展示
+              设备认知
             </Link>
           </div>
 

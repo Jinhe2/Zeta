@@ -14,7 +14,7 @@ const BUSINESS_NAV = [
       { to: '/admin/users/admins', label: '管理员' },
     ],
   },
-  { to: '/admin/display', label: '屏柜展示维护' },
+  { to: '/admin/display', label: '屏柜认知' },
   { to: '/admin/settings', label: '系统设置' },
 ]
 

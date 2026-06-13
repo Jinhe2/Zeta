@@ -17,7 +17,7 @@ import TeacherPage from './pages/TeacherPage'
 import AdminLayout from './components/AdminLayout'
 import UsersPage from './pages/admin/business/UsersPage'
 import AdminPlaceholderPage from './pages/admin/business/AdminPlaceholderPage'
-import DisplayHubPage from './pages/admin/business/display/DisplayHubPage'
+import DisplayCabinetListPage from './pages/admin/business/display/DisplayCabinetListPage'
 import CabinetDisplayItemsPage from './pages/admin/business/display/CabinetDisplayItemsPage'
 import DeviceDisplayItemsPage from './pages/admin/business/display/DeviceDisplayItemsPage'
 import CabinetCatalogListPage from './pages/admin/screen/catalog/CabinetCatalogListPage'
@@ -27,6 +27,11 @@ import CatalogDeviceDetailPage from './pages/admin/screen/catalog/CatalogDeviceD
 function LegacyDiagramRedirect() {
   const { id } = useParams()
   return <Navigate to={`/student/modes/panorama/${id}`} replace />
+}
+
+function LegacyCabinetDisplayItemsRedirect() {
+  const { cabinetId } = useParams()
+  return <Navigate to={`/admin/display/cabinets/${cabinetId}`} replace />
 }
 
 function LegacyPresentationRedirect() {
@@ -39,7 +44,7 @@ function LegacyCognitionItemsRedirect() {
     return <Navigate to={`/admin/display/devices/${deviceId}/items`} replace />
   }
   if (cabinetId) {
-    return <Navigate to={`/admin/display/cabinets/${cabinetId}/items`} replace />
+    return <Navigate to={`/admin/display/cabinets/${cabinetId}`} replace />
   }
   return <Navigate to="/admin/display" replace />
 }
@@ -177,10 +182,15 @@ export default function App() {
             <Route path="users" element={<Navigate to="/admin/users/students" replace />} />
             <Route path="users/:roleKey" element={<UsersPage />} />
 
-            <Route path="display" element={<DisplayHubPage />} />
+            <Route path="display" element={<DisplayCabinetListPage />} />
+            <Route path="display/cabinets/:cabinetId" element={<CabinetDisplayItemsPage />} />
             <Route
               path="display/cabinets/:cabinetId/items"
-              element={<CabinetDisplayItemsPage />}
+              element={<LegacyCabinetDisplayItemsRedirect />}
+            />
+            <Route
+              path="display/cabinets/:cabinetId/devices/:deviceId/items"
+              element={<DeviceDisplayItemsPage />}
             />
             <Route
               path="display/devices/:deviceId/items"

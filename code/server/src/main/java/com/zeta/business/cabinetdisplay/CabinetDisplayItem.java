@@ -8,8 +8,8 @@ import javax.persistence.*;
 import java.time.Instant;
 
 /**
- * 屏柜展示条目 — 业务库（ct-screen-monitor）展示/介绍数据。
- * 通过 screenCabinetId 引用屏柜库 cabinet 表主键，跨库无外键。
+ * 屏柜认知条目 — 业务库（ct-screen-monitor）。
+ * 每条包含一张图片与一段文字描述，通过 screenCabinetId 引用屏柜库 cabinet 表主键。
  */
 @Entity
 @Table(name = "cabinet_display_items")
@@ -26,9 +26,15 @@ public class CabinetDisplayItem {
     @Column(name = "screen_cabinet_id", nullable = false)
     private Long screenCabinetId;
 
+    /** 条目名称，如正视图、侧视图等 */
     @Column(nullable = false, length = 128)
     private String title;
 
+    /** 图片访问路径 */
+    @Column(name = "image_url", nullable = false, length = 512)
+    private String imageUrl;
+
+    /** 文字描述 */
     @Lob
     @Column(nullable = false)
     private String content;

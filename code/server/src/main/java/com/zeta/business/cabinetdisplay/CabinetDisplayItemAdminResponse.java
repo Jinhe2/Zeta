@@ -13,6 +13,7 @@ public class CabinetDisplayItemAdminResponse {
     private Long cabinetId;
     private String cabinetName;
     private String title;
+    private String imageUrl;
     private String content;
     private int sortOrder;
     private boolean enabled;

@@ -28,10 +28,12 @@ function previewContent(text, max = 48) {
 }
 
 export default function DeviceDisplayItemsPage() {
-  const { deviceId } = useParams()
+  const { cabinetId, deviceId } = useParams()
   const deviceIdNum = Number(deviceId)
+  const cabinetIdNum = cabinetId ? Number(cabinetId) : null
 
   const [device, setDevice] = useState(null)
+  const [cabinet, setCabinet] = useState(null)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -51,12 +53,17 @@ export default function DeviceDisplayItemsPage() {
     setError('')
     setItems([])
     try {
-      const [deviceData, itemData] = await Promise.all([
+      const requests = [
         api.getKnowledgeDevice(deviceIdNum),
         api.listDeviceDisplayItems(deviceIdNum),
-      ])
-      setDevice(deviceData)
-      setItems(itemData)
+      ]
+      if (cabinetIdNum) {
+        requests.push(api.getKnowledgeCabinet(cabinetIdNum))
+      }
+      const results = await Promise.all(requests)
+      setDevice(results[0])
+      setItems(results[1])
+      setCabinet(cabinetIdNum ? results[2] : null)
     } catch (err) {
       setError(err.message || '加载设备展示条目失败')
       setDevice(null)
@@ -64,7 +71,7 @@ export default function DeviceDisplayItemsPage() {
     } finally {
       setLoading(false)
     }
-  }, [deviceIdNum])
+  }, [deviceIdNum, cabinetIdNum])
 
   useEffect(() => {
     loadData()
@@ -146,9 +153,17 @@ export default function DeviceDisplayItemsPage() {
       <div className="users-page__header">
         <div>
           <p className="users-page__breadcrumb">
-            <Link to="/admin/display">屏柜展示维护</Link>
+            <Link to="/admin/display">屏柜认知</Link>
+            {cabinetIdNum && (
+              <>
+                <span> / </span>
+                <Link to={`/admin/display/cabinets/${cabinetId}`}>
+                  {cabinet?.name ?? '屏柜'}
+                </Link>
+              </>
+            )}
             <span> / </span>
-            <span>设备展示</span>
+            <span>{device ? `${device.name} — 展示条目` : '设备展示条目'}</span>
           </p>
           <h2 className="users-page__title">
             {device ? `${device.name} — 展示条目` : '设备展示条目'}

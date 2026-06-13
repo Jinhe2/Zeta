@@ -1,0 +1,38 @@
+[Unit]
+Description=Zeta Business Server (Spring Boot)
+Documentation=file:/opt/zeta/README.md
+After=network-online.target mariadb.service redis.service
+Wants=network-online.target mariadb.service redis.service
+
+[Service]
+Type=simple
+User=zeta
+Group=zeta
+WorkingDirectory=/opt/zeta
+
+# Java 8+；按机器内存调整 -Xmx
+ExecStart=/usr/bin/java \
+  -Xms512m \
+  -Xmx1024m \
+  -Dfile.encoding=UTF-8 \
+  -jar /opt/zeta/bin/zeta-server.jar \
+  --spring.profiles.active=prod
+
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+
+# 安全加固（可选，若遇权限问题可注释）
+NoNewPrivileges=true
+PrivateTmp=true
+
+# 确保日志、上传目录可写（目录需预先创建并 chown zeta:zeta）
+ReadWritePaths=/opt/zeta/data /opt/zeta/logs
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=zeta-server
+
+[Install]
+WantedBy=multi-user.target

@@ -84,6 +84,11 @@ public class CabinetDisplayItemService {
         displayItemRepository.delete(item);
     }
 
+    @Transactional(value = "businessTransactionManager", readOnly = true)
+    public CabinetDisplayItemAdminResponse getAdmin(Long id) {
+        return toAdminResponse(requireItem(id));
+    }
+
     private CabinetDisplayItem requireItem(Long id) {
         return displayItemRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "屏柜认知条目不存在"));

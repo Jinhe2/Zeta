@@ -1,0 +1,31 @@
+.cognition-devices__editor-section {
+  margin-bottom: 1.5rem;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.cognition-devices__hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #90a4ae;
+}
+
+.cognition-devices__form-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #78909c;
+}
+
+.cognition-devices__region-actions {
+  margin-top: 12px;
+}
+
+.cognition-devices__row--active {
+  background: rgba(100, 181, 246, 0.1);
+}
+
+.cognition-devices__row--active td {
+  color: #e3f2fd;
+}

@@ -22,21 +22,21 @@ public class DeviceDisplayItemController {
         this.authService = authService;
     }
 
-    @GetMapping("/api/devices/{deviceId}/display-items")
-    public List<DeviceDisplayItemAdminResponse> listByDevice(
+    @GetMapping("/api/cognition-devices/{cognitionDeviceId}/display-items")
+    public List<DeviceDisplayItemAdminResponse> listByCognitionDevice(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @PathVariable Long deviceId) {
+            @PathVariable Long cognitionDeviceId) {
         authService.requireRole(authorization, UserRole.ADMIN);
-        return displayItemService.listByScreenDevice(deviceId);
+        return displayItemService.listByCognitionDevice(cognitionDeviceId);
     }
 
-    @PostMapping("/api/devices/{deviceId}/display-items")
+    @PostMapping("/api/cognition-devices/{cognitionDeviceId}/display-items")
     public DeviceDisplayItemAdminResponse create(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @PathVariable Long deviceId,
+            @PathVariable Long cognitionDeviceId,
             @Valid @RequestBody CreateDeviceDisplayItemRequest request) {
         authService.requireRole(authorization, UserRole.ADMIN);
-        return displayItemService.create(deviceId, request);
+        return displayItemService.create(cognitionDeviceId, request);
     }
 
     @PutMapping("/api/admin/device-display-items/{id}")

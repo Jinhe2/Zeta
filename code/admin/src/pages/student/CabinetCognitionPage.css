@@ -358,8 +358,19 @@
   gap: 16px;
 }
 
+.cabinet-section__item-tabs--compact {
+  margin-bottom: 10px;
+}
+
+.cabinet-section__meta {
+  color: #90a4ae;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
 .cabinet-section--device .cabinet-section__media--cabinet {
   grid-area: cabinet;
+  min-height: 240px;
 }
 
 .cabinet-section--device .cabinet-section__media--device {

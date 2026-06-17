@@ -251,18 +251,48 @@ export const api = {
     return request(`/api/admin/cabinet-display-items/${id}`, { method: 'DELETE' })
   },
 
+  getCabinetDisplayItem(id) {
+    return request(`/api/cabinet-display-items/${id}`)
+  },
+
   uploadCabinetDisplayImage(file) {
     const formData = new FormData()
     formData.append('file', file)
     return uploadRequest('/api/admin/cabinet-display-images', formData)
   },
 
-  listDeviceDisplayItems(deviceId) {
-    return request(`/api/devices/${deviceId}/display-items`)
+  listCognitionDevices(itemId) {
+    return request(`/api/cabinet-display-items/${itemId}/cognition-devices`)
   },
 
-  createDeviceDisplayItem(deviceId, payload) {
-    return request(`/api/devices/${deviceId}/display-items`, {
+  createCognitionDevice(itemId, payload) {
+    return request(`/api/cabinet-display-items/${itemId}/cognition-devices`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  getCognitionDevice(id) {
+    return request(`/api/admin/cognition-devices/${id}`)
+  },
+
+  updateCognitionDevice(id, payload) {
+    return request(`/api/admin/cognition-devices/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteCognitionDevice(id) {
+    return request(`/api/admin/cognition-devices/${id}`, { method: 'DELETE' })
+  },
+
+  listCognitionDeviceDisplayItems(cognitionDeviceId) {
+    return request(`/api/cognition-devices/${cognitionDeviceId}/display-items`)
+  },
+
+  createCognitionDeviceDisplayItem(cognitionDeviceId, payload) {
+    return request(`/api/cognition-devices/${cognitionDeviceId}/display-items`, {
       method: 'POST',
       body: JSON.stringify(payload),
     })
@@ -277,5 +307,19 @@ export const api = {
 
   deleteDeviceDisplayItem(id) {
     return request(`/api/admin/device-display-items/${id}`, { method: 'DELETE' })
+  },
+
+  uploadDeviceDisplayImage(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return uploadRequest('/api/admin/device-display-images', formData)
+  },
+
+  listKnowledgeCognitionDevices(itemId) {
+    return request(`/api/knowledge/cabinet-display-items/${itemId}/cognition-devices`)
+  },
+
+  listKnowledgeCognitionDeviceDisplayItems(cognitionDeviceId) {
+    return request(`/api/knowledge/cognition-devices/${cognitionDeviceId}/display-items`)
   },
 }

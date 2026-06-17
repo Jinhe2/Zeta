@@ -8,8 +8,7 @@ import javax.persistence.*;
 import java.time.Instant;
 
 /**
- * 设备展示条目 — 业务库（ct-screen-monitor）展示/介绍数据。
- * 通过 screenDeviceId 引用屏柜库 ied_device 表主键，跨库无外键。
+ * 认知设备下的展示条目（图片 + 文字），隶属于 {@code cognition_devices}。
  */
 @Entity
 @Table(name = "device_display_items")
@@ -22,12 +21,14 @@ public class DeviceDisplayItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** 屏柜库 ct-screen.ied_device.id */
-    @Column(name = "screen_device_id", nullable = false)
-    private Long screenDeviceId;
+    @Column(name = "cognition_device_id", nullable = false)
+    private Long cognitionDeviceId;
 
     @Column(nullable = false, length = 128)
     private String title;
+
+    @Column(name = "image_url", nullable = false, length = 512)
+    private String imageUrl;
 
     @Lob
     @Column(nullable = false)

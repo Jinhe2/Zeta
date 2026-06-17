@@ -161,6 +161,17 @@ a.users-page__link {
   border-color: rgba(100, 181, 246, 0.4);
 }
 
+.users-page__btn--ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #b0bec5;
+}
+
+.users-page__btn--ghost:hover:not(:disabled) {
+  color: #e8edf4;
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
 .users-page__btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;

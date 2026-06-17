@@ -34,6 +34,8 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         migrateDisplayTable("device_display_items");
         migrateDisplayTable("cabinet_display_items");
         migrateCabinetDisplayImageUrl();
+        migrateDeviceDisplayImageUrl();
+        migrateCognitionDevices();
     }
 
     private void migrateUsers() {
@@ -51,6 +53,99 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         String sql = "RENAME TABLE `" + oldName + "` TO `" + newName + "`";
         if (executeIgnoreError(sql)) {
             log.info("业务库表重命名：{} → {}", oldName, newName);
+        }
+    }
+
+    private void migrateDeviceDisplayImageUrl() {
+        String table = "device_display_items";
+        if (!tableExists(table) || columnExists(table, "image_url")) {
+            return;
+        }
+        String sql = "ALTER TABLE `" + table + "` ADD COLUMN `image_url` VARCHAR(512) NOT NULL "
+                + "DEFAULT '/images/protection-device.svg' COMMENT '认知图片路径' AFTER `title`";
+        if (executeIgnoreError(sql)) {
+            log.info("业务库 {}：新增列 image_url", table);
+        }
+    }
+
+    private void migrateCognitionDevices() {
+        createCognitionDevicesTable();
+        migrateLegacyDeviceCabinetRegions();
+        migrateDeviceDisplayItemsCognitionDeviceId();
+    }
+
+    private void createCognitionDevicesTable() {
+        if (tableExists("cognition_devices")) {
+            return;
+        }
+        String sql = "CREATE TABLE IF NOT EXISTS cognition_devices ("
+                + "id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+                + "cabinet_display_item_id BIGINT UNSIGNED NOT NULL, "
+                + "device_type VARCHAR(32) NOT NULL, "
+                + "screen_device_id BIGINT UNSIGNED NULL, "
+                + "title VARCHAR(128) NOT NULL, "
+                + "left_percent DOUBLE NOT NULL, "
+                + "top_percent DOUBLE NOT NULL, "
+                + "width_percent DOUBLE NOT NULL, "
+                + "height_percent DOUBLE NOT NULL, "
+                + "sort_order INT NOT NULL DEFAULT 0, "
+                + "enabled TINYINT(1) NOT NULL DEFAULT 1, "
+                + "created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), "
+                + "PRIMARY KEY (id), "
+                + "INDEX idx_cd_cabinet_item (cabinet_display_item_id)"
+                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                + "COMMENT='屏柜认知图上的抽象设备'";
+        if (executeIgnoreError(sql)) {
+            log.info("业务库：创建表 cognition_devices");
+        }
+    }
+
+    private void migrateLegacyDeviceCabinetRegions() {
+        if (!tableExists("device_cabinet_regions") || !tableExists("cognition_devices")) {
+            return;
+        }
+        String sql = "INSERT INTO cognition_devices "
+                + "(cabinet_display_item_id, device_type, screen_device_id, title, "
+                + "left_percent, top_percent, width_percent, height_percent, sort_order, enabled) "
+                + "SELECT r.cabinet_display_item_id, 'IED', r.screen_device_id, "
+                + "CONCAT('IED-', r.screen_device_id), r.x_percent, r.y_percent, "
+                + "r.width_percent, r.height_percent, 0, 1 "
+                + "FROM device_cabinet_regions r "
+                + "WHERE NOT EXISTS ("
+                + "  SELECT 1 FROM cognition_devices c "
+                + "  WHERE c.screen_device_id = r.screen_device_id "
+                + "  AND c.cabinet_display_item_id = r.cabinet_display_item_id"
+                + ")";
+        if (executeIgnoreError(sql)) {
+            log.info("业务库：从 device_cabinet_regions 迁移至 cognition_devices");
+        }
+        executeIgnoreError("DROP TABLE IF EXISTS device_cabinet_regions");
+    }
+
+    private void migrateDeviceDisplayItemsCognitionDeviceId() {
+        String table = "device_display_items";
+        if (!tableExists(table)) {
+            return;
+        }
+        if (!columnExists(table, "cognition_device_id")) {
+            String addCol = "ALTER TABLE `" + table + "` ADD COLUMN `cognition_device_id` "
+                    + "BIGINT UNSIGNED NULL COMMENT '认知设备 id' AFTER `id`";
+            executeIgnoreError(addCol);
+            log.info("业务库 {}：新增列 cognition_device_id", table);
+        }
+        if (columnExists(table, "screen_device_id") && columnExists(table, "cognition_device_id")) {
+            String backfill = "UPDATE `" + table + "` ddi "
+                    + "INNER JOIN cognition_devices cd ON cd.screen_device_id = ddi.screen_device_id "
+                    + "SET ddi.cognition_device_id = cd.id "
+                    + "WHERE ddi.cognition_device_id IS NULL";
+            executeIgnoreError(backfill);
+            log.info("业务库 {}：回填 cognition_device_id", table);
+            executeIgnoreError("ALTER TABLE `" + table + "` DROP COLUMN `screen_device_id`");
+            log.info("业务库 {}：删除列 screen_device_id", table);
+        }
+        if (columnExists(table, "cognition_device_id")) {
+            executeIgnoreError("ALTER TABLE `" + table + "` MODIFY COLUMN `cognition_device_id` "
+                    + "BIGINT UNSIGNED NOT NULL");
         }
     }
 

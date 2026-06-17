@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface DeviceDisplayItemRepository extends JpaRepository<DeviceDisplayItem, Long> {
 
-    Optional<DeviceDisplayItem> findByScreenDeviceIdAndTitle(Long screenDeviceId, String title);
+    Optional<DeviceDisplayItem> findByCognitionDeviceIdAndTitle(Long cognitionDeviceId, String title);
 
-    List<DeviceDisplayItem> findByScreenDeviceIdOrderBySortOrderAscIdAsc(Long screenDeviceId);
+    List<DeviceDisplayItem> findByCognitionDeviceIdOrderBySortOrderAscIdAsc(Long cognitionDeviceId);
 }

@@ -15,6 +15,10 @@ public class UpdateDeviceDisplayItemRequest {
     @Size(max = 128, message = "标题不能超过 128 个字符")
     private String title;
 
+    @NotBlank(message = "请上传认知图片")
+    @Size(max = 512, message = "图片地址过长")
+    private String imageUrl;
+
     @NotBlank(message = "请输入展示内容")
     private String content;
 

@@ -1,0 +1,57 @@
+.device-display-items__thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.device-display-items__region-section {
+  margin-bottom: 2rem;
+  padding: 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.device-display-items__region-title {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: #e8edf4;
+}
+
+.device-display-items__region-desc {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #90a4ae;
+}
+
+.device-display-items__region-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.device-display-items__region-tab {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: #b0bec5;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.device-display-items__region-tab--active {
+  border-color: rgba(100, 181, 246, 0.5);
+  background: rgba(100, 181, 246, 0.15);
+  color: #e3f2fd;
+}
+
+.device-display-items__region-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}

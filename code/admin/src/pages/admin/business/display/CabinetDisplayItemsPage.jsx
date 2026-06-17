@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api } from '../../../../api/client'
+import CabinetImageUploadField from '../../../../components/CabinetImageUploadField'
 import '../UsersPage.css'
 import './CabinetDisplayItemsPage.css'
 
@@ -27,41 +28,6 @@ function previewContent(text, max = 48) {
   if (!text) return '—'
   const oneLine = text.replace(/\s+/g, ' ').trim()
   return oneLine.length > max ? `${oneLine.slice(0, max)}…` : oneLine
-}
-
-function ImageUploadField({ imageUrl, onChange, disabled }) {
-  const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState('')
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    setUploadError('')
-    try {
-      const result = await api.uploadCabinetDisplayImage(file)
-      onChange(result.imageUrl)
-    } catch (err) {
-      setUploadError(err.message || '图片上传失败')
-    } finally {
-      setUploading(false)
-      e.target.value = ''
-    }
-  }
-
-  return (
-    <label className="cabinet-display-items__image-field">
-      认知图片
-      <input type="file" accept="image/*" onChange={handleFileChange} disabled={disabled || uploading} />
-      {uploading && <span className="cabinet-display-items__upload-hint">上传中…</span>}
-      {uploadError && <span className="cabinet-display-items__upload-error">{uploadError}</span>}
-      {imageUrl ? (
-        <img className="cabinet-display-items__preview" src={imageUrl} alt="认知图片预览" />
-      ) : (
-        <span className="cabinet-display-items__upload-hint">请上传一张图片（JPG、PNG、GIF、WebP、SVG）</span>
-      )}
-    </label>
-  )
 }
 
 export default function CabinetDisplayItemsPage() {
@@ -268,6 +234,12 @@ export default function CabinetDisplayItemsPage() {
                       <td>{item.enabled ? '启用' : '停用'}</td>
                       <td>{formatDate(item.createdAt)}</td>
                       <td className="users-page__actions">
+                        <Link
+                          className="users-page__link"
+                          to={`/admin/display/cabinet-items/${item.id}/cognition-devices`}
+                        >
+                          子设备
+                        </Link>
                         <button type="button" className="users-page__link" onClick={() => openEdit(item)}>
                           编辑
                         </button>
@@ -285,47 +257,6 @@ export default function CabinetDisplayItemsPage() {
               </tbody>
             </table>
           </div>
-
-          <div className="cabinet-display-items__devices">
-            <h3 className="users-page__title cabinet-display-items__devices-title">下属设备</h3>
-            <div className="users-page__table-wrap">
-              <table className="users-page__table">
-                <thead>
-                  <tr>
-                    <th>设备名称</th>
-                    <th>编码</th>
-                    <th>描述</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(cabinet.devices ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="users-page__empty-cell">
-                        暂无设备
-                      </td>
-                    </tr>
-                  ) : (
-                    cabinet.devices.map((device) => (
-                      <tr key={device.id}>
-                        <td>{device.name}</td>
-                        <td>{device.code}</td>
-                        <td>{device.description || '—'}</td>
-                        <td>
-                          <Link
-                            className="users-page__link"
-                            to={`/admin/display/cabinets/${cabinetId}/devices/${device.id}/items`}
-                          >
-                            设备认知
-                          </Link>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </>
       )}
 
@@ -342,7 +273,7 @@ export default function CabinetDisplayItemsPage() {
                 required
               />
             </label>
-            <ImageUploadField
+            <CabinetImageUploadField
               imageUrl={createForm.imageUrl}
               onChange={(url) => setCreateForm({ ...createForm, imageUrl: url })}
               disabled={creating}
@@ -396,7 +327,7 @@ export default function CabinetDisplayItemsPage() {
                 required
               />
             </label>
-            <ImageUploadField
+            <CabinetImageUploadField
               imageUrl={editForm.imageUrl}
               onChange={(url) => setEditForm({ ...editForm, imageUrl: url })}
               disabled={saving}

@@ -10,9 +10,10 @@ import java.time.Instant;
 public class DeviceDisplayItemAdminResponse {
 
     private Long id;
-    private Long deviceId;
-    private String deviceName;
+    private Long cognitionDeviceId;
+    private String cognitionDeviceTitle;
     private String title;
+    private String imageUrl;
     private String content;
     private int sortOrder;
     private boolean enabled;

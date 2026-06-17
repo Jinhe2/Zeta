@@ -11,6 +11,24 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 14px;
+}
+
+.cabinet-display-items__image-label {
+  font-size: 13px;
+  color: #b0bec5;
+}
+
+.cabinet-display-items__image-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cabinet-display-items__pick-btn {
+  padding: 7px 12px !important;
+  font-size: 13px !important;
 }
 
 .cabinet-display-items__preview {

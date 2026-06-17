@@ -3,6 +3,8 @@ package com.zeta.screen.knowledge;
 import com.zeta.business.auth.AuthService;
 import com.zeta.business.cabinetdisplay.CabinetDisplayItemResponse;
 import com.zeta.business.cabinetdisplay.CabinetDisplayItemService;
+import com.zeta.business.cognitiondevice.CognitionDeviceResponse;
+import com.zeta.business.cognitiondevice.CognitionDeviceService;
 import com.zeta.business.devicedisplay.DeviceDisplayItemResponse;
 import com.zeta.business.devicedisplay.DeviceDisplayItemService;
 import org.springframework.web.bind.annotation.*;
@@ -15,16 +17,19 @@ public class KnowledgeStructureController {
 
     private final KnowledgeStructureService knowledgeStructureService;
     private final DeviceDisplayItemService deviceDisplayItemService;
+    private final CognitionDeviceService cognitionDeviceService;
     private final CabinetDisplayItemService cabinetDisplayItemService;
     private final AuthService authService;
 
     public KnowledgeStructureController(
             KnowledgeStructureService knowledgeStructureService,
             DeviceDisplayItemService deviceDisplayItemService,
+            CognitionDeviceService cognitionDeviceService,
             CabinetDisplayItemService cabinetDisplayItemService,
             AuthService authService) {
         this.knowledgeStructureService = knowledgeStructureService;
         this.deviceDisplayItemService = deviceDisplayItemService;
+        this.cognitionDeviceService = cognitionDeviceService;
         this.cabinetDisplayItemService = cabinetDisplayItemService;
         this.authService = authService;
     }
@@ -83,11 +88,19 @@ public class KnowledgeStructureController {
         return cabinetDisplayItemService.listEnabledByScreenCabinet(id);
     }
 
-    @GetMapping("/devices/{id}/display-items")
-    public List<DeviceDisplayItemResponse> listDeviceDisplayItems(
+    @GetMapping("/cabinet-display-items/{itemId}/cognition-devices")
+    public List<CognitionDeviceResponse> listCognitionDevices(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable Long itemId) {
+        authService.requireUser(authorization);
+        return cognitionDeviceService.listEnabledByCabinetDisplayItem(itemId);
+    }
+
+    @GetMapping("/cognition-devices/{id}/display-items")
+    public List<DeviceDisplayItemResponse> listCognitionDeviceDisplayItems(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @PathVariable Long id) {
         authService.requireUser(authorization);
-        return deviceDisplayItemService.listEnabledByScreenDevice(id);
+        return deviceDisplayItemService.listEnabledByCognitionDevice(id);
     }
 }

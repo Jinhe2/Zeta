@@ -1,4 +1,4 @@
-package com.zeta.business.cabinetdisplay;
+package com.zeta.business.cognitiondevice;
 
 import com.zeta.business.auth.AuthService;
 import com.zeta.business.user.UserRole;
@@ -10,57 +10,57 @@ import java.util.List;
 
 @RestController
 @Validated
-public class CabinetDisplayItemController {
+public class CognitionDeviceController {
 
-    private final CabinetDisplayItemService displayItemService;
+    private final CognitionDeviceService cognitionDeviceService;
     private final AuthService authService;
 
-    public CabinetDisplayItemController(
-            CabinetDisplayItemService displayItemService,
+    public CognitionDeviceController(
+            CognitionDeviceService cognitionDeviceService,
             AuthService authService) {
-        this.displayItemService = displayItemService;
+        this.cognitionDeviceService = cognitionDeviceService;
         this.authService = authService;
     }
 
-    @GetMapping("/api/cabinets/{cabinetId}/display-items")
-    public List<CabinetDisplayItemAdminResponse> listByCabinet(
+    @GetMapping("/api/cabinet-display-items/{itemId}/cognition-devices")
+    public List<CognitionDeviceAdminResponse> listByCabinetDisplayItem(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @PathVariable Long cabinetId) {
+            @PathVariable Long itemId) {
         authService.requireRole(authorization, UserRole.ADMIN);
-        return displayItemService.listByScreenCabinet(cabinetId);
+        return cognitionDeviceService.listByCabinetDisplayItem(itemId);
     }
 
-    @PostMapping("/api/cabinets/{cabinetId}/display-items")
-    public CabinetDisplayItemAdminResponse create(
+    @PostMapping("/api/cabinet-display-items/{itemId}/cognition-devices")
+    public CognitionDeviceAdminResponse create(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @PathVariable Long cabinetId,
-            @Valid @RequestBody CreateCabinetDisplayItemRequest request) {
+            @PathVariable Long itemId,
+            @Valid @RequestBody CreateCognitionDeviceRequest request) {
         authService.requireRole(authorization, UserRole.ADMIN);
-        return displayItemService.create(cabinetId, request);
+        return cognitionDeviceService.create(itemId, request);
     }
 
-    @GetMapping("/api/cabinet-display-items/{id}")
-    public CabinetDisplayItemAdminResponse get(
+    @GetMapping("/api/admin/cognition-devices/{id}")
+    public CognitionDeviceAdminResponse get(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @PathVariable Long id) {
         authService.requireRole(authorization, UserRole.ADMIN);
-        return displayItemService.getAdmin(id);
+        return cognitionDeviceService.getAdmin(id);
     }
 
-    @PutMapping("/api/admin/cabinet-display-items/{id}")
-    public CabinetDisplayItemAdminResponse update(
+    @PutMapping("/api/admin/cognition-devices/{id}")
+    public CognitionDeviceAdminResponse update(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @PathVariable Long id,
-            @Valid @RequestBody UpdateCabinetDisplayItemRequest request) {
+            @Valid @RequestBody UpdateCognitionDeviceRequest request) {
         authService.requireRole(authorization, UserRole.ADMIN);
-        return displayItemService.update(id, request);
+        return cognitionDeviceService.update(id, request);
     }
 
-    @DeleteMapping("/api/admin/cabinet-display-items/{id}")
+    @DeleteMapping("/api/admin/cognition-devices/{id}")
     public void delete(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @PathVariable Long id) {
         authService.requireRole(authorization, UserRole.ADMIN);
-        displayItemService.delete(id);
+        cognitionDeviceService.delete(id);
     }
 }

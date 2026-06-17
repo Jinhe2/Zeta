@@ -2,6 +2,9 @@ package com.zeta.config;
 
 import com.zeta.business.cabinetdisplay.CabinetDisplayItem;
 import com.zeta.business.cabinetdisplay.CabinetDisplayItemRepository;
+import com.zeta.business.cognitiondevice.CognitionDevice;
+import com.zeta.business.cognitiondevice.CognitionDeviceRepository;
+import com.zeta.business.cognitiondevice.CognitionDeviceType;
 import com.zeta.business.devicedisplay.DeviceDisplayItem;
 import com.zeta.business.devicedisplay.DeviceDisplayItemRepository;
 import com.zeta.business.user.User;
@@ -16,6 +19,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -30,6 +34,7 @@ public class BusinessDataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final CabinetDisplayItemRepository cabinetDisplayItemRepository;
+    private final CognitionDeviceRepository cognitionDeviceRepository;
     private final DeviceDisplayItemRepository deviceDisplayItemRepository;
     private final CabinetRepository cabinetRepository;
     private final DeviceRepository deviceRepository;
@@ -37,11 +42,13 @@ public class BusinessDataInitializer implements CommandLineRunner {
     public BusinessDataInitializer(
             UserRepository userRepository,
             CabinetDisplayItemRepository cabinetDisplayItemRepository,
+            CognitionDeviceRepository cognitionDeviceRepository,
             DeviceDisplayItemRepository deviceDisplayItemRepository,
             CabinetRepository cabinetRepository,
             DeviceRepository deviceRepository) {
         this.userRepository = userRepository;
         this.cabinetDisplayItemRepository = cabinetDisplayItemRepository;
+        this.cognitionDeviceRepository = cognitionDeviceRepository;
         this.deviceDisplayItemRepository = deviceDisplayItemRepository;
         this.cabinetRepository = cabinetRepository;
         this.deviceRepository = deviceRepository;
@@ -92,16 +99,25 @@ public class BusinessDataInitializer implements CommandLineRunner {
 
     @Transactional("businessTransactionManager")
     public void seedDeviceDisplayItems(Device device) {
-        upsertDeviceDisplayItem(device.getId(), "装置面板与指示灯",
+        CabinetDisplayItem frontView = cabinetDisplayItemRepository
+                .findByScreenCabinetIdAndTitle(device.getCabinet().getId(), "正视图")
+                .orElse(null);
+        if (frontView == null) {
+            return;
+        }
+        CognitionDevice cognitionDevice = upsertIedCognitionDevice(
+                frontView.getId(), device.getId(), device.getIedName(), 30.0, 25.0, 20.0, 15.0, 0);
+
+        upsertDeviceDisplayItem(cognitionDevice.getId(), "装置面板与指示灯",
                 "屏柜内核心设备为继电保护测控装置，通常面板安装，正面包含液晶显示区、运行/动作/告警指示灯及本地操作按键。",
                 0);
-        upsertDeviceDisplayItem(device.getId(), "液晶界面与自检",
+        upsertDeviceDisplayItem(cognitionDevice.getId(), "液晶界面与自检",
                 "通过液晶界面可查看模拟量、开关量状态、定值区信息及装置自检结果；指示灯用于快速判断装置运行与故障情况。",
                 1);
-        upsertDeviceDisplayItem(device.getId(), "接线端子与屏内连接",
+        upsertDeviceDisplayItem(cognitionDevice.getId(), "接线端子与屏内连接",
                 "装置背面或侧方设有交流电压、电流、开入开出等接线端子，通过屏柜内电缆与端子排、断路器辅助接点相连。",
                 2);
-        upsertDeviceDisplayItem(device.getId(), "型号参数与安装检修",
+        upsertDeviceDisplayItem(cognitionDevice.getId(), "型号参数与安装检修",
                 "学习设备认知时，应能识别装置型号、额定参数、通信接口位置，并理解装置在屏柜中的安装层级与检修空间要求。",
                 3);
     }
@@ -136,12 +152,43 @@ public class BusinessDataInitializer implements CommandLineRunner {
         cabinetDisplayItemRepository.save(item);
     }
 
-    private void upsertDeviceDisplayItem(Long screenDeviceId, String title, String content, int sortOrder) {
+    private CognitionDevice upsertIedCognitionDevice(
+            Long cabinetDisplayItemId,
+            Long screenDeviceId,
+            String title,
+            double left,
+            double top,
+            double width,
+            double height,
+            int sortOrder) {
+        CognitionDevice device = cognitionDeviceRepository
+                .findByScreenDeviceIdAndCabinetDisplayItemId(screenDeviceId, cabinetDisplayItemId)
+                .orElseGet(CognitionDevice::new);
+        device.setCabinetDisplayItemId(cabinetDisplayItemId);
+        device.setDeviceType(CognitionDeviceType.IED);
+        device.setScreenDeviceId(screenDeviceId);
+        device.setTitle(title);
+        device.setLeftPercent(left);
+        device.setTopPercent(top);
+        device.setWidthPercent(width);
+        device.setHeightPercent(height);
+        device.setSortOrder(sortOrder);
+        device.setEnabled(true);
+        if (device.getCreatedAt() == null) {
+            device.setCreatedAt(Instant.now());
+        }
+        return cognitionDeviceRepository.save(device);
+    }
+
+    private void upsertDeviceDisplayItem(Long cognitionDeviceId, String title, String content, int sortOrder) {
         DeviceDisplayItem item = deviceDisplayItemRepository
-                .findByScreenDeviceIdAndTitle(screenDeviceId, title)
+                .findByCognitionDeviceIdAndTitle(cognitionDeviceId, title)
                 .orElseGet(DeviceDisplayItem::new);
-        item.setScreenDeviceId(screenDeviceId);
+        item.setCognitionDeviceId(cognitionDeviceId);
         item.setTitle(title);
+        if (!StringUtils.hasText(item.getImageUrl())) {
+            item.setImageUrl("/images/protection-device.svg");
+        }
         item.setContent(content);
         item.setSortOrder(sortOrder);
         item.setEnabled(true);

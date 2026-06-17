@@ -9,6 +9,7 @@ public class DeviceDisplayItemResponse {
 
     private Long id;
     private String title;
+    private String imageUrl;
     private String content;
     private int sortOrder;
 }

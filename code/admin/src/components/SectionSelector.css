@@ -2,7 +2,7 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   padding: 10px 14px;
   border-top: 1px solid rgba(129, 199, 132, 0.25);
   background: rgba(18, 24, 42, 0.95);
@@ -27,31 +27,83 @@
   white-space: nowrap;
 }
 
-.section-selector__list {
-  flex: 1;
+/* ---- Controls: prev / select / next ---- */
+
+.section-selector__controls {
   display: flex;
+  align-items: center;
   gap: 8px;
-  overflow-x: auto;
+  flex: 1;
   min-width: 0;
 }
 
-.section-selector__item {
+.section-selector__nav-btn {
   flex-shrink: 0;
-  padding: 7px 14px;
+  padding: 6px 12px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
   color: #cfd8dc;
   font-size: 13px;
   cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
 }
 
-.section-selector__item--active {
-  border-color: rgba(129, 199, 132, 0.75);
-  background: rgba(129, 199, 132, 0.2);
-  color: #fff;
-  font-weight: 600;
+.section-selector__nav-btn:hover:not(:disabled) {
+  background: rgba(129, 199, 132, 0.12);
+  border-color: rgba(129, 199, 132, 0.5);
 }
+
+.section-selector__nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.section-selector__select {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 32px 7px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(129, 199, 132, 0.45);
+  background: rgba(129, 199, 132, 0.1);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' fill='none' stroke='%23a5d6a7' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.section-selector__select:hover {
+  border-color: rgba(129, 199, 132, 0.7);
+}
+
+.section-selector__select:focus {
+  outline: none;
+  border-color: rgba(129, 199, 132, 0.8);
+  box-shadow: 0 0 0 3px rgba(129, 199, 132, 0.15);
+}
+
+.section-selector__select option {
+  background: #1a2332;
+  color: #f0f4f8;
+}
+
+/* ---- Counter ---- */
+
+.section-selector__count {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #78909c;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- Legend ---- */
 
 .section-selector__legend {
   display: flex;

@@ -37,6 +37,19 @@ export default function LoginPage() {
     return <Navigate to={HOME_BY_ROLE[session.role] || '/'} replace />
   }
 
+  const doLogin = async (user, pass) => {
+    setError(null)
+    setLoading(true)
+    try {
+      const homePath = await login(user, pass)
+      navigate(homePath, { replace: true })
+    } catch (err) {
+      setError(err.message || '登录失败，请检查用户名和密码')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     const validationError = validateForm(username, password)
@@ -44,17 +57,20 @@ export default function LoginPage() {
       setError(validationError)
       return
     }
+    await doLogin(username, password)
+  }
 
-    setError(null)
-    setLoading(true)
-    try {
-      const homePath = await login(username, password)
-      navigate(homePath, { replace: true })
-    } catch (err) {
-      setError(err.message || '登录失败，请检查用户名和密码')
-    } finally {
-      setLoading(false)
-    }
+  const quickAccounts = [
+    { label: '学员', username: 'student', icon: '👤' },
+    { label: '教师', username: 'teacher', icon: '🎓' },
+    { label: '管理员', username: 'admin', icon: '⚙️' },
+  ]
+
+  const handleQuickLogin = (account) => {
+    if (loading) return
+    setUsername(account.username)
+    setPassword('123456')
+    doLogin(account.username, '123456')
   }
 
   return (
@@ -106,6 +122,24 @@ export default function LoginPage() {
             {loading ? '登录中…' : '登录'}
           </button>
         </form>
+
+        <div className="login-card__quick">
+          <span className="login-card__quick-label">快捷登录</span>
+          <div className="login-card__quick-buttons">
+            {quickAccounts.map((account) => (
+              <button
+                key={account.username}
+                type="button"
+                className="login-quick-btn"
+                disabled={loading}
+                onClick={() => handleQuickLogin(account)}
+              >
+                <span className="login-quick-btn__icon">{account.icon}</span>
+                <span className="login-quick-btn__text">{account.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {import.meta.env.DEV && (
           <p className="login-card__hint">

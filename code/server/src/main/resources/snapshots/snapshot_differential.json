@@ -1,0 +1,40 @@
+{
+  "version": "2.3",
+  "fileId": "SNAPSHOT_20260601_100000_diff-001",
+  "logicId": "logic_differential",
+  "startTime": "2026/06/01 10:00:00.000",
+  "endTime": "2026/06/01 10:00:02.500",
+  "timeReference": "datetime",
+  "recordStartTime": "2026/06/01 10:00:00.000",
+  "totalTransitions": 5,
+  "settings": [],
+  "nodes": [
+    {"id": "input_1", "name": "光纤同步正常", "type": "input", "channelRef": "DIG101", "channelType": "DIGITAL"},
+    {"id": "input_2", "name": "本侧保护电流启动", "type": "input", "channelRef": "DIG102", "channelType": "DIGITAL"},
+    {"id": "input_3", "name": "本侧任一差动投入", "type": "input", "channelRef": "DIG103", "channelType": "DIGITAL"},
+    {"id": "input_4", "name": "电压辅助启动", "type": "input", "channelRef": "DIG104", "channelType": "DIGITAL"},
+    {"id": "input_5", "name": "跳位固定", "type": "input", "channelRef": "DIG105", "channelType": "DIGITAL"},
+    {"id": "gate_1", "name": "gate_1", "type": "gate"},
+    {"id": "gate_2", "name": "gate_2", "type": "gate"},
+    {"id": "output_1", "name": "本侧差动允许", "type": "output", "channelRef": "DIG201"}
+  ],
+  "timestamps": [
+    "2026/06/01 10:00:00.000",
+    "2026/06/01 10:00:00.100",
+    "2026/06/01 10:00:00.300",
+    "2026/06/01 10:00:00.800",
+    "2026/06/01 10:00:01.500",
+    "2026/06/01 10:00:02.500"
+  ],
+  "sampleIndices": [0, 100, 300, 800, 1500, 2500],
+  "channels": [
+    {"values": [0, 1, 1, 1, 0, 0]},
+    {"values": [0, 0, 0, 0, 0, 1]},
+    {"values": [0, 0, 1, 1, 1, 1]},
+    {"values": [0, 0, 0, 1, 1, 1]},
+    {"values": [0, 0, 0, 0, 0, 0]},
+    {"values": [0, 0, 0, 0, 1, 1]},
+    {"values": [0, 0, 0, 1, 1, 1]},
+    {"values": [0, 0, 0, 0, 1, 1]}
+  ]
+}

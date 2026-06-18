@@ -24,9 +24,9 @@ logging:
       max-history: 14
 
 zeta:
-  # 与 Nginx 对外域名一致；若前后端同域反代，填 https://your-host
+  # 前端直连 API，需将前端域名加入 CORS 白名单
   cors:
-    allowed-origins: https://your-host.example
+    allowed-origins: https://zeta-app.qyabc.cn,http://zeta-app.qyabc.cn
 
   upload:
     storage-dir: /opt/zeta/data/uploads

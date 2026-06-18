@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api } from '../../../api/client'
+import { api, imageUrl } from '../../../api/client'
 
 const DEFAULT_CABINET_CODE = 'cabinet-line-220'
 
@@ -58,7 +58,7 @@ export default function StructureCognitionContent() {
         {!loading && !error && selectedItem && (
           <img
             className="cabinet-section__image"
-            src={selectedItem.imageUrl}
+            src={imageUrl(selectedItem.imageUrl)}
             alt={selectedItem.title}
           />
         )}

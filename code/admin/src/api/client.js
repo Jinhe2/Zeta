@@ -1,6 +1,21 @@
 const ACCESS_TOKEN_KEY = 'zeta_access_token'
 const REFRESH_TOKEN_KEY = 'zeta_refresh_token'
 
+/** 生产环境 API 基地址（开发环境为空，走 Vite proxy） */
+const BASE = import.meta.env.VITE_API_BASE_URL || ''
+
+/** 拼接完整 API URL：开发走代理，生产直连 */
+export function apiUrl(path) {
+  return BASE + path
+}
+
+/** 将后端返回的图片相对路径转为完整 URL */
+export function imageUrl(path) {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path
+  return BASE + path
+}
+
 let refreshPromise = null
 
 export function getAccessToken() {
@@ -40,7 +55,7 @@ async function parseResponse(res) {
 
 /** 登录/刷新等鉴权接口：不自动续期 */
 async function authRequest(path, options = {}) {
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -86,7 +101,7 @@ async function request(path, options = {}, retried = false) {
     headers.Authorization = `Bearer ${accessToken}`
   }
 
-  const res = await fetch(path, { ...options, headers })
+  const res = await fetch(apiUrl(path), { ...options, headers })
   const data = await parseResponse(res)
 
   if (res.status === 401 && !retried && getRefreshToken() && !path.includes('/api/auth/')) {
@@ -107,7 +122,7 @@ async function uploadRequest(path, formData, retried = false) {
     headers.Authorization = `Bearer ${accessToken}`
   }
 
-  const res = await fetch(path, { method: 'POST', headers, body: formData })
+  const res = await fetch(apiUrl(path), { method: 'POST', headers, body: formData })
   const data = await parseResponse(res)
 
   if (res.status === 401 && !retried && getRefreshToken() && !path.includes('/api/auth/')) {

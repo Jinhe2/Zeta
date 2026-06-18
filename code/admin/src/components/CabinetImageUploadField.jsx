@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { api } from '../api/client'
+import { api, imageUrl as resolveImageUrl } from '../api/client'
 import CabinetImageEditor from './CabinetImageEditor'
 import {
   isRasterImageFile,
@@ -63,7 +63,7 @@ export default function CabinetImageUploadField({ imageUrl, onChange, disabled, 
     if (!imageUrl) return
     setUploadError('')
     try {
-      const src = await loadImageSourceFromUrl(imageUrl)
+      const src = await loadImageSourceFromUrl(resolveImageUrl(imageUrl))
       setEditorSrc(src)
     } catch (err) {
       setUploadError(err.message || '无法加载当前图片')
@@ -104,7 +104,7 @@ export default function CabinetImageUploadField({ imageUrl, onChange, disabled, 
         />
         {uploadError && <span className="cabinet-display-items__upload-error">{uploadError}</span>}
         {imageUrl ? (
-          <img className="cabinet-display-items__preview" src={imageUrl} alt="认知图片预览" />
+          <img className="cabinet-display-items__preview" src={resolveImageUrl(imageUrl)} alt="认知图片预览" />
         ) : (
           <span className="cabinet-display-items__upload-hint">
             支持 JPG、PNG、GIF、WebP（可裁切、旋转、翻转）；SVG 将直接上传

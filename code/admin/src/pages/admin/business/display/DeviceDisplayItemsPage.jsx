@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { api } from '../../../../api/client'
+import { api, imageUrl } from '../../../../api/client'
 import CabinetImageUploadField from '../../../../components/CabinetImageUploadField'
 import '../UsersPage.css'
 import './DeviceDisplayItemsPage.css'
@@ -227,7 +227,7 @@ export default function DeviceDisplayItemsPage() {
                 items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <img className="device-display-items__thumb" src={item.imageUrl} alt={item.title} />
+                      <img className="device-display-items__thumb" src={imageUrl(item.imageUrl)} alt={item.title} />
                     </td>
                     <td>{item.title}</td>
                     <td>{previewContent(item.content)}</td>

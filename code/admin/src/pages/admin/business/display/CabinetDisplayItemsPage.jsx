@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { api } from '../../../../api/client'
+import { api, imageUrl } from '../../../../api/client'
 import CabinetImageUploadField from '../../../../components/CabinetImageUploadField'
 import '../UsersPage.css'
 import './CabinetDisplayItemsPage.css'
@@ -224,7 +224,7 @@ export default function CabinetDisplayItemsPage() {
                       <td>
                         <img
                           className="cabinet-display-items__thumb"
-                          src={item.imageUrl}
+                          src={imageUrl(item.imageUrl)}
                           alt={item.title}
                         />
                       </td>

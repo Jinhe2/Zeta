@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api } from '../../../api/client'
+import { api, imageUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
 import { normalizeRegion } from '../../../utils/imageRegionUtils'
 
@@ -142,7 +142,7 @@ export default function DeviceCognitionContent() {
               </div>
             )}
             <ImageRegionViewer
-              imageUrl={selectedCabinetItem.imageUrl}
+              imageUrl={imageUrl(selectedCabinetItem.imageUrl)}
               region={highlightRegion}
               alt={selectedCabinetItem.title}
             />
@@ -172,7 +172,7 @@ export default function DeviceCognitionContent() {
         {!loading && !error && selectedDisplayItem && (
           <img
             className="cabinet-section__image cabinet-section__image--device"
-            src={selectedDisplayItem.imageUrl}
+            src={imageUrl(selectedDisplayItem.imageUrl)}
             alt={selectedDisplayItem.title}
           />
         )}

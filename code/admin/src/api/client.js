@@ -208,6 +208,33 @@ export const api = {
     return request(`/api/protection-logics/${id}/sections`)
   },
 
+  triggerExperiment(logicId) {
+    return request(`/api/protection-logics/${logicId}/snapshots`, { method: 'POST' })
+  },
+
+  importSnapshotJson(logicId, snapshotJson) {
+    return request(`/api/protection-logics/${logicId}/snapshots/import`, {
+      method: 'POST',
+      body: JSON.stringify({ snapshotJson }),
+    })
+  },
+
+  listMySnapshots() {
+    return request('/api/snapshots')
+  },
+
+  listSnapshotsByLogic(logicId) {
+    return request(`/api/snapshots?logicId=${logicId}`)
+  },
+
+  getSnapshotSections(snapshotId) {
+    return request(`/api/snapshots/${snapshotId}/sections`)
+  },
+
+  getSnapshotDetail(snapshotId) {
+    return request(`/api/snapshots/${snapshotId}`)
+  },
+
   listUsers(role) {
     if (!role) {
       return Promise.reject(new Error('缺少用户角色参数'))

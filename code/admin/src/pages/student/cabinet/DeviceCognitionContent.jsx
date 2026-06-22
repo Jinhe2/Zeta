@@ -26,6 +26,7 @@ export default function DeviceCognitionContent() {
   const [displayItems, setDisplayItems] = useState([])
   const [selectedCabinetItemId, setSelectedCabinetItemId] = useState(null)
   const [selectedCognitionDeviceId, setSelectedCognitionDeviceId] = useState(null)
+  const [currentSlide, setCurrentSlide] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -69,11 +70,12 @@ export default function DeviceCognitionContent() {
     let cancelled = false
     async function loadDevices() {
       try {
-        const devices = await api.listKnowledgeCognitionDevices(selectedCabinetItemId)
+        const allDevices = await api.listKnowledgeCognitionDevices(selectedCabinetItemId)
+        // 设备认知页签只显示 IED 类型的保护装置
+        const devices = allDevices.filter((d) => d.deviceType === 'IED')
         if (!cancelled) {
           setCognitionDevices(devices)
-          const preferred = devices.find((d) => d.deviceType === 'IED') ?? devices[0]
-          setSelectedCognitionDeviceId(preferred?.id ?? null)
+          setSelectedCognitionDeviceId(devices[0]?.id ?? null)
         }
       } catch (err) {
         if (!cancelled) setError(err.message)
@@ -96,7 +98,10 @@ export default function DeviceCognitionContent() {
     async function loadDisplayItems() {
       try {
         const items = await api.listKnowledgeCognitionDeviceDisplayItems(selectedCognitionDeviceId)
-        if (!cancelled) setDisplayItems(items)
+        if (!cancelled) {
+          setDisplayItems(items)
+          setCurrentSlide(0)
+        }
       } catch (err) {
         if (!cancelled) setError(err.message)
       }
@@ -112,9 +117,22 @@ export default function DeviceCognitionContent() {
     cabinetItems.find((item) => item.id === selectedCabinetItemId) ?? cabinetItems[0] ?? null
   const selectedCognitionDevice =
     cognitionDevices.find((d) => d.id === selectedCognitionDeviceId) ?? cognitionDevices[0] ?? null
-  const selectedDisplayItem = displayItems[0] ?? null
+  const currentDisplayItem = displayItems[currentSlide] ?? displayItems[0] ?? null
 
-  const highlightRegion = selectedCognitionDevice ? normalizeRegion(selectedCognitionDevice) : null
+  // 只有屏柜条目和设备都已选定，且设备属于当前屏柜条目时，才显示高亮区域
+  const highlightRegion =
+    selectedCabinetItem && selectedCognitionDevice && cognitionDevices.length > 0
+      ? normalizeRegion(selectedCognitionDevice)
+      : null
+
+  const handleCabinetItemSelect = (itemId) => {
+    // 立即清除旧设备和区域，避免切换瞬间错位
+    setCognitionDevices([])
+    setSelectedCognitionDeviceId(null)
+    setDisplayItems([])
+    setCurrentSlide(0)
+    setSelectedCabinetItemId(itemId)
+  }
 
   return (
     <div className="cabinet-section cabinet-section--device">
@@ -134,7 +152,7 @@ export default function DeviceCognitionContent() {
                     className={`cabinet-section__item-tab${
                       item.id === selectedCabinetItem?.id ? ' cabinet-section__item-tab--active' : ''
                     }`}
-                    onClick={() => setSelectedCabinetItemId(item.id)}
+                    onClick={() => handleCabinetItemSelect(item.id)}
                   >
                     {item.title}
                   </button>
@@ -142,41 +160,58 @@ export default function DeviceCognitionContent() {
               </div>
             )}
             <ImageRegionViewer
+              key={selectedCabinetItemId}
               imageUrl={imageUrl(selectedCabinetItem.imageUrl)}
               region={highlightRegion}
               alt={selectedCabinetItem.title}
             />
-            {cognitionDevices.length > 1 && (
-              <div className="cabinet-section__item-tabs cabinet-section__item-tabs--compact" role="tablist">
-                {cognitionDevices.map((device) => (
-                  <button
-                    key={device.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={device.id === selectedCognitionDevice?.id}
-                    className={`cabinet-section__item-tab${
-                      device.id === selectedCognitionDevice?.id ? ' cabinet-section__item-tab--active' : ''
-                    }`}
-                    onClick={() => setSelectedCognitionDeviceId(device.id)}
-                  >
-                    {device.title}
-                  </button>
-                ))}
-              </div>
-            )}
           </>
         )}
       </div>
 
       <div className="cabinet-section__media cabinet-section__media--device">
-        {!loading && !error && selectedDisplayItem && (
-          <img
-            className="cabinet-section__image cabinet-section__image--device"
-            src={imageUrl(selectedDisplayItem.imageUrl)}
-            alt={selectedDisplayItem.title}
-          />
+        {!loading && !error && cognitionDevices.length > 1 && (
+          <div className="cabinet-section__item-tabs cabinet-section__item-tabs--compact" role="tablist">
+            {cognitionDevices.map((device) => (
+              <button
+                key={device.id}
+                type="button"
+                role="tab"
+                aria-selected={device.id === selectedCognitionDevice?.id}
+                className={`cabinet-section__item-tab${
+                  device.id === selectedCognitionDevice?.id ? ' cabinet-section__item-tab--active' : ''
+                }`}
+                onClick={() => setSelectedCognitionDeviceId(device.id)}
+              >
+                {device.title}
+              </button>
+            ))}
+          </div>
         )}
-        {!loading && !error && !selectedDisplayItem && (
+        {!loading && !error && currentDisplayItem && (
+          <>
+            <img
+              key={currentSlide}
+              className="cabinet-section__image cabinet-section__image--device"
+              src={imageUrl(currentDisplayItem.imageUrl)}
+              alt={currentDisplayItem.title}
+            />
+            {displayItems.length > 1 && (
+              <div className="cabinet-section__slide-dots">
+                {displayItems.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className={`cabinet-section__slide-dot${i === currentSlide ? ' cabinet-section__slide-dot--active' : ''}`}
+                    onClick={() => setCurrentSlide(i)}
+                    aria-label={`第 ${i + 1} 张`}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+        {!loading && !error && !currentDisplayItem && (
           <p className="cabinet-section__paragraph">暂无设备认知条目</p>
         )}
       </div>
@@ -190,16 +225,14 @@ export default function DeviceCognitionContent() {
             {selectedCognitionDevice.title}
           </p>
         )}
-        {!loading &&
-          !error &&
-          displayItems.map((item) => (
-            <div key={item.id} className="cabinet-section__cognition-item">
-              {displayItems.length > 1 && item.title && (
-                <h3 className="cabinet-section__cognition-title">{item.title}</h3>
-              )}
-              <p className="cabinet-section__paragraph">{item.content}</p>
-            </div>
-          ))}
+        {!loading && !error && currentDisplayItem && (
+          <div className="cabinet-section__cognition-item">
+            {currentDisplayItem.title && (
+              <h3 className="cabinet-section__cognition-title">{currentDisplayItem.title}</h3>
+            )}
+            <p className="cabinet-section__paragraph">{currentDisplayItem.content}</p>
+          </div>
+        )}
       </div>
     </div>
   )

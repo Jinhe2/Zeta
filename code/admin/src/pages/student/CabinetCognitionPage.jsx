@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/AuthContext'
 import StructureCognitionContent from './cabinet/StructureCognitionContent'
 import DeviceCognitionContent from './cabinet/DeviceCognitionContent'
 import PlateCognitionContent from './cabinet/PlateCognitionContent'
+import TerminalCognitionContent from './cabinet/TerminalCognitionContent'
 import './CabinetCognitionPage.css'
 
 const SECTIONS = [
@@ -32,6 +33,9 @@ export default function CabinetCognitionPage() {
     }
     if (activeSection === 'plate') {
       return <PlateCognitionContent />
+    }
+    if (activeSection === 'terminal') {
+      return <TerminalCognitionContent />
     }
     return (
       <div className="cabinet-page__content-placeholder">

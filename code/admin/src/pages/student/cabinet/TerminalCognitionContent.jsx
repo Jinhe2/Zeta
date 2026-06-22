@@ -14,7 +14,7 @@ function findCabinetId(tree, cabinetCode) {
   return tree?.cabinets?.[0]?.id ?? null
 }
 
-export default function PlateCognitionContent() {
+export default function TerminalCognitionContent() {
   const [cabinetItems, setCabinetItems] = useState([])
   const [cognitionDevices, setCognitionDevices] = useState([])
   const [displayItems, setDisplayItems] = useState([])
@@ -24,7 +24,6 @@ export default function PlateCognitionContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // 加载屏柜条目
   useEffect(() => {
     let cancelled = false
     async function load() {
@@ -49,7 +48,6 @@ export default function PlateCognitionContent() {
     return () => { cancelled = true }
   }, [])
 
-  // 加载压板组设备（仅 PLATE_GROUP 类型）
   useEffect(() => {
     if (!selectedCabinetItemId) {
       setCognitionDevices([])
@@ -60,7 +58,7 @@ export default function PlateCognitionContent() {
     async function loadDevices() {
       try {
         const all = await api.listKnowledgeCognitionDevices(selectedCabinetItemId)
-        const devices = all.filter((d) => d.deviceType === 'PLATE_GROUP')
+        const devices = all.filter((d) => d.deviceType === 'TERMINAL_GROUP')
         if (!cancelled) {
           setCognitionDevices(devices)
           setSelectedDeviceId(devices[0]?.id ?? null)
@@ -73,7 +71,6 @@ export default function PlateCognitionContent() {
     return () => { cancelled = true }
   }, [selectedCabinetItemId])
 
-  // 加载认知条目
   useEffect(() => {
     if (!selectedDeviceId) {
       setDisplayItems([])
@@ -116,7 +113,6 @@ export default function PlateCognitionContent() {
 
   return (
     <div className="cabinet-section cabinet-section--device">
-      {/* 左侧：屏柜图 + 区域高亮 */}
       <div className="cabinet-section__media cabinet-section__media--cabinet">
         {loading && <p className="cabinet-section__paragraph">加载中…</p>}
         {error && <p className="cabinet-section__paragraph cabinet-section__paragraph--error">{error}</p>}
@@ -150,7 +146,6 @@ export default function PlateCognitionContent() {
         )}
       </div>
 
-      {/* 右侧上方：压板组选择 + 幻灯图片 */}
       <div className="cabinet-section__media cabinet-section__media--device">
         {!loading && !error && cognitionDevices.length > 1 && (
           <div className="cabinet-section__item-tabs cabinet-section__item-tabs--compact" role="tablist">
@@ -194,16 +189,15 @@ export default function PlateCognitionContent() {
           </>
         )}
         {!loading && !error && !currentDisplayItem && (
-          <p className="cabinet-section__paragraph">暂无压板认知条目</p>
+          <p className="cabinet-section__paragraph">暂无端子排认知条目</p>
         )}
       </div>
 
-      {/* 右侧下方：文字说明 */}
       <div className="cabinet-section__text cabinet-section__text--device">
-        <h2 className="cabinet-section__title">压板认知</h2>
+        <h2 className="cabinet-section__title">端子排认知</h2>
         {selectedDevice && (
           <p className="cabinet-section__paragraph cabinet-section__meta">
-            压板组 · {selectedDevice.title}
+            端子排 · {selectedDevice.title}
           </p>
         )}
         {!loading && !error && currentDisplayItem && (

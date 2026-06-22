@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { api } from '../../../../api/client'
+import { api, imageUrl } from '../../../../api/client'
 import ImageRegionEditor from '../../../../components/ImageRegionEditor'
 import { DEFAULT_REGION, normalizeRegion } from '../../../../utils/imageRegionUtils'
 import '../UsersPage.css'
@@ -247,7 +247,7 @@ export default function CognitionDevicesPage() {
               <>
                 <ImageRegionEditor
                   key={selectedId}
-                  imageUrl={cabinetItem.imageUrl}
+                  imageUrl={imageUrl(cabinetItem.imageUrl)}
                   region={regionDraft}
                   onChange={setRegionDraft}
                 />

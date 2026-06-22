@@ -364,4 +364,29 @@ export const api = {
   listKnowledgeCognitionDeviceDisplayItems(cognitionDeviceId) {
     return request(`/api/knowledge/cognition-devices/${cognitionDeviceId}/display-items`)
   },
+
+  // ── 设备绑定 ──
+
+  checkBinding(bindId) {
+    return request(`/api/bindings/check?bindId=${encodeURIComponent(bindId)}`)
+  },
+
+  listBindingCabinets() {
+    return request('/api/bindings/cabinets')
+  },
+
+  bindCabinet(cabinetId, bindId, bindLabel) {
+    return request(`/api/bindings/cabinets/${cabinetId}`, {
+      method: 'POST',
+      body: JSON.stringify({ bindId, bindLabel }),
+    })
+  },
+
+  unbindCabinet(cabinetId) {
+    return request(`/api/bindings/cabinets/${cabinetId}`, { method: 'DELETE' })
+  },
+
+  forceUnbindCabinet(cabinetId) {
+    return request(`/api/bindings/cabinets/${cabinetId}/force`, { method: 'DELETE' })
+  },
 }

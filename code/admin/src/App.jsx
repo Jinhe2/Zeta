@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import RequireAuth from './components/RequireAuth'
+import BindingGuard from './components/BindingGuard'
 import RootRedirect from './components/RootRedirect'
 import LoginPage from './pages/LoginPage'
 import StudentHomePage from './pages/StudentHomePage'
@@ -21,6 +22,7 @@ import DisplayCabinetListPage from './pages/admin/business/display/DisplayCabine
 import CabinetDisplayItemsPage from './pages/admin/business/display/CabinetDisplayItemsPage'
 import CognitionDevicesPage from './pages/admin/business/display/CognitionDevicesPage'
 import DeviceDisplayItemsPage from './pages/admin/business/display/DeviceDisplayItemsPage'
+import CabinetBindingPage from './pages/admin/binding/CabinetBindingPage'
 import CabinetCatalogListPage from './pages/admin/screen/catalog/CabinetCatalogListPage'
 import CabinetCatalogDetailPage from './pages/admin/screen/catalog/CabinetCatalogDetailPage'
 import CatalogDeviceDetailPage from './pages/admin/screen/catalog/CatalogDeviceDetailPage'
@@ -72,106 +74,39 @@ export default function App() {
           <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<LoginPage />} />
 
+          {/* ── Student routes (with binding check) ── */}
           <Route
             path="/student"
             element={
               <RequireAuth role="STUDENT">
-                <StudentHomePage />
+                <BindingGuard>
+                  <Outlet />
+                </BindingGuard>
               </RequireAuth>
             }
-          />
-
-          <Route
-            path="/student/modes/coach"
-            element={
-              <RequireAuth role="STUDENT">
-                <CoachModePage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/student/modes/coach/cabinet"
-            element={
-              <RequireAuth role="STUDENT">
-                <CabinetCognitionPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/student/modes/exam"
-            element={
-              <RequireAuth role="STUDENT">
-                <StudentPlaceholderPage title="测评模式" description="模拟测评考核，功能开发中。" />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/student/modes/panorama"
-            element={
-              <RequireAuth role="STUDENT">
-                <PanoramaListPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/student/modes/panorama/:id"
-            element={
-              <RequireAuth role="STUDENT">
-                <StudentDiagramPage />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/student/settings/password"
-            element={
-              <RequireAuth role="STUDENT">
-                <ChangePasswordPage />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/student/profile"
-            element={
-              <RequireAuth role="STUDENT">
-                <ProfilePage />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/student/mistakes"
-            element={
-              <RequireAuth role="STUDENT">
-                <MistakesPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/student/tasks"
-            element={
-              <RequireAuth role="STUDENT">
-                <TasksPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/student/resources/:type"
-            element={
-              <RequireAuth role="STUDENT">
-                <StudentPlaceholderPage title="资源库" description="资源内容加载功能开发中。" />
-              </RequireAuth>
-            }
-          />
-
+          >
+            <Route index element={<StudentHomePage />} />
+            <Route path="modes/coach" element={<CoachModePage />} />
+            <Route path="modes/coach/cabinet" element={<CabinetCognitionPage />} />
+            <Route path="modes/exam" element={<StudentPlaceholderPage title="测评模式" description="模拟测评考核，功能开发中。" />} />
+            <Route path="modes/panorama" element={<PanoramaListPage />} />
+            <Route path="modes/panorama/:id" element={<StudentDiagramPage />} />
+            <Route path="settings/password" element={<ChangePasswordPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="mistakes" element={<MistakesPage />} />
+            <Route path="tasks" element={<TasksPage />} />
+            <Route path="resources/:type" element={<StudentPlaceholderPage title="资源库" description="资源内容加载功能开发中。" />} />
+          </Route>
           <Route path="/student/diagram/:id" element={<LegacyDiagramRedirect />} />
 
+          {/* ── Teacher routes (with binding check) ── */}
           <Route
             path="/teacher"
             element={
               <RequireAuth role="TEACHER">
-                <TeacherPage />
+                <BindingGuard>
+                  <TeacherPage />
+                </BindingGuard>
               </RequireAuth>
             }
           />
@@ -189,6 +124,7 @@ export default function App() {
             <Route path="users/:roleKey" element={<UsersPage />} />
 
             <Route path="display" element={<DisplayCabinetListPage />} />
+            <Route path="binding" element={<CabinetBindingPage />} />
             <Route path="display/cabinets/:cabinetId" element={<CabinetDisplayItemsPage />} />
             <Route path="display/cabinet-items/:itemId/cognition-devices" element={<CognitionDevicesPage />} />
             <Route

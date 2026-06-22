@@ -49,23 +49,7 @@
 }
 
 .student-subpage__close {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.06);
-  color: #cfe8ff;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
-
-.student-subpage__close:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
 .student-subpage__body {
   flex: 1;
   min-height: 0;
@@ -84,21 +68,7 @@
 }
 
 .student-subpage__tab {
-  position: relative;
-  padding: 12px 22px;
-  border: none;
-  background: transparent;
-  color: #90a4ae;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.15s;
 }
-
-.student-subpage__tab:hover {
-  color: #cfe8ff;
-}
-
 .student-subpage__tab--active {
   color: #5eb3ff;
 }
@@ -122,6 +92,7 @@
 }
 
 @media (max-width: 768px) {
+}
   .student-subpage__bar {
     flex-wrap: wrap;
     padding: 12px 16px;
@@ -141,4 +112,3 @@
     padding: 10px 16px;
     white-space: nowrap;
   }
-}

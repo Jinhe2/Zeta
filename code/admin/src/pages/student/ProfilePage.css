@@ -134,13 +134,7 @@
 }
 
 .profile-scores-table td {
-  color: #b0c8de;
 }
-
-.profile-scores-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
 .profile-score {
   display: inline-block;
   min-width: 36px;
@@ -207,7 +201,7 @@
 }
 
 @media (max-width: 768px) {
+}
   .profile-stats {
     grid-template-columns: repeat(2, 1fr);
   }
-}

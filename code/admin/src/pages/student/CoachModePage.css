@@ -10,17 +10,60 @@
   color: #e8f0f8;
   overflow: hidden;
   user-select: none;
+  /* 禁止平板双击缩放 */
+  touch-action: manipulation;
 }
 
-/* ── 顶栏（结构同首页） ── */
+/* ── 背景装饰 ── */
+
+.coach-mode__bg-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.coach-mode__bg-circle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.07;
+}
+
+.coach-mode__bg-circle--1 {
+  width: 600px;
+  height: 600px;
+  top: -120px;
+  right: -80px;
+  background: radial-gradient(circle, #42a5f5, transparent 70%);
+}
+
+.coach-mode__bg-circle--2 {
+  width: 500px;
+  height: 500px;
+  bottom: -100px;
+  left: -60px;
+  background: radial-gradient(circle, #66bb6a, transparent 70%);
+}
+
+.coach-mode__bg-circle--3 {
+  width: 350px;
+  height: 350px;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #ab47bc, transparent 70%);
+}
+
+/* ── 顶栏 ── */
+
 .coach-mode__header {
   position: relative;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  gap: 8px;
-  padding: 0 16px 6px;
-  padding-top: 50px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
   flex-shrink: 0;
 }
 
@@ -31,7 +74,7 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 4;
+  z-index: 2;
   padding: 2px;
   clip-path: var(--trap-clip);
   background: linear-gradient(
@@ -48,7 +91,7 @@
 .coach-mode__title-badge-inner {
   position: relative;
   clip-path: var(--trap-clip);
-  padding: 11px clamp(32px, 6vw, 64px) 15px;
+  padding: 10px clamp(28px, 5.5vw, 56px) 14px;
   background-color: #0f2e24;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
@@ -61,27 +104,9 @@
       rgba(255, 255, 255, 0.025) 6px
     ),
     radial-gradient(ellipse at 25% 20%, rgba(129, 199, 132, 0.18) 0%, transparent 55%),
-    radial-gradient(ellipse at 75% 80%, rgba(56, 142, 60, 0.12) 0%, transparent 50%),
     linear-gradient(180deg, #1a4a32 0%, #123828 42%, #0c281c 100%);
-  background-size:
-    12px 12px,
-    12px 12px,
-    auto,
-    auto,
-    auto,
-    auto;
+  background-size: 12px 12px, 12px 12px, auto, auto, auto;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-
-.coach-mode__title-badge-inner::before {
-  content: '';
-  position: absolute;
-  top: 6px;
-  left: 18%;
-  right: 18%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(165, 214, 167, 0.55), transparent);
-  pointer-events: none;
 }
 
 .coach-mode__title-badge-inner::after {
@@ -95,6 +120,16 @@
   pointer-events: none;
 }
 
+.coach-mode__title {
+  margin: 0;
+  font-size: clamp(1.05rem, 2vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #f4fff6;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35), 0 0 18px rgba(129, 199, 132, 0.32);
+  white-space: nowrap;
+}
+
 .coach-mode__user {
   display: flex;
   align-items: center;
@@ -102,31 +137,42 @@
 }
 
 .coach-mode__avatar {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   border: 2px solid rgba(129, 199, 132, 0.5);
   background: #1a3050;
   flex-shrink: 0;
 }
 
+.coach-mode__user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .coach-mode__user-name {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: #fff;
   line-height: 1.2;
 }
 
 .coach-mode__user-level {
-  margin-top: 2px;
-  font-size: 12px;
+  font-size: 11px;
   color: #a5d6a7;
 }
 
+.coach-mode__progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+}
+
 .coach-mode__progress {
-  margin-top: 6px;
-  width: 150px;
-  height: 6px;
+  width: 100px;
+  height: 5px;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.1);
   overflow: hidden;
@@ -139,35 +185,20 @@
 }
 
 .coach-mode__progress-text {
-  margin-top: 3px;
   font-size: 11px;
   color: #7a9bb8;
-}
-
-.coach-mode__title {
-  position: relative;
-  margin: 0;
-  font-size: clamp(1.1rem, 2.2vw, 1.6rem);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: #f4fff6;
-  text-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.35),
-    0 0 18px rgba(129, 199, 132, 0.32);
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .coach-mode__actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  min-width: 38px;
 }
 
 .coach-mode__close {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.06);
   color: #cfe8ff;
@@ -176,143 +207,162 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* 平板触控反馈 */
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
 }
 
-.coach-mode__close:hover {
-  background: rgba(255, 255, 255, 0.12);
+.coach-mode__close:active {
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* ── 内容区：五个大圆形按钮 ── */
+/* ── 内容区 ── */
+
 .coach-mode__main {
   flex: 1;
   min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 24px 24px;
-}
-
-.coach-mode__entries {
+  padding: 16px 24px 32px;
   position: relative;
+  z-index: 1;
+}
+
+.coach-mode__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
   width: 100%;
-  max-width: 1180px;
-  height: 100%;
-  min-height: 560px;
+  max-width: 1100px;
 }
 
-.coach-mode__circle-btn {
-  position: absolute;
-  border-radius: 50%;
-  border: 3px solid transparent;
+/* ── 卡片 ── */
+
+.coach-mode__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 16px 26px;
+  border-radius: 18px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
   color: #fff;
-  font-weight: 700;
-  line-height: 1.3;
-  text-align: center;
-  padding: 14px;
   cursor: pointer;
-  background:
-    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.22), transparent 48%),
-    var(--btn-bg);
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.32),
-    0 0 24px var(--btn-glow);
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  text-align: center;
+  overflow: hidden;
+  /* 平板触控反馈 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 0.1s;
 }
 
-.coach-mode__circle-btn:hover {
-  transform: translateY(-5px) scale(1.04);
-  box-shadow:
-    0 14px 36px rgba(0, 0, 0, 0.38),
-    0 0 36px var(--btn-glow-hover);
-  border-color: var(--btn-border-hover);
+.coach-mode__card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 0%, var(--card-glow), transparent 65%);
+  opacity: 0.5;
+  pointer-events: none;
 }
 
-.coach-mode__circle-btn:active {
-  transform: scale(0.98);
+/* 平板按压反馈 */
+.coach-mode__card:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
-/* 颜色各异 */
-.coach-mode__circle-btn--cabinet {
-  --btn-bg: linear-gradient(145deg, rgba(41, 121, 200, 0.88) 0%, rgba(21, 72, 140, 0.92) 100%);
-  --btn-glow: rgba(66, 165, 245, 0.28);
-  --btn-glow-hover: rgba(100, 181, 246, 0.45);
-  --btn-border-hover: rgba(144, 202, 249, 0.75);
-  border-color: rgba(100, 181, 246, 0.5);
+.coach-mode__card--disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
-.coach-mode__circle-btn--logic {
-  --btn-bg: linear-gradient(145deg, rgba(126, 87, 194, 0.88) 0%, rgba(81, 45, 168, 0.92) 100%);
-  --btn-glow: rgba(149, 117, 205, 0.28);
-  --btn-glow-hover: rgba(179, 157, 219, 0.45);
-  --btn-border-hover: rgba(206, 147, 216, 0.75);
-  border-color: rgba(179, 157, 219, 0.5);
+/* 图标 */
+.coach-mode__card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--card-icon-color, #fff);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
 }
 
-.coach-mode__circle-btn--operation {
-  --btn-bg: linear-gradient(145deg, rgba(56, 142, 60, 0.9) 0%, rgba(27, 94, 32, 0.94) 100%);
-  --btn-glow: rgba(102, 187, 106, 0.32);
-  --btn-glow-hover: rgba(165, 214, 167, 0.5);
-  --btn-border-hover: rgba(200, 230, 201, 0.8);
-  border-color: rgba(129, 199, 132, 0.55);
+.coach-mode__card-icon svg {
+  display: block;
 }
 
-.coach-mode__circle-btn--drawing {
-  --btn-bg: linear-gradient(145deg, rgba(230, 140, 30, 0.9) 0%, rgba(183, 90, 15, 0.94) 100%);
-  --btn-glow: rgba(255, 183, 77, 0.3);
-  --btn-glow-hover: rgba(255, 204, 128, 0.48);
-  --btn-border-hover: rgba(255, 224, 178, 0.8);
-  border-color: rgba(255, 183, 77, 0.55);
+/* 标签 */
+.coach-mode__card-label {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
-.coach-mode__circle-btn--circuit {
-  --btn-bg: linear-gradient(145deg, rgba(0, 151, 167, 0.9) 0%, rgba(0, 105, 120, 0.94) 100%);
-  --btn-glow: rgba(77, 208, 225, 0.3);
-  --btn-glow-hover: rgba(128, 222, 234, 0.48);
-  --btn-border-hover: rgba(178, 235, 242, 0.8);
-  border-color: rgba(77, 208, 225, 0.55);
+/* 描述 */
+.coach-mode__card-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 160px;
 }
 
-/* 大小不一：继续加大 */
-.coach-mode__circle-btn--offset-0 {
-  left: 2%;
-  top: 6%;
-  width: clamp(200px, 22vw, 252px);
-  height: clamp(200px, 22vw, 252px);
-  font-size: clamp(16px, 1.9vw, 20px);
+/* 即将开放角标 */
+.coach-mode__card-soon {
+  position: absolute;
+  top: 12px;
+  right: -22px;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 26px;
+  background: rgba(0, 0, 0, 0.4);
+  color: rgba(255, 255, 255, 0.55);
+  transform: rotate(35deg);
+  letter-spacing: 0.04em;
 }
 
-.coach-mode__circle-btn--offset-1 {
-  left: 64%;
-  top: 0;
-  width: clamp(172px, 17vw, 208px);
-  height: clamp(172px, 17vw, 208px);
-  font-size: clamp(14px, 1.6vw, 17px);
+/* ── 各卡片配色 ── */
+
+.coach-mode__card--cabinet {
+  --card-bg: linear-gradient(165deg, rgba(30, 90, 160, 0.55) 0%, rgba(15, 50, 100, 0.7) 100%);
+  --card-border: rgba(100, 181, 246, 0.4);
+  --card-glow: rgba(66, 165, 245, 0.22);
+  --card-icon-color: #90caf9;
 }
 
-.coach-mode__circle-btn--offset-2 {
-  left: 30%;
-  top: 28%;
-  width: clamp(228px, 26vw, 292px);
-  height: clamp(228px, 26vw, 292px);
-  font-size: clamp(18px, 2.2vw, 23px);
-  z-index: 2;
+.coach-mode__card--logic {
+  --card-bg: linear-gradient(165deg, rgba(100, 60, 170, 0.55) 0%, rgba(60, 30, 120, 0.7) 100%);
+  --card-border: rgba(179, 157, 219, 0.4);
+  --card-glow: rgba(149, 117, 205, 0.22);
+  --card-icon-color: #ce93d8;
 }
 
-.coach-mode__circle-btn--offset-3 {
-  left: 0;
-  top: 50%;
-  width: clamp(156px, 15vw, 188px);
-  height: clamp(156px, 15vw, 188px);
-  font-size: clamp(13px, 1.4vw, 15px);
+.coach-mode__card--operation {
+  --card-bg: linear-gradient(165deg, rgba(40, 120, 50, 0.55) 0%, rgba(20, 70, 30, 0.7) 100%);
+  --card-border: rgba(129, 199, 132, 0.4);
+  --card-glow: rgba(102, 187, 106, 0.24);
+  --card-icon-color: #a5d6a7;
 }
 
-.coach-mode__circle-btn--offset-4 {
-  left: 58%;
-  top: 44%;
-  width: clamp(188px, 19vw, 232px);
-  height: clamp(188px, 19vw, 232px);
-  font-size: clamp(15px, 1.7vw, 18px);
+.coach-mode__card--drawing {
+  --card-bg: linear-gradient(165deg, rgba(180, 110, 20, 0.55) 0%, rgba(130, 70, 10, 0.7) 100%);
+  --card-border: rgba(255, 183, 77, 0.4);
+  --card-glow: rgba(255, 183, 77, 0.22);
+  --card-icon-color: #ffcc80;
 }
+
+.coach-mode__card--circuit {
+  --card-bg: linear-gradient(165deg, rgba(0, 120, 140, 0.55) 0%, rgba(0, 80, 95, 0.7) 100%);
+  --card-border: rgba(77, 208, 225, 0.4);
+  --card-glow: rgba(77, 208, 225, 0.22);
+  --card-icon-color: #80deea;
+}
+
+/* ── 响应式 ── */
 
 @media (max-width: 900px) {
   .coach-mode__header {
@@ -328,52 +378,42 @@
 
   .coach-mode__actions {
     position: absolute;
-    top: 52px;
+    top: 12px;
     right: 16px;
   }
 
-  .coach-mode__entries {
-    min-height: 620px;
-    max-width: 100%;
+  .coach-mode__grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
   }
 
-  .coach-mode__circle-btn--offset-0 {
-    left: 0;
-    top: 0;
-    width: 178px;
-    height: 178px;
+  .coach-mode__card {
+    padding: 24px 12px 20px;
+    gap: 10px;
+  }
+
+  .coach-mode__card-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .coach-mode__card-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .coach-mode__card-label {
     font-size: 16px;
   }
 
-  .coach-mode__circle-btn--offset-1 {
-    left: 50%;
-    top: 0;
-    width: 148px;
-    height: 148px;
-    font-size: 14px;
+  .coach-mode__card-desc {
+    font-size: 11px;
   }
+}
 
-  .coach-mode__circle-btn--offset-2 {
-    left: 18%;
-    top: 28%;
-    width: 200px;
-    height: 200px;
-    font-size: 18px;
-  }
-
-  .coach-mode__circle-btn--offset-3 {
-    left: 0;
-    top: 54%;
-    width: 132px;
-    height: 132px;
-    font-size: 12px;
-  }
-
-  .coach-mode__circle-btn--offset-4 {
-    left: 48%;
-    top: 50%;
-    width: 164px;
-    height: 164px;
-    font-size: 15px;
+@media (max-width: 600px) {
+  .coach-mode__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
 }

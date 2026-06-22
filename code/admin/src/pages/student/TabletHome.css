@@ -189,11 +189,6 @@
   font-size: 15px;
 }
 
-.tablet-home__icon-btn:hover,
-.tablet-home__text-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
 .tablet-home__text-btn {
   padding: 7px 12px;
   border-radius: 7px;
@@ -267,21 +262,17 @@
 .mode-card {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 6px;
-  width: 100%;
-  min-height: 0;
-  padding: 16px 20px;
-  border-radius: 12px;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  text-align: left;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.mode-card:hover {
-  transform: translateY(-2px) scale(1.01);
+.mode-card:active {
+  transform: scale(0.97);
 }
 
 .mode-card--coach {
@@ -386,19 +377,11 @@
 }
 
 .tablet-home__resource-item {
-  padding: 9px 16px;
-  border-radius: 9px;
-  border: 1px solid rgba(94, 179, 255, 0.35);
-  background: rgba(30, 55, 85, 0.85);
-  color: #cfe8ff;
+  padding: 8px 12px;
+  border-radius: 6px;
   font-size: 13px;
+  color: #b0c8de;
   cursor: pointer;
-  white-space: nowrap;
-}
-
-.tablet-home__resource-item:hover {
-  background: rgba(50, 90, 130, 0.9);
-  border-color: rgba(94, 179, 255, 0.6);
 }
 
 .tablet-home__bottom-nav {
@@ -408,25 +391,16 @@
 }
 
 .tablet-home__nav-item {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(20, 35, 55, 0.75);
-  color: #d0e4f8;
-  font-size: 14px;
-  font-weight: 600;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #b0c8de;
+  font-size: 13px;
   cursor: pointer;
-  backdrop-filter: blur(8px);
-}
-
-.tablet-home__nav-item:hover,
-.tablet-home__nav-item--active {
-  border-color: rgba(94, 179, 255, 0.5);
-  background: rgba(40, 75, 115, 0.85);
-  color: #fff;
 }
 
 .tablet-home__nav-caret {

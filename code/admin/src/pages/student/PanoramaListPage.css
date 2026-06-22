@@ -21,23 +21,7 @@
 }
 
 .panorama-list__card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 18px;
-  border-radius: 12px;
-  border: 1px solid rgba(94, 179, 255, 0.25);
-  background: rgba(20, 40, 65, 0.6);
-  text-decoration: none;
-  color: inherit;
-  transition: border-color 0.15s, transform 0.15s;
 }
-
-.panorama-list__card:hover {
-  border-color: rgba(94, 179, 255, 0.55);
-  transform: translateY(-2px);
-}
-
 .panorama-list__category {
   font-size: 11px;
   color: #8ec5f8;

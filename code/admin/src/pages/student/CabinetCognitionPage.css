@@ -156,9 +156,6 @@
   justify-content: center;
 }
 
-.cabinet-page__close:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
 
 .cabinet-page__main {
   flex: 1;
@@ -210,11 +207,6 @@
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.cabinet-page__nav-btn:hover {
-  border-color: rgba(100, 181, 246, 0.4);
-  background: rgba(66, 165, 245, 0.12);
-  color: #e8f0f8;
-}
 
 .cabinet-page__nav-btn--active {
   border-color: rgba(100, 181, 246, 0.55);
@@ -427,10 +419,6 @@
   transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
-.cabinet-section__slide-dot:hover {
-  border-color: rgba(100, 181, 246, 0.7);
-  transform: scale(1.15);
-}
 
 .cabinet-section__slide-dot--active {
   background: rgba(100, 181, 246, 0.7);
@@ -509,10 +497,6 @@
   pointer-events: none;
 }
 
-.plate-part:hover {
-  border-color: rgba(255, 224, 130, 0.55);
-  background: rgba(255, 224, 130, 0.12);
-}
 
 .plate-part--active {
   border-color: rgba(255, 224, 130, 0.85);

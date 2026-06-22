@@ -45,20 +45,6 @@
 }
 
 .exit-dialog__btn {
-  min-width: 108px;
-  padding: 10px 24px;
-  border-radius: 8px;
-  border: none;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: filter 0.15s, transform 0.15s;
-}
-
-.exit-dialog__btn:hover {
-  filter: brightness(1.08);
-}
-
 .exit-dialog__btn:active {
   transform: scale(0.98);
 }
@@ -73,4 +59,6 @@
   background: linear-gradient(180deg, #43a047 0%, #2e7d32 100%);
   color: #fff;
   box-shadow: 0 4px 14px rgba(67, 160, 71, 0.35);
+}
+
 }

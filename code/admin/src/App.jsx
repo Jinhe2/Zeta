@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from 'react-router-dom'
+import { BrowserRouter, HashRouter, Routes, Route, Navigate, Outlet, useParams } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import RequireAuth from './components/RequireAuth'
 import BindingGuard from './components/BindingGuard'
@@ -67,8 +67,11 @@ function LegacyCabinetDevicesRedirect() {
 }
 
 export default function App() {
+  // Electron 使用 HashRouter（file:// 协议不支持 pushState），Web 使用 BrowserRouter
+  const Router = window.electronAPI ? HashRouter : BrowserRouter
+
   return (
-    <BrowserRouter>
+    <Router>
       <AuthProvider>
         <Routes>
           <Route path="/" element={<RootRedirect />} />
@@ -181,6 +184,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
-    </BrowserRouter>
+    </Router>
   )
 }

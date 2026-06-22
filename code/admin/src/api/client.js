@@ -1,8 +1,15 @@
 const ACCESS_TOKEN_KEY = 'zeta_access_token'
 const REFRESH_TOKEN_KEY = 'zeta_refresh_token'
 
-/** 生产环境 API 基地址（开发环境为空，走 Vite proxy） */
-const BASE = import.meta.env.VITE_API_BASE_URL || ''
+/**
+ * API 基地址，优先级：
+ *  1. Electron 运行时配置（window.electronAPI.getSettings().apiBaseUrl）
+ *  2. Vite 编译时环境变量（VITE_API_BASE_URL）
+ *  3. 空字符串（开发环境，走 Vite proxy）
+ */
+const BASE = window.electronAPI?.getSettings?.()?.apiBaseUrl
+          || import.meta.env.VITE_API_BASE_URL
+          || ''
 
 /** 拼接完整 API URL：开发走代理，生产直连 */
 export function apiUrl(path) {

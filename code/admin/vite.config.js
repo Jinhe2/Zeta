@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  // Electron 模式使用相对路径，Web 模式使用默认绝对路径
+  base: mode === 'electron' ? './' : '/',
   plugins: [react()],
   resolve: {
     alias: {
@@ -32,4 +34,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

@@ -36,16 +36,6 @@ export default function StudentDiagramPage() {
         if (cancelled) return
         setDetail(detailData)
         setSnapshots(snapshotData)
-        // Auto-load latest snapshot if exists
-        if (snapshotData.length > 0) {
-          const latest = snapshotData[0]
-          setSelectedSnapshotId(latest.id)
-          return api.getSnapshotSections(latest.id).then((secs) => {
-            if (cancelled) return
-            setSections(secs)
-            setSelectedSectionId(secs[0]?.id ?? null)
-          })
-        }
       })
       .catch((err) => {
         if (!cancelled) setError(err.message)
@@ -128,6 +118,22 @@ export default function StudentDiagramPage() {
       .finally(() => setTriggering(false))
   }, [id, detail])
 
+  // Reload data
+  const handleReload = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    setSections([])
+    setSelectedSectionId(null)
+    setSelectedSnapshotId(null)
+    Promise.all([api.getProtectionLogic(id), api.listSnapshotsByLogic(id)])
+      .then(([detailData, snapshotData]) => {
+        setDetail(detailData)
+        setSnapshots(snapshotData)
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [id])
+
   useEffect(() => {
     if (detail?.title) document.title = detail.title
   }, [detail])
@@ -169,43 +175,41 @@ export default function StudentDiagramPage() {
           <div className="diagram-canvas">
             {loading ? (
               <p className="diagram-canvas__placeholder">正在加载…</p>
-            ) : sections.length === 0 ? (
+            ) : !detail?.config ? (
               <div className="diagram-canvas__placeholder">
-                {snapshots.length === 0 ? (
-                  <>
-                    <p>暂无实验数据</p>
-                    <button
-                      type="button"
-                      className="diagram-canvas__trigger-btn"
-                      disabled={triggering}
-                      onClick={handleTrigger}
-                    >
-                      {triggering ? '实验进行中…' : '▶ 开始实验'}
-                    </button>
-                  </>
-                ) : (
-                  <p>请从右侧选择一次实验记录查看断面</p>
-                )}
+                <p>配置文件有误，请检查配置</p>
+                <button
+                  type="button"
+                  className="diagram-canvas__trigger-btn"
+                  onClick={handleReload}
+                >
+                  ↻ 刷新
+                </button>
               </div>
             ) : (
               <>
                 <div className="diagram-canvas__header">
                   <span>逻辑框图</span>
-                  {nodeStates && (
+                  {nodeStates ? (
                     <span>当前断面：满足 {satisfiedCount} / {totalCount}</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline"
+                      disabled={triggering}
+                      onClick={handleTrigger}
+                    >
+                      {triggering ? '实验进行中…' : '▶ 开始实验'}
+                    </button>
                   )}
                 </div>
                 <div className="diagram-canvas__area">
-                  {detail?.config ? (
-                    <ZetaGraphView
-                      config={detail.config}
-                      showDevInfo={false}
-                      nodeStates={nodeStates}
-                      className="diagram-canvas__preview"
-                    />
-                  ) : (
-                    <p className="diagram-canvas__placeholder">暂无框图配置</p>
-                  )}
+                  <ZetaGraphView
+                    config={detail.config}
+                    showDevInfo={false}
+                    nodeStates={nodeStates}
+                    className="diagram-canvas__preview"
+                  />
                 </div>
               </>
             )}

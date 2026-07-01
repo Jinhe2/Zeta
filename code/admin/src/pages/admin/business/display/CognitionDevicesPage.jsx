@@ -206,7 +206,7 @@ export default function CognitionDevicesPage() {
       <div className="users-page__header">
         <div>
           <p className="users-page__breadcrumb">
-            <Link to="/admin/display">屏柜认知</Link>
+            <Link to="/admin/display">屏柜学习</Link>
             {cabinetItem && (
               <>
                 <span> / </span>
@@ -222,7 +222,7 @@ export default function CognitionDevicesPage() {
             {cabinetItem ? `${cabinetItem.title} — 认知子设备` : '认知子设备'}
           </h2>
           <p className="users-page__desc">
-            子设备隶属于本张屏柜认知图，在图上圈选区域；类型可为 IED 设备、端子组或压板组。
+            子设备隶属于本张屏柜学习图，在图上圈选区域；类型可为 IED 设备、端子组或压板组。
           </p>
         </div>
         <button type="button" className="users-page__btn users-page__btn--primary" onClick={() => setShowCreate(true)}>
@@ -237,7 +237,7 @@ export default function CognitionDevicesPage() {
         <p className="users-page__loading">加载中…</p>
       ) : !cabinetItem ? (
         <p className="users-page__empty">
-          屏柜认知条目不存在，<Link to="/admin/display">返回列表</Link>。
+          屏柜学习条目不存在，<Link to="/admin/display">返回列表</Link>。
         </p>
       ) : (
         <>

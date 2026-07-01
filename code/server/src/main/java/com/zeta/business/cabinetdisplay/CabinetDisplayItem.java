@@ -8,7 +8,7 @@ import javax.persistence.*;
 import java.time.Instant;
 
 /**
- * 屏柜认知条目 — 业务库（ct-screen-monitor）。
+ * 屏柜学习条目 — 业务库（ct-screen-monitor）。
  * 每条包含一张图片与一段文字描述，通过 screenCabinetId 引用屏柜库 cabinet 表主键。
  */
 @Entity

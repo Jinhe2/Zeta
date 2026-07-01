@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { api } from '../../../../api/client'
 import '../UsersPage.css'
 
-/** 屏柜认知 — 屏柜列表（第一级） */
+/** 屏柜学习 — 屏柜列表（第一级） */
 export default function DisplayCabinetListPage() {
   const [cabinets, setCabinets] = useState([])
   const [loading, setLoading] = useState(true)
@@ -29,7 +29,7 @@ export default function DisplayCabinetListPage() {
 
   return (
     <div className="users-page">
-      <h2 className="users-page__title">屏柜认知</h2>
+      <h2 className="users-page__title">屏柜学习</h2>
       <p className="users-page__desc">
         屏柜与设备基础数据来自屏柜系统（ct-screen，只读）。选择屏柜后即可维护该屏柜的认知条目。
       </p>

@@ -8,7 +8,7 @@ import javax.persistence.*;
 import java.time.Instant;
 
 /**
- * 屏柜认知图上的抽象设备 — 隶属于某条 {@code cabinet_display_items}，
+ * 屏柜学习图上的抽象设备 — 隶属于某条 {@code cabinet_display_items}，
  * 在父图上有区域坐标；可关联屏柜库 IED（仅 {@link CognitionDeviceType#IED}）。
  */
 @Entity

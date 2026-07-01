@@ -164,7 +164,7 @@ export default function DeviceDisplayItemsPage() {
       <div className="users-page__header">
         <div>
           <p className="users-page__breadcrumb">
-            <Link to="/admin/display">屏柜认知</Link>
+            <Link to="/admin/display">屏柜学习</Link>
             {cognitionDevice && (
               <>
                 <span> / </span>

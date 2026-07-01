@@ -55,7 +55,7 @@ export default function CabinetCognitionPage() {
 
         <div className="cabinet-page__title-badge">
           <div className="cabinet-page__title-badge-inner">
-            <h1 className="cabinet-page__title">屏柜认知</h1>
+            <h1 className="cabinet-page__title">屏柜学习</h1>
           </div>
         </div>
 
@@ -72,7 +72,7 @@ export default function CabinetCognitionPage() {
       </header>
 
       <main className="cabinet-page__main">
-        <nav className="cabinet-page__nav" aria-label="屏柜认知分类">
+        <nav className="cabinet-page__nav" aria-label="屏柜学习分类">
           {SECTIONS.map((section) => (
             <button
               key={section.id}

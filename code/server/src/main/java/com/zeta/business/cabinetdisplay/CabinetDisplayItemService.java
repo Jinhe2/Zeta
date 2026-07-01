@@ -91,7 +91,7 @@ public class CabinetDisplayItemService {
 
     private CabinetDisplayItem requireItem(Long id) {
         return displayItemRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "屏柜认知条目不存在"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "屏柜学习条目不存在"));
     }
 
     private String normalizeImageUrl(String imageUrl) {

@@ -74,7 +74,7 @@ function IconCircuit() {
 const COACH_ENTRIES = [
   {
     id: 'cabinet',
-    label: '屏柜认知',
+    label: '屏柜学习',
     Icon: IconCabinet,
     desc: '认识屏柜结构、保护装置、压板与端子排',
     route: '/student/modes/coach/cabinet',
@@ -88,9 +88,9 @@ const COACH_ENTRIES = [
   },
   {
     id: 'operation',
-    label: '屏柜操作',
+    label: '采样测试',
     Icon: IconOperation,
-    desc: '学习屏柜投退、切换及安全操作规范',
+    desc: '对保护装置进行采样值测试与信号校验',
     route: null,
   },
   {

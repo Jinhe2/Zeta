@@ -67,7 +67,7 @@ export default function CabinetDisplayItemsPage() {
       setCabinet(cabinetData)
       setItems(itemData)
     } catch (err) {
-      setError(err.message || '加载屏柜认知条目失败')
+      setError(err.message || '加载屏柜学习条目失败')
       setCabinet(null)
       setItems([])
     } finally {
@@ -164,12 +164,12 @@ export default function CabinetDisplayItemsPage() {
       <div className="users-page__header">
         <div>
           <p className="users-page__breadcrumb">
-            <Link to="/admin/display">屏柜认知</Link>
+            <Link to="/admin/display">屏柜学习</Link>
             <span> / </span>
             <span>{cabinet?.name ?? '认知条目'}</span>
           </p>
           <h2 className="users-page__title">
-            {cabinet ? `${cabinet.name} — 认知条目` : '屏柜认知条目'}
+            {cabinet ? `${cabinet.name} — 认知条目` : '屏柜学习条目'}
           </h2>
           <p className="users-page__desc">
             每条认知包含一张图片与一段文字描述（如正视图、侧视图等）。学员端按排序展示已启用条目。

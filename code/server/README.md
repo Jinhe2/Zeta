@@ -106,7 +106,7 @@ java -jar zeta-server.jar --spring.profiles.active=prod
 
 - `/api/auth/*` — 鉴权
 - `/api/users/*` — 用户管理（ADMIN）
-- `/api/cabinets/{id}/display-items` — 屏柜认知条目 CRUD（图片 + 文字描述，ADMIN）
+- `/api/cabinets/{id}/display-items` — 屏柜学习条目 CRUD（图片 + 文字描述，ADMIN）
 - `POST /api/admin/cabinet-display-images` — 上传认知图片（ADMIN）
 - `/api/devices/{id}/display-items` — 设备展示条目 CRUD（ADMIN，id 为屏柜库 device 主键）
 - `/api/knowledge/devices/{id}/display-items` — 学员可读展示条目

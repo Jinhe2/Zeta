@@ -44,7 +44,7 @@ export default function CabinetCatalogDetailPage() {
       </p>
 
       <h2 className="users-page__title">{cabinet ? cabinet.name : '屏柜详情'}</h2>
-      <p className="users-page__desc">屏柜系统只读数据。业务侧认知内容请通过「屏柜认知」入口编辑。</p>
+      <p className="users-page__desc">屏柜系统只读数据。业务侧认知内容请通过「屏柜学习」入口编辑。</p>
 
       {error && <div className="users-page__error">{error}</div>}
       {loading ? (
@@ -66,7 +66,7 @@ export default function CabinetCatalogDetailPage() {
               className="users-page__btn users-page__btn--primary"
               to={`/admin/display/cabinets/${cabinetId}`}
             >
-              屏柜认知
+              屏柜学习
             </Link>
           </div>
 

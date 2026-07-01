@@ -40,7 +40,7 @@ export default function DeviceCognitionContent() {
         const tree = await api.getKnowledgeTree()
         const cabinetId = findCabinetId(tree, DEFAULT_CABINET_CODE)
         if (!cabinetId) {
-          throw new Error('未找到屏柜认知数据')
+          throw new Error('未找到屏柜学习数据')
         }
         const items = await api.listKnowledgeCabinetDisplayItems(cabinetId)
         if (!cancelled) {

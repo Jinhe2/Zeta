@@ -138,7 +138,7 @@ public class CognitionDeviceService {
 
     private CabinetDisplayItem requireCabinetDisplayItem(Long id) {
         return cabinetDisplayItemRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "屏柜认知条目不存在"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "屏柜学习条目不存在"));
     }
 
     private CognitionDeviceAdminResponse toAdminResponse(CognitionDevice device) {

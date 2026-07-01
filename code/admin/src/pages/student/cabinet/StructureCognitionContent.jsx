@@ -28,7 +28,7 @@ export default function StructureCognitionContent() {
         const tree = await api.getKnowledgeTree()
         const cabinetId = findCabinetId(tree, DEFAULT_CABINET_CODE)
         if (!cabinetId) {
-          throw new Error('未找到屏柜认知数据')
+          throw new Error('未找到屏柜学习数据')
         }
         const data = await api.listKnowledgeCabinetDisplayItems(cabinetId)
         if (!cancelled) {
@@ -63,13 +63,13 @@ export default function StructureCognitionContent() {
           />
         )}
         {!loading && !error && !selectedItem && (
-          <p className="cabinet-section__paragraph">暂无屏柜认知条目</p>
+          <p className="cabinet-section__paragraph">暂无屏柜学习条目</p>
         )}
       </div>
       <div className="cabinet-section__text">
         <h2 className="cabinet-section__title">结构认知</h2>
         {!loading && !error && items.length > 1 && (
-          <div className="cabinet-section__item-tabs" role="tablist" aria-label="屏柜认知条目">
+          <div className="cabinet-section__item-tabs" role="tablist" aria-label="屏柜学习条目">
             {items.map((item) => (
               <button
                 key={item.id}

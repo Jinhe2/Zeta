@@ -52,7 +52,7 @@ export default function CatalogDeviceDetailPage() {
       </p>
 
       <h2 className="users-page__title">{device ? device.name : '设备详情'}</h2>
-      <p className="users-page__desc">屏柜系统只读数据。业务侧认知内容请通过「屏柜认知」入口编辑。</p>
+      <p className="users-page__desc">屏柜系统只读数据。业务侧认知内容请通过「屏柜学习」入口编辑。</p>
 
       {error && <div className="users-page__error">{error}</div>}
       {loading ? (

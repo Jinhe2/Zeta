@@ -94,7 +94,7 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
                 + "PRIMARY KEY (id), "
                 + "INDEX idx_cd_cabinet_item (cabinet_display_item_id)"
                 + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
-                + "COMMENT='屏柜认知图上的抽象设备'";
+                + "COMMENT='屏柜学习图上的抽象设备'";
         if (executeIgnoreError(sql)) {
             log.info("业务库：创建表 cognition_devices");
         }

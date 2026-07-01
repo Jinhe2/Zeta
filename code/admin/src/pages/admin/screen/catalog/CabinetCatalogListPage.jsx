@@ -31,7 +31,7 @@ export default function CabinetCatalogListPage() {
     <div className="users-page">
       <h2 className="users-page__title">屏柜数据</h2>
       <p className="users-page__desc">
-        只读展示屏柜系统（ct-screen）中的屏柜列表。认知内容请在「业务 → 屏柜认知」中维护。
+        只读展示屏柜系统（ct-screen）中的屏柜列表。认知内容请在「业务 → 屏柜学习」中维护。
       </p>
 
       {error && <div className="users-page__error">{error}</div>}
@@ -61,7 +61,7 @@ export default function CabinetCatalogListPage() {
                       查看详情
                     </Link>
                     <Link className="users-page__link" to={`/admin/display/cabinets/${cabinet.id}`}>
-                      屏柜认知
+                      屏柜学习
                     </Link>
                   </td>
                 </tr>

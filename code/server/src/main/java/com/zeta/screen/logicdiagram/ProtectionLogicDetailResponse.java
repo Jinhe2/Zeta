@@ -1,5 +1,6 @@
 package com.zeta.screen.logicdiagram;
 
+import com.zeta.screen.logicdiagram.dto.ConfigDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -12,5 +13,5 @@ public class ProtectionLogicDetailResponse {
     private String title;
     private String description;
     private String category;
-    private Object config;
+    private ConfigDto config;
 }

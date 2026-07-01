@@ -2,6 +2,7 @@ package com.zeta.screen.logicdiagram;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zeta.screen.logicdiagram.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -14,6 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.annotation.PostConstruct;
 import java.io.InputStream;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Transactional(value = "screenTransactionManager", readOnly = true)
@@ -72,7 +75,7 @@ public class ProtectionLogicService {
 
     public List<SectionSnapshotResponse> listSections(Long id) {
         ProtectionLogic logic = requireLogic(id);
-        Map<String, Object> config = parseConfig(logic.getConfigJson());
+        ConfigDto config = parseConfig(logic.getConfigJson());
 
         // 1. Try v2.3 snapshot match by logicId
         Map<String, Object> snapshot = findSnapshot(logic.getLogicId(), logic.getProtectType());
@@ -83,20 +86,20 @@ public class ProtectionLogicService {
             }
         }
 
-        // 2. Try legacy config sections
+        // 2. Try legacy config sections / synthetic fallback
         List<String> nodeIds = collectNodeIds(config);
         return buildSections(nodeIds, config);
     }
+
+    /* ── 内部方法 ── */
 
     /**
      * Find a matching snapshot by logicId or protectType keyword.
      */
     private Map<String, Object> findSnapshot(String logicId, String protectType) {
-        // Exact match on logicId
         if (snapshotCache.containsKey(logicId)) {
             return snapshotCache.get(logicId);
         }
-        // Keyword match on protectType or logicId
         String searchKey = (protectType != null ? protectType : "") + " " + (logicId != null ? logicId : "");
         searchKey = searchKey.toLowerCase();
         for (Map.Entry<String, Map<String, Object>> entry : snapshotCache.entrySet()) {
@@ -116,7 +119,6 @@ public class ProtectionLogicService {
 
     /**
      * Convert v2.3 snapshot format to SectionSnapshotResponse list.
-     * Each timestamp becomes a section; channels[i].values[k] maps to nodes[i].id.
      */
     @SuppressWarnings("unchecked")
     private List<SectionSnapshotResponse> buildSectionsFromSnapshot(Map<String, Object> snapshot) {
@@ -129,8 +131,7 @@ public class ProtectionLogicService {
         }
 
         List<SectionSnapshotResponse> sections = new ArrayList<>();
-        String baseTimestamp = timestamps.get(0);
-        long baseMs = parseTimestampMs(baseTimestamp);
+        long baseMs = parseTimestampMs(timestamps.get(0));
 
         for (int k = 0; k < timestamps.size(); k++) {
             Map<String, Boolean> states = new LinkedHashMap<>();
@@ -150,34 +151,12 @@ public class ProtectionLogicService {
             String label = String.format("T = %.3f s", elapsedSec);
 
             sections.add(new SectionSnapshotResponse(
-                    "section-" + k,
-                    label,
-                    elapsedSec,
-                    timestamp,
-                    states));
+                    "section-" + k, label, elapsedSec, timestamp, states));
         }
         return sections;
     }
 
-    /**
-     * Format a timestamp into a relative time label: "T = X.XXX s"
-     */
-    private String formatTimestampLabel(String timestamp, String baseTimestamp) {
-        try {
-            long baseMs = parseTimestampMs(baseTimestamp);
-            long currentMs = parseTimestampMs(timestamp);
-            double elapsedSec = (currentMs - baseMs) / 1000.0;
-            return String.format("T = %.3f s", elapsedSec);
-        } catch (Exception e) {
-            return timestamp;
-        }
-    }
-
-    /**
-     * Parse "YYYY/MM/DD HH:MM:SS.mmm" to milliseconds since epoch (approximate).
-     */
     private long parseTimestampMs(String ts) {
-        // Extract time part: HH:MM:SS.mmm
         int spaceIdx = ts.indexOf(' ');
         String timePart = spaceIdx >= 0 ? ts.substring(spaceIdx + 1) : ts;
         String[] parts = timePart.split("[:.]");
@@ -194,16 +173,16 @@ public class ProtectionLogicService {
     }
 
     private ProtectionLogicSummaryResponse toSummary(ProtectionLogic logic) {
-        Map<String, Object> config = parseConfig(logic.getConfigJson());
+        ConfigDto config = parseConfig(logic.getConfigJson());
         return new ProtectionLogicSummaryResponse(
                 logic.getId(),
                 logic.getCode(),
                 logic.getTitle(),
                 logic.getDescription(),
                 logic.getCategory(),
-                listSize(config.get("inputs")),
-                listSize(config.get("gates")),
-                listSize(config.get("outputs")));
+                sizeOf(config.getInputs()),
+                sizeOf(config.getGates()),
+                sizeOf(config.getOutputs()));
     }
 
     private ProtectionLogicDetailResponse toDetail(ProtectionLogic logic) {
@@ -216,77 +195,46 @@ public class ProtectionLogicService {
                 parseConfig(logic.getConfigJson()));
     }
 
-    @SuppressWarnings("unchecked")
-    private int listSize(Object value) {
-        if (value instanceof List) {
-            return ((List<?>) value).size();
-        }
-        return 0;
+    private static <T> int sizeOf(List<T> list) {
+        return list != null ? list.size() : 0;
     }
 
-    @SuppressWarnings("unchecked")
-    private List<String> collectNodeIds(Map<String, Object> config) {
-        List<String> ids = new ArrayList<>();
-        appendIds(config.get("inputs"), ids, "id");
-        appendIds(config.get("gates"), ids, "id");
-        appendIds(config.get("timers"), ids, "id");
-        appendIds(config.get("outputs"), ids, "id");
-        return ids;
+    private List<String> collectNodeIds(ConfigDto config) {
+        return Stream.of(
+                        nullSafe(config.getInputs()).stream().map(InputDto::getId),
+                        nullSafe(config.getGates()).stream().map(GateDto::getId),
+                        nullSafe(config.getTimers()).stream().map(TimerDto::getId),
+                        nullSafe(config.getOutputs()).stream().map(OutputDto::getId))
+                .flatMap(s -> s)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
-    @SuppressWarnings("unchecked")
-    private void appendIds(Object listValue, List<String> ids, String key) {
-        if (!(listValue instanceof List)) {
-            return;
-        }
-        for (Object item : (List<?>) listValue) {
-            if (item instanceof Map) {
-                Object id = ((Map<String, Object>) item).get(key);
-                if (id != null) {
-                    ids.add(String.valueOf(id));
-                }
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<SectionSnapshotResponse> buildSections(List<String> nodeIds, Map<String, Object> config) {
-        Object sectionsObj = config.get("sections");
-        if (sectionsObj instanceof List && !((List<?>) sectionsObj).isEmpty()) {
+    private List<SectionSnapshotResponse> buildSections(List<String> nodeIds, ConfigDto config) {
+        // Tier 2: legacy config sections
+        List<SectionDto> configSections = config.getSections();
+        if (configSections != null && !configSections.isEmpty()) {
             List<SectionSnapshotResponse> sections = new ArrayList<>();
-            List<?> rawList = (List<?>) sectionsObj;
-            for (int i = 0; i < rawList.size(); i++) {
-                Object raw = rawList.get(i);
-                if (!(raw instanceof Map)) {
-                    continue;
-                }
-                Map<String, Object> item = (Map<String, Object>) raw;
+            for (int i = 0; i < configSections.size(); i++) {
+                SectionDto sec = configSections.get(i);
                 Map<String, Boolean> states = new LinkedHashMap<>();
-                Object statesObj = item.get("states");
-                if (statesObj == null) {
-                    statesObj = item.get("nodeStates");
-                }
-                if (statesObj instanceof Map) {
+                Map<String, Boolean> rawStates = sec.getStates() != null ? sec.getStates() : sec.getNodeStates();
+                if (rawStates != null) {
                     for (String nodeId : nodeIds) {
-                        Object v = ((Map<String, Object>) statesObj).get(nodeId);
-                        states.put(nodeId, parseBool(v));
+                        states.put(nodeId, parseBool(rawStates.get(nodeId)));
                     }
                 }
-                double time = item.get("time") instanceof Number
-                        ? ((Number) item.get("time")).doubleValue()
-                        : i * 0.5;
-                sections.add(new SectionSnapshotResponse(
-                        String.valueOf(item.getOrDefault("id", "section-" + i)),
-                        String.valueOf(item.getOrDefault("label", "T = " + time + " s")),
-                        time,
-                        null,
-                        states));
+                double time = sec.getTime() != null ? sec.getTime() : i * 0.5;
+                String id = sec.getId() != null ? sec.getId() : "section-" + i;
+                String label = sec.getLabel() != null ? sec.getLabel() : "T = " + time + " s";
+                sections.add(new SectionSnapshotResponse(id, label, time, null, states));
             }
             return sections;
         }
 
-        Map<String, String> displayState = config.get("displayState") instanceof Map
-                ? (Map<String, String>) config.get("displayState")
+        // Tier 3: hash-based synthesis
+        Map<String, String> displayState = config.getDisplayState() != null
+                ? config.getDisplayState()
                 : Collections.emptyMap();
         double[] times = {0, 0.2, 0.5, 1.0, 2.0, 5.0};
         List<SectionSnapshotResponse> sections = new ArrayList<>();
@@ -302,21 +250,16 @@ public class ProtectionLogicService {
             sections.add(new SectionSnapshotResponse(
                     "section-" + i,
                     String.format("T = %.1f s", times[i]),
-                    times[i],
-                    null,
-                    states));
+                    times[i], null, states));
         }
         return sections;
     }
 
     private boolean parseBool(Object value) {
-        if (value instanceof Boolean) {
-            return (Boolean) value;
-        }
+        if (value == null) return false;
+        if (value instanceof Boolean) return (Boolean) value;
         String s = String.valueOf(value).trim().toLowerCase();
-        if ("1".equals(s) || "true".equals(s) || "yes".equals(s)) {
-            return true;
-        }
+        if ("1".equals(s) || "true".equals(s) || "yes".equals(s)) return true;
         try {
             return Double.parseDouble(s) > 0;
         } catch (NumberFormatException e) {
@@ -332,11 +275,15 @@ public class ProtectionLogicService {
         return Math.abs(h);
     }
 
-    private Map<String, Object> parseConfig(String json) {
+    private ConfigDto parseConfig(String json) {
         try {
-            return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+            return objectMapper.readValue(json, ConfigDto.class);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "配置解析失败");
         }
+    }
+
+    private static <T> List<T> nullSafe(List<T> list) {
+        return list != null ? list : Collections.emptyList();
     }
 }

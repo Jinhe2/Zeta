@@ -6,32 +6,33 @@ import com.zeta.business.user.User;
 import com.zeta.screen.logicdiagram.ProtectionLogic;
 import com.zeta.screen.logicdiagram.ProtectionLogicRepository;
 import com.zeta.screen.logicdiagram.SectionSnapshotResponse;
+import com.zeta.screen.logicdiagram.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.annotation.PostConstruct;
-import java.io.InputStream;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class LogicSnapshotService {
 
     private static final Logger log = LoggerFactory.getLogger(LogicSnapshotService.class);
+    private static final DateTimeFormatter TS_FMT = DateTimeFormatter
+            .ofPattern("yyyy/MM/dd HH:mm:ss.SSS")
+            .withZone(ZoneId.systemDefault());
 
     private final LogicSnapshotRepository snapshotRepository;
     private final ProtectionLogicRepository protectionLogicRepository;
     private final ObjectMapper objectMapper;
-
-    /** v2.3 snapshot templates indexed by logicId */
-    private final Map<String, String> templateCache = new LinkedHashMap<>();
 
     public LogicSnapshotService(LogicSnapshotRepository snapshotRepository,
                                 ProtectionLogicRepository protectionLogicRepository,
@@ -41,52 +42,24 @@ public class LogicSnapshotService {
         this.objectMapper = objectMapper;
     }
 
-    @PostConstruct
-    void loadTemplates() {
-        try {
-            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-            Resource[] resources = resolver.getResources("classpath:snapshots/snapshot_*.json");
-            for (Resource res : resources) {
-                try (InputStream is = res.getInputStream()) {
-                    byte[] bytes = new byte[is.available()];
-                    is.read(bytes);
-                    String json = new String(bytes);
-                    Map<String, Object> snap = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
-                    String logicId = String.valueOf(snap.getOrDefault("logicId", ""));
-                    if (!logicId.isEmpty()) {
-                        templateCache.put(logicId, json);
-                        log.info("Loaded snapshot template: {} ({} bytes)", logicId, json.length());
-                    }
-                } catch (Exception e) {
-                    log.warn("Failed to load snapshot template {}: {}", res.getFilename(), e.getMessage());
-                }
-            }
-            log.info("Snapshot template cache: {} entries", templateCache.size());
-        } catch (Exception e) {
-            log.warn("No snapshot templates found: {}", e.getMessage());
-        }
-    }
-
-    // ── Generate ──────────────────────────────────────────────────────────
+    // ── Generate（从 config_json 生成断面数据）──────────────────────────────
 
     @Transactional("businessTransactionManager")
     public TriggerSnapshotResponse generateSnapshot(User user, Long protectionLogicId) {
         ProtectionLogic logic = protectionLogicRepository.findById(protectionLogicId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "保护逻辑不存在"));
 
-        // Find matching template
-        String templateJson = findTemplate(logic.getLogicId(), logic.getProtectType());
-        if (templateJson == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "未找到匹配的断面模板");
+        ConfigDto config = parseConfig(logic.getConfigJson());
+        List<NodeInfo> nodeInfos = collectNodeInfos(config);
+        if (nodeInfos.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "配置中无有效节点");
         }
 
-        // Apply random perturbation to simulate real experiment
-        String perturbedJson = perturbSnapshot(templateJson);
+        String snapshotJson = generateV23Snapshot(nodeInfos, config.getDisplayState());
 
-        // Parse total_transitions
         int totalTransitions = 0;
         try {
-            Map<String, Object> snap = objectMapper.readValue(perturbedJson, new TypeReference<Map<String, Object>>() {});
+            Map<String, Object> snap = objectMapper.readValue(snapshotJson, new TypeReference<Map<String, Object>>() {});
             totalTransitions = snap.get("totalTransitions") instanceof Number
                     ? ((Number) snap.get("totalTransitions")).intValue() : 0;
         } catch (Exception ignored) {}
@@ -96,7 +69,7 @@ public class LogicSnapshotService {
         snapshot.setLogicId(protectionLogicId);
         snapshot.setLogicCode(logic.getLogicId());
         snapshot.setLogicName(logic.getLogicName());
-        snapshot.setSnapshotJson(perturbedJson);
+        snapshot.setSnapshotJson(snapshotJson);
         snapshot.setTotalTransitions(totalTransitions);
         snapshot.setStatus("COMPLETED");
         snapshot.setCreatedAt(Instant.now());
@@ -119,7 +92,6 @@ public class LogicSnapshotService {
         ProtectionLogic logic = protectionLogicRepository.findById(protectionLogicId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "保护逻辑不存在"));
 
-        // Validate JSON structure
         Map<String, Object> parsed;
         try {
             parsed = objectMapper.readValue(rawJson, new TypeReference<Map<String, Object>>() {});
@@ -127,7 +99,6 @@ public class LogicSnapshotService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JSON 格式错误: " + e.getMessage());
         }
 
-        // Validate required v2.3 fields
         List<String> missing = new ArrayList<>();
         if (!parsed.containsKey("nodes")) missing.add("nodes");
         if (!parsed.containsKey("channels")) missing.add("channels");
@@ -137,10 +108,10 @@ public class LogicSnapshotService {
                     "缺少 v2.3 必要字段: " + String.join(", ", missing));
         }
 
-        // Validate arrays
         if (!(parsed.get("nodes") instanceof List) || !(parsed.get("channels") instanceof List)
                 || !(parsed.get("timestamps") instanceof List)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "nodes/channels/timestamps 必须为数组");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "nodes/channels/timestamps 必须为数组");
         }
 
         @SuppressWarnings("unchecked")
@@ -159,7 +130,6 @@ public class LogicSnapshotService {
                 ? ((Number) parsed.get("totalTransitions")).intValue()
                 : Math.max(0, tsCount - 1);
 
-        // Re-serialize to ensure clean JSON
         String cleanJson;
         try {
             cleanJson = objectMapper.writeValueAsString(parsed);
@@ -258,71 +228,142 @@ public class LogicSnapshotService {
 
     // ── Internals ─────────────────────────────────────────────────────────
 
-    private String findTemplate(String logicId, String protectType) {
-        // Exact match
-        if (templateCache.containsKey(logicId)) {
-            return templateCache.get(logicId);
-        }
-        // Keyword match
-        String searchKey = ((protectType != null ? protectType : "") + " " + (logicId != null ? logicId : "")).toLowerCase();
-        for (Map.Entry<String, String> entry : templateCache.entrySet()) {
-            String key = entry.getKey().toLowerCase();
-            if (key.contains("differential") && (searchKey.contains("差动") || searchKey.contains("differential"))) {
-                return entry.getValue();
-            }
-            if (key.contains("overcurrent") && (searchKey.contains("过流") || searchKey.contains("overcurrent"))) {
-                return entry.getValue();
-            }
-            if (key.contains("reclose") && (searchKey.contains("重合闸") || searchKey.contains("reclose"))) {
-                return entry.getValue();
+    /**
+     * 从 config_json 收集所有节点信息（id + type）。
+     */
+    private List<NodeInfo> collectNodeInfos(ConfigDto config) {
+        List<NodeInfo> infos = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+
+        for (InputDto input : nullSafe(config.getInputs())) {
+            if (seen.add(input.getId())) {
+                infos.add(new NodeInfo(input.getId(), "input"));
             }
         }
-        return null;
+        for (GateDto gate : nullSafe(config.getGates())) {
+            if (seen.add(gate.getId())) {
+                infos.add(new NodeInfo(gate.getId(), "gate"));
+            }
+        }
+        for (TimerDto timer : nullSafe(config.getTimers())) {
+            if (seen.add(timer.getId())) {
+                infos.add(new NodeInfo(timer.getId(), "timer"));
+            }
+        }
+        for (OutputDto output : nullSafe(config.getOutputs())) {
+            if (seen.add(output.getId())) {
+                infos.add(new NodeInfo(output.getId(), "output"));
+            }
+        }
+        return infos;
     }
 
     /**
-     * Apply minor random perturbation to a v2.3 snapshot template.
-     * Flips a few input channel values to simulate experiment variation.
+     * 从节点信息生成 v2.3 格式断面 JSON。
+     * 模拟实验过程：初始状态部分满足 → 逐步变化 → 最终动作。
      */
-    @SuppressWarnings("unchecked")
-    private String perturbSnapshot(String templateJson) {
-        try {
-            Map<String, Object> snap = objectMapper.readValue(templateJson, new TypeReference<Map<String, Object>>() {});
-            List<Map<String, Object>> nodes = (List<Map<String, Object>>) snap.get("nodes");
-            List<Map<String, Object>> channels = (List<Map<String, Object>>) snap.get("channels");
-            List<String> timestamps = (List<String>) snap.get("timestamps");
+    private String generateV23Snapshot(List<NodeInfo> nodeInfos, Map<String, String> displayState) {
+        ThreadLocalRandom rng = ThreadLocalRandom.current();
+        Instant now = Instant.now();
 
-            if (nodes == null || channels == null || timestamps == null) {
-                return templateJson;
+        // 生成 8 个时间点（20ms 间隔，模拟保护动作过程）
+        int tsCount = 8;
+        List<String> timestamps = new ArrayList<>();
+        for (int k = 0; k < tsCount; k++) {
+            timestamps.add(TS_FMT.format(now.plusMillis(k * 20L)));
+        }
+
+        // 为每个节点生成通道值序列
+        List<Map<String, Object>> nodes = new ArrayList<>();
+        List<Map<String, Object>> channels = new ArrayList<>();
+        int totalTransitions = 0;
+
+        for (NodeInfo node : nodeInfos) {
+            Map<String, Object> nodeEntry = new LinkedHashMap<>();
+            nodeEntry.put("id", node.id);
+            nodeEntry.put("type", node.type);
+            nodes.add(nodeEntry);
+
+            List<Integer> values = new ArrayList<>();
+
+            // 初始值：优先取 displayState，否则 input=1 其余=0
+            int initVal;
+            if (displayState != null && displayState.containsKey(node.id)) {
+                initVal = parseBool(displayState.get(node.id)) ? 1 : 0;
+            } else {
+                initVal = "input".equals(node.type) ? 1 : 0;
             }
 
-            ThreadLocalRandom rng = ThreadLocalRandom.current();
+            // 生成变化序列：模拟信号逐步传播
+            for (int k = 0; k < tsCount; k++) {
+                int val;
+                if (k == 0) {
+                    val = initVal;
+                } else {
+                    // 随时间推移，gate/timer/output 逐步变为 1（模拟保护动作传播）
+                    int activateProbability = 20 + k * 12; // 每个时间步增加激活概率
+                    if ("input".equals(node.type)) {
+                        // input 信号偶尔翻转
+                        val = initVal;
+                        if (rng.nextInt(100) < 8) {
+                            val = 1 - val;
+                        }
+                    } else if ("output".equals(node.type)) {
+                        // output 在最后几个时间步更可能动作
+                        val = (k >= tsCount - 2 && rng.nextInt(100) < 60) ? 1 : 0;
+                    } else {
+                        // gate/timer 随时间逐步激活
+                        val = rng.nextInt(100) < activateProbability ? 1 : 0;
+                    }
+                }
+                values.add(val);
+            }
 
-            // Perturb 1-3 input channels: flip a random value
-            int perturbCount = rng.nextInt(1, 4);
-            for (int p = 0; p < perturbCount; p++) {
-                for (int i = 0; i < nodes.size() && i < channels.size(); i++) {
-                    String type = String.valueOf(nodes.get(i).getOrDefault("type", ""));
-                    if (!"input".equals(type)) continue;
-                    if (rng.nextBoolean()) continue; // 50% skip
-
-                    Map<String, Object> channel = channels.get(i);
-                    List<Integer> values = new ArrayList<>((List<Integer>) channel.get("values"));
-                    int flipIdx = rng.nextInt(values.size());
-                    values.set(flipIdx, values.get(flipIdx) == 0 ? 1 : 0);
-                    channel.put("values", values);
-                    break;
+            // 统计变位次数
+            for (int k = 1; k < values.size(); k++) {
+                if (!values.get(k).equals(values.get(k - 1))) {
+                    totalTransitions++;
                 }
             }
 
-            // Update fileId with new UUID
-            String origFileId = String.valueOf(snap.getOrDefault("fileId", "SNAPSHOT"));
-            snap.put("fileId", origFileId.substring(0, origFileId.lastIndexOf('_') + 1) + UUID.randomUUID());
+            Map<String, Object> channel = new LinkedHashMap<>();
+            channel.put("values", values);
+            channels.add(channel);
+        }
 
-            return objectMapper.writeValueAsString(snap);
+        // 组装 v2.3 格式
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("fileId", "SNAPSHOT_" + UUID.randomUUID());
+        snapshot.put("logicId", "generated");
+        snapshot.put("totalTransitions", totalTransitions);
+        snapshot.put("nodes", nodes);
+        snapshot.put("timestamps", timestamps);
+        snapshot.put("channels", channels);
+
+        try {
+            return objectMapper.writeValueAsString(snapshot);
         } catch (Exception e) {
-            log.warn("Perturbation failed, using original template: {}", e.getMessage());
-            return templateJson;
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "断面 JSON 生成失败");
+        }
+    }
+
+    private ConfigDto parseConfig(String json) {
+        try {
+            return objectMapper.readValue(json, ConfigDto.class);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "配置解析失败");
+        }
+    }
+
+    private boolean parseBool(Object value) {
+        if (value == null) return false;
+        if (value instanceof Boolean) return (Boolean) value;
+        String s = String.valueOf(value).trim().toLowerCase();
+        if ("1".equals(s) || "true".equals(s) || "yes".equals(s)) return true;
+        try {
+            return Double.parseDouble(s) > 0;
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 
@@ -348,5 +389,20 @@ public class LogicSnapshotService {
         long s = Long.parseLong(parts[2]);
         long ms = parts.length > 3 ? Long.parseLong(parts[3]) : 0;
         return ((h * 60 + m) * 60 + s) * 1000 + ms;
+    }
+
+    private static <T> List<T> nullSafe(List<T> list) {
+        return list != null ? list : Collections.emptyList();
+    }
+
+    /** 节点信息（id + 类型） */
+    private static class NodeInfo {
+        final String id;
+        final String type;
+
+        NodeInfo(String id, String type) {
+            this.id = id;
+            this.type = type;
+        }
     }
 }

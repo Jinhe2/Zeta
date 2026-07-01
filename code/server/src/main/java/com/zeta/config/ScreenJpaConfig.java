@@ -19,7 +19,12 @@ import java.util.Map;
         basePackages = {
                 "com.zeta.screen.cabinet",
                 "com.zeta.screen.ieddevice",
-                "com.zeta.screen.logicdiagram"
+                "com.zeta.screen.logicdiagram",
+                "com.zeta.screen.terminal",
+                "com.zeta.screen.hardpressboard",
+                "com.zeta.screen.baseline",
+                "com.zeta.screen.wiring",
+                "com.zeta.screen.monitor"
         },
         entityManagerFactoryRef = "screenEntityManagerFactory",
         transactionManagerRef = "screenTransactionManager")
@@ -48,7 +53,12 @@ public class ScreenJpaConfig {
                 .packages(
                         "com.zeta.screen.cabinet",
                         "com.zeta.screen.ieddevice",
-                        "com.zeta.screen.logicdiagram")
+                        "com.zeta.screen.logicdiagram",
+                        "com.zeta.screen.terminal",
+                        "com.zeta.screen.hardpressboard",
+                        "com.zeta.screen.baseline",
+                        "com.zeta.screen.wiring",
+                        "com.zeta.screen.monitor")
                 .persistenceUnit(PERSISTENCE_UNIT)
                 .properties(jpaProps)
                 .build();

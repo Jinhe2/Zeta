@@ -275,6 +275,15 @@
   transform: scale(0.97);
 }
 
+.mode-card--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mode-card--disabled:active {
+  transform: none;
+}
+
 .mode-card--coach {
   background: linear-gradient(135deg, rgba(56, 142, 60, 0.45), rgba(30, 90, 50, 0.35));
   box-shadow: 0 6px 20px rgba(56, 142, 60, 0.2);

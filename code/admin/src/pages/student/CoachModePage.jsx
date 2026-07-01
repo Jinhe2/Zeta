@@ -91,7 +91,8 @@ const COACH_ENTRIES = [
     label: '采样测试',
     Icon: IconOperation,
     desc: '对保护装置进行采样值测试与信号校验',
-    route: null,
+    route: '/student/modes/panorama',
+    navigateState: { from: 'coach' },
   },
   {
     id: 'drawing',
@@ -174,7 +175,7 @@ export default function CoachModePage() {
                 type="button"
                 className={`coach-mode__card coach-mode__card--${entry.id}${!entry.route ? ' coach-mode__card--disabled' : ''}`}
                 onClick={() => {
-                  if (entry.route) navigate(entry.route)
+                  if (entry.route) navigate(entry.route, { state: entry.navigateState })
                 }}
                 disabled={!entry.route}
               >

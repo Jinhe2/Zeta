@@ -38,12 +38,14 @@ const MODE_ENTRIES = [
     path: '/student/modes/exam',
     accent: 'exam',
   },
+  // 全景模式已禁用 — 功能移入教练模式「采样测试」，后续可按需重新启用
   {
     id: 'panorama',
     title: '全景模式',
     desc: '逻辑全景与保护框图综合浏览',
     path: '/student/modes/panorama',
     accent: 'panorama',
+    disabled: true,
   },
 ]
 
@@ -141,12 +143,13 @@ export default function TabletHome() {
             <button
               key={mode.id}
               type="button"
-              className={`mode-card mode-card--${mode.accent}`}
-              onClick={() => navigate(mode.path)}
+              className={`mode-card mode-card--${mode.accent}${mode.disabled ? ' mode-card--disabled' : ''}`}
+              onClick={() => { if (!mode.disabled) navigate(mode.path) }}
+              disabled={mode.disabled}
             >
               <span className="mode-card__title">{mode.title}</span>
               <span className="mode-card__desc">{mode.desc}</span>
-              <span className="mode-card__arrow">进入 →</span>
+              <span className="mode-card__arrow">{mode.disabled ? '暂未开放' : '进入 →'}</span>
             </button>
           ))}
         </section>

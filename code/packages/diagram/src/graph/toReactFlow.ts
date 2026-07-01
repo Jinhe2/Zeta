@@ -78,16 +78,19 @@ export function toReactFlow(
     }
   })
 
+  const edgeMap = new Map(source.edges.map((e) => [e.id, e]))
+
   const edges: Edge[] = (elkGraph.edges ?? []).map((edge: ElkExtendedEdge) => {
     const sourceId = edge.sources[0]
     const targetId = edge.targets[0]
     const path = sectionsToPath(edge.sections, sourceId, targetId, nodeRects)
+    const graphEdge = edgeMap.get(edge.id)
     return {
       id: edge.id,
       source: sourceId,
       target: targetId,
       type: 'elk',
-      data: { path },
+      data: { path, inverted: graphEdge?.inverted ?? false },
       selectable: false,
     }
   })

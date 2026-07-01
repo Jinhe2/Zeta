@@ -72,11 +72,11 @@ export function adaptZetaConfig(config: ZetaConfig): GraphData {
     nodes.push(node)
   }
 
-  function addEdge(source: string, target: string) {
+  function addEdge(source: string, target: string, inverted?: boolean) {
     if (!source || !target) return
     const id = `${source}->${target}`
     if (edges.some((e) => e.id === id)) return
-    edges.push({ id, source, target })
+    edges.push({ id, source, target, inverted })
   }
 
   for (const input of config.inputs ?? []) {
@@ -99,7 +99,7 @@ export function adaptZetaConfig(config: ZetaConfig): GraphData {
       data: { gateType: gate.type, inverted: gate.inverted ?? false },
     })
     for (const inp of gate.inputs ?? []) {
-      addEdge(inp.node, gate.id)
+      addEdge(inp.node, gate.id, inp.inverted ?? false)
     }
   }
 

@@ -7,7 +7,10 @@
     "start": "electron .",
     "build:admin": "cd ../admin && npm run build:electron",
     "build": "npm run build:admin && electron-builder --win --x64",
-    "build:dir": "npm run build:admin && electron-builder --win --x64 --dir"
+    "build:dir": "npm run build:admin && electron-builder --win --x64 --dir",
+    "build:portable": "npm run build:admin && electron-builder --win portable",
+    "build:zip": "npm run build:admin && electron-builder --win zip",
+    "pack:unpacked": "node scripts/pack-unpacked.js"
   },
   "devDependencies": {
     "electron": "^33.0.0",

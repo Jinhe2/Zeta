@@ -191,6 +191,21 @@
   background: rgba(100, 181, 246, 0.12);
 }
 
+.admin-layout__student-entry {
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(100, 181, 246, 0.4);
+  background: rgba(100, 181, 246, 0.15);
+  color: #64b5f6;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.admin-layout__student-entry:hover {
+  background: rgba(100, 181, 246, 0.25);
+  color: #90caf9;
+}
+
 .admin-layout__logout {
   padding: 7px 14px;
   border-radius: 6px;

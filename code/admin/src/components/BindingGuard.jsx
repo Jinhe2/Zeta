@@ -14,9 +14,14 @@ import './BindingGuard.css'
  *  - 网络错误/其他错误 → 阻断并显示错误提示，用户可重试
  */
 export default function BindingGuard({ children }) {
-  const { logout } = useAuth()
+  const { logout, session } = useAuth()
   const [status, setStatus] = useState('checking') // checking | bound | unbound | error
   const [errorMsg, setErrorMsg] = useState('')
+
+  // 管理员无需设备绑定，直接放行
+  if (session?.role === 'ADMIN') {
+    return children
+  }
 
   const check = useCallback(() => {
     setStatus('checking')

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import './AdminLayout.css'
 
@@ -70,6 +70,7 @@ function NavGroup({ item }) {
 
 export default function AdminLayout() {
   const { session, logout } = useAuth()
+  const navigate = useNavigate()
 
   return (
     <div className="admin-layout">
@@ -118,6 +119,13 @@ export default function AdminLayout() {
             <span className="admin-layout__user">{session?.displayName}</span>
             <span className="admin-layout__role">管理员</span>
           </div>
+          <button
+            type="button"
+            className="admin-layout__student-entry"
+            onClick={() => navigate('/student')}
+          >
+            学员视图
+          </button>
           <button
             type="button"
             className="admin-layout__logout"

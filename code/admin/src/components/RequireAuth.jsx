@@ -15,7 +15,8 @@ export default function RequireAuth({ role, children }) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
-  if (role && session.role !== role) {
+  // ADMIN 拥有学员全部权限，可进入学员界面
+  if (role && session.role !== role && session.role !== 'ADMIN') {
     return <Navigate to={HOME_BY_ROLE[session.role] || '/'} replace />
   }
 

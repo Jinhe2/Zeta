@@ -1,4 +1,4 @@
-package com.zeta.screen.monitor;
+package com.zeta.business.monitor;
 
 import com.zeta.business.auth.AuthService;
 import org.springframework.web.bind.annotation.*;

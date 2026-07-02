@@ -1,7 +1,5 @@
-package com.zeta.screen.monitor;
+package com.zeta.business.monitor;
 
-import com.zeta.screen.ieddevice.Device;
-import com.zeta.screen.logicdiagram.ProtectionLogic;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,8 +8,10 @@ import javax.persistence.*;
 import java.time.Instant;
 
 /**
- * 实验监控任务，对应 ct-screen.monitor_task。
- * 由乙方监控系统写入，本系统只读。
+ * 实验监控任务，对应 ct-screen-monitor.monitor_task。
+ * 由乙方研判程序写入，本系统读取。
+ * 注意：ied_device_id 和 logic_diagram_id 是底层库 (ct-screen) 的外键，
+ * 但本实体在业务库 (ct-screen-monitor) 中，不能跨库 @ManyToOne，仅存 ID。
  */
 @Entity
 @Table(name = "monitor_task")
@@ -27,13 +27,11 @@ public class MonitorTask {
     @Column(nullable = false, length = 36)
     private String uuid;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "ied_device_id", nullable = false)
-    private Device iedDevice;
+    @Column(name = "ied_device_id", nullable = false)
+    private Long iedDeviceId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "logic_diagram_id", nullable = false)
-    private ProtectionLogic logicDiagram;
+    @Column(name = "logic_diagram_id", nullable = false)
+    private Long logicDiagramId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

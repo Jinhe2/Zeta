@@ -4,8 +4,8 @@ import com.zeta.business.snapshot.LogicSnapshot;
 import com.zeta.business.snapshot.LogicSnapshotRepository;
 import com.zeta.integration.queue.ScreenQueueMessage;
 import com.zeta.integration.queue.ScreenQueuePublisher;
-import com.zeta.screen.monitor.MonitorTask;
-import com.zeta.screen.monitor.MonitorTaskRepository;
+import com.zeta.business.monitor.MonitorTask;
+import com.zeta.business.monitor.MonitorTaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -163,9 +163,9 @@ public class MonitorCommandService {
 
         LogicSnapshot snapshot = new LogicSnapshot();
         snapshot.setUserId(userId);
-        snapshot.setLogicId(task.getLogicDiagram() != null ? task.getLogicDiagram().getId() : null);
-        snapshot.setLogicCode(task.getLogicDiagram() != null ? task.getLogicDiagram().getLogicId() : null);
-        snapshot.setLogicName(task.getLogicDiagram() != null ? task.getLogicDiagram().getLogicName() : null);
+        snapshot.setLogicId(task.getLogicDiagramId());
+        snapshot.setLogicCode(null);
+        snapshot.setLogicName(null);
         snapshot.setSnapshotJson(task.getSnapshotJson());
         snapshot.setTotalTransitions(task.getTotalTransitions() != null ? task.getTotalTransitions() : 0);
         snapshot.setStatus("COMPLETED");

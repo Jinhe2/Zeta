@@ -1,4 +1,4 @@
-package com.zeta.screen.monitor;
+package com.zeta.business.monitor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -11,7 +11,7 @@ import java.util.*;
  * 查询 monitor_task 表（底层库，只读）。
  */
 @Service
-@Transactional(value = "screenTransactionManager", readOnly = true)
+@Transactional(value = "businessTransactionManager", readOnly = true)
 public class MonitorTaskService {
 
     private final MonitorTaskRepository repository;
@@ -38,8 +38,8 @@ public class MonitorTaskService {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", task.getId());
         map.put("uuid", task.getUuid());
-        map.put("iedDeviceId", task.getIedDevice() != null ? task.getIedDevice().getId() : null);
-        map.put("logicDiagramId", task.getLogicDiagram() != null ? task.getLogicDiagram().getId() : null);
+        map.put("iedDeviceId", task.getIedDeviceId());
+        map.put("logicDiagramId", task.getLogicDiagramId());
         map.put("state", task.getState() != null ? task.getState().name() : null);
         map.put("errorCode", task.getErrorCode());
         map.put("errorMessage", task.getErrorMessage());

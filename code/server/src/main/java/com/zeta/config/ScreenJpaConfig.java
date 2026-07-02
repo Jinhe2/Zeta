@@ -23,8 +23,7 @@ import java.util.Map;
                 "com.zeta.screen.terminal",
                 "com.zeta.screen.hardpressboard",
                 "com.zeta.screen.baseline",
-                "com.zeta.screen.wiring",
-                "com.zeta.screen.monitor"
+                "com.zeta.screen.wiring"
         },
         entityManagerFactoryRef = "screenEntityManagerFactory",
         transactionManagerRef = "screenTransactionManager")
@@ -57,8 +56,7 @@ public class ScreenJpaConfig {
                         "com.zeta.screen.terminal",
                         "com.zeta.screen.hardpressboard",
                         "com.zeta.screen.baseline",
-                        "com.zeta.screen.wiring",
-                        "com.zeta.screen.monitor")
+                        "com.zeta.screen.wiring")
                 .persistenceUnit(PERSISTENCE_UNIT)
                 .properties(jpaProps)
                 .build();

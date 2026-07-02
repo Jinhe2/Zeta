@@ -1,4 +1,4 @@
-package com.zeta.screen.monitor;
+package com.zeta.business.monitor;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

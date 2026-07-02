@@ -36,8 +36,7 @@ public class ScreenQueuePublisher {
             String payload = objectMapper.writeValueAsString(message);
             // Redis Pub/Sub: PUBLISH channel message
             redisTemplate.convertAndSend(properties.getOutboundKey(), payload);
-            log.info(">>> MQ OUTBOUND [PUBLISH {}]: command={} req_id={} data={}",
-                    properties.getOutboundKey(), message.getCommand(), message.getReqId(), message.getData());
+            log.info(">>> MQ OUTBOUND [PUBLISH {}]: {}", properties.getOutboundKey(), payload);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("无法序列化队列消息", e);
         }

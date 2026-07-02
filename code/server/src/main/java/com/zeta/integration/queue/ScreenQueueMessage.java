@@ -21,6 +21,10 @@ public class ScreenQueueMessage {
     @JsonProperty("req_id")
     private String reqId;
 
+    /** 用户标识，随请求发送，响应原样返回 */
+    @JsonProperty("user_data")
+    private String userData;
+
     private Map<String, Object> data;
 
     private Boolean success;
@@ -39,6 +43,13 @@ public class ScreenQueueMessage {
         this.data = data;
     }
 
+    public ScreenQueueMessage(String command, String reqId, String userData, Map<String, Object> data) {
+        this.command = command;
+        this.reqId = reqId;
+        this.userData = userData;
+        this.data = data;
+    }
+
     public String getCommand() {
         return command;
     }
@@ -53,6 +64,14 @@ public class ScreenQueueMessage {
 
     public void setReqId(String reqId) {
         this.reqId = reqId;
+    }
+
+    public String getUserData() {
+        return userData;
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
     }
 
     public Map<String, Object> getData() {

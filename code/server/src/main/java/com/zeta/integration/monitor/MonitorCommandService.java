@@ -1,10 +1,17 @@
 package com.zeta.integration.monitor;
 
+import com.zeta.business.snapshot.LogicSnapshot;
+import com.zeta.business.snapshot.LogicSnapshotRepository;
 import com.zeta.integration.queue.ScreenQueueMessage;
 import com.zeta.integration.queue.ScreenQueuePublisher;
+import com.zeta.screen.monitor.MonitorTask;
+import com.zeta.screen.monitor.MonitorTaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 import javax.annotation.PreDestroy;
 import java.util.*;
@@ -21,6 +28,8 @@ public class MonitorCommandService {
     private static final long DEFAULT_TIMEOUT_SECONDS = 30;
 
     private final ScreenQueuePublisher publisher;
+    private final LogicSnapshotRepository logicSnapshotRepository;
+    private final MonitorTaskRepository monitorTaskRepository;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     /** req_id → 等待响应的 Future */
@@ -43,8 +52,12 @@ public class MonitorCommandService {
     private final java.util.concurrent.ConcurrentLinkedDeque<Map<String, Object>> recentMessages = new java.util.concurrent.ConcurrentLinkedDeque<>();
     private static final int MAX_RECENT = 20;
 
-    public MonitorCommandService(Optional<ScreenQueuePublisher> publisher) {
+    public MonitorCommandService(Optional<ScreenQueuePublisher> publisher,
+                                 LogicSnapshotRepository logicSnapshotRepository,
+                                 MonitorTaskRepository monitorTaskRepository) {
         this.publisher = publisher.orElse(null);
+        this.logicSnapshotRepository = logicSnapshotRepository;
+        this.monitorTaskRepository = monitorTaskRepository;
     }
 
     /**
@@ -58,7 +71,7 @@ public class MonitorCommandService {
         data.put("types", Arrays.asList("FUNCTION", "EXPORT"));
         data.put("include_spare", false);
 
-        return sendCommand("summon_pressboard_status", data, "pressboard:" + cabinetId);
+        return sendCommand("summon_pressboard_status", null, data, "pressboard:" + cabinetId);
     }
 
     /**
@@ -70,7 +83,7 @@ public class MonitorCommandService {
         data.put("refresh", true);
         data.put("terminal_ids", Collections.emptyList());
 
-        return sendCommand("summon_terminal_status", data, "terminal:" + cabinetId);
+        return sendCommand("summon_terminal_status", null, data, "terminal:" + cabinetId);
     }
 
     // ── 实验监视 summon_logic_monitor ──────────────────────────────────────
@@ -78,13 +91,14 @@ public class MonitorCommandService {
     /**
      * 启动实验监视任务。返回 accepted 响应（含 req_id 作为 taskUuid）。
      */
-    public CompletableFuture<ScreenQueueMessage> startLogicMonitor(String iedName, String logicId) {
+    public CompletableFuture<ScreenQueueMessage> startLogicMonitor(String iedName, String logicId,
+                                                                    Long userId, String username) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("action", "start");
         data.put("ied_name", iedName);
         data.put("logic_id", logicId);
 
-        return sendCommand("summon_logic_monitor", data, null);
+        return sendCommand("summon_logic_monitor", String.valueOf(userId), data, null);
     }
 
     /**
@@ -128,6 +142,42 @@ public class MonitorCommandService {
     }
 
     /**
+     * 从 monitor_task 读取断面数据，创建 logic_snapshot 记录到业务库。
+     */
+    @Transactional("businessTransactionManager")
+    private void createLogicSnapshotFromTask(Long taskId, String userIdStr) {
+        MonitorTask task = monitorTaskRepository.findById(taskId).orElse(null);
+        if (task == null) {
+            log.warn("monitor_task {} not found, skip snapshot creation", taskId);
+            return;
+        }
+        if (task.getSnapshotJson() == null || task.getSnapshotJson().isEmpty()) {
+            log.warn("monitor_task {} has no snapshot_json, skip", taskId);
+            return;
+        }
+
+        Long userId = null;
+        if (userIdStr != null) {
+            try { userId = Long.parseLong(userIdStr); } catch (NumberFormatException ignored) {}
+        }
+
+        LogicSnapshot snapshot = new LogicSnapshot();
+        snapshot.setUserId(userId);
+        snapshot.setLogicId(task.getLogicDiagram() != null ? task.getLogicDiagram().getId() : null);
+        snapshot.setLogicCode(task.getLogicDiagram() != null ? task.getLogicDiagram().getLogicId() : null);
+        snapshot.setLogicName(task.getLogicDiagram() != null ? task.getLogicDiagram().getLogicName() : null);
+        snapshot.setSnapshotJson(task.getSnapshotJson());
+        snapshot.setTotalTransitions(task.getTotalTransitions() != null ? task.getTotalTransitions() : 0);
+        snapshot.setStatus("COMPLETED");
+        snapshot.setSource("MONITOR");
+        snapshot.setCreatedAt(Instant.now());
+        snapshot.setCompletedAt(Instant.now());
+
+        logicSnapshotRepository.save(snapshot);
+        log.info("Created logic_snapshot id={} from monitor_task={} userId={}", snapshot.getId(), taskId, userIdStr);
+    }
+
+    /**
      * 处理 monitord 返回的响应消息。
      */
     public void handleResponse(ScreenQueueMessage message) {
@@ -140,12 +190,32 @@ public class MonitorCommandService {
         lastReceivedAt = System.currentTimeMillis();
         addRecentMessage("IN", command, reqId, data);
 
-        // 实验监视完成响应：按 req_id（taskUuid）缓存
+        // 实验监视完成响应：按 req_id（taskUuid）缓存，成功时创建 logic_snapshot
         if ("summon_logic_monitor".equals(command) && data != null) {
             String result = String.valueOf(data.getOrDefault("result", ""));
             if ("success".equals(result) || "failed".equals(result)) {
+                // 合并顶层 error 字段到 data 缓存中
+                if (message.getError() != null) {
+                    data.put("error", message.getError());
+                }
+                if (message.getErrorMessage() != null) {
+                    data.put("error_message", message.getErrorMessage());
+                }
                 monitorTaskResults.put(reqId, data);
                 log.info("Cached monitor task result for req_id={} result={}", reqId, result);
+
+                // 成功且有 snapshot_path → 读取 monitor_task 创建 logic_snapshot
+                if ("success".equals(result)) {
+                    String snapshotPath = String.valueOf(data.getOrDefault("snapshot_path", ""));
+                    String userIdStr = message.getUserData();
+                    if (!snapshotPath.isEmpty() && !snapshotPath.equals("null") && userIdStr != null) {
+                        try {
+                            createLogicSnapshotFromTask(Long.parseLong(snapshotPath), userIdStr);
+                        } catch (Exception e) {
+                            log.error("Failed to create logic_snapshot from monitor_task {}: {}", snapshotPath, e.getMessage());
+                        }
+                    }
+                }
             }
         }
 
@@ -249,7 +319,8 @@ public class MonitorCommandService {
         log.info("Sent monitord fire-and-forget: {} req_id={} data={}", command, reqId, data);
     }
 
-    private CompletableFuture<ScreenQueueMessage> sendCommand(String command, Map<String, Object> data, String cachePrefix) {
+    private CompletableFuture<ScreenQueueMessage> sendCommand(String command, String userData,
+                                                                Map<String, Object> data, String cachePrefix) {
         if (publisher == null) {
             CompletableFuture<ScreenQueueMessage> future = new CompletableFuture<>();
             future.completeExceptionally(new RuntimeException("Redis 队列未启用，无法发送命令"));
@@ -257,7 +328,7 @@ public class MonitorCommandService {
         }
 
         String reqId = UUID.randomUUID().toString();
-        ScreenQueueMessage message = new ScreenQueueMessage(command, reqId, data);
+        ScreenQueueMessage message = new ScreenQueueMessage(command, reqId, userData, data);
 
         CompletableFuture<ScreenQueueMessage> future = new CompletableFuture<>();
         pendingRequests.put(reqId, future);

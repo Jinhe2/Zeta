@@ -95,7 +95,7 @@ public class MonitorCommandController {
     public Map<String, Object> logicMonitorAction(
             @RequestHeader("Authorization") String authorization,
             @RequestBody Map<String, Object> body) {
-        authService.requireUser(authorization);
+        com.zeta.business.user.User user = authService.requireUser(authorization);
 
         String action = String.valueOf(body.getOrDefault("action", "start"));
 
@@ -106,11 +106,35 @@ public class MonitorCommandController {
                 if (iedName == null || logicId == null) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 iedName 或 logicId");
                 }
-                CompletableFuture<ScreenQueueMessage> future = commandService.startLogicMonitor(iedName, logicId);
-                Map<String, Object> response = awaitResponse(future, "summon_logic_monitor");
-                // 返回 taskUuid（即 req_id）供前端心跳和查询使用
-                Map<String, Object> result = new java.util.LinkedHashMap<>(response);
-                return result;
+                CompletableFuture<ScreenQueueMessage> future = commandService.startLogicMonitor(
+                        iedName, logicId, user.getId(), user.getUsername());
+                // start 返回完整信封（含 req_id），而非只返回 data
+                try {
+                    ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);
+                    if (Boolean.FALSE.equals(response.getSuccess())) {
+                        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                                "monitord 返回错误: " + response.getErrorMessage());
+                    }
+                    Map<String, Object> result = new java.util.LinkedHashMap<>();
+                    result.put("req_id", response.getReqId());
+                    result.put("success", response.getSuccess());
+                    if (response.getData() != null) {
+                        result.putAll(response.getData());
+                    }
+                    return result;
+                } catch (java.util.concurrent.TimeoutException e) {
+                    throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+                } catch (java.util.concurrent.ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof java.util.concurrent.TimeoutException) {
+                        throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+                    }
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "命令执行失败: " + (cause != null ? cause.getMessage() : e.getMessage()));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "命令被中断");
+                }
             }
             case "heartbeat": {
                 String taskUuid = (String) body.get("taskUuid");
@@ -171,11 +195,11 @@ public class MonitorCommandController {
 
         if (commandService.isQueueEnabled()) {
             try {
-                redisTemplate.getConnectionFactory().getConnection().ping();
-                status.put("redisConnected", true);
+                String pong = redisTemplate.getConnectionFactory().getConnection().ping();
+                status.put("redisConnected", "PONG".equalsIgnoreCase(pong) || pong != null);
             } catch (Exception e) {
                 status.put("redisConnected", false);
-                status.put("redisError", e.getMessage());
+                status.put("redisError", e.getClass().getSimpleName() + ": " + e.getMessage());
             }
         }
 

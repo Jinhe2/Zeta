@@ -278,6 +278,52 @@ export const api = {
     return request(`/api/terminals?cabinetId=${cabinetId}`)
   },
 
+  // ── 实验监视 ────────────────────────────────────────────
+
+  startLogicMonitor(iedName, logicId) {
+    return request('/api/monitor/commands/logic-monitor', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'start', iedName, logicId }),
+    })
+  },
+
+  sendLogicMonitorHeartbeat(taskUuid) {
+    return request('/api/monitor/commands/logic-monitor', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'heartbeat', taskUuid }),
+    })
+  },
+
+  endLogicMonitor(taskUuid) {
+    return request('/api/monitor/commands/logic-monitor', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'end', taskUuid }),
+    })
+  },
+
+  abortLogicMonitor(taskUuid) {
+    return request('/api/monitor/commands/logic-monitor', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'abort', taskUuid }),
+    })
+  },
+
+  getMonitorTaskResult(taskUuid) {
+    return request(`/api/monitor/tasks/${taskUuid}/result`)
+  },
+
+  getMonitorTask(taskId) {
+    return request(`/api/monitor/tasks/${taskId}`)
+  },
+
+  listMonitorTasks(logicDiagramId) {
+    return request(`/api/monitor/tasks?logicDiagramId=${logicDiagramId}`)
+  },
+
+  getQueueStatus() {
+    return request('/api/monitor/queue/status')
+  },
+
   listUsers(role) {
     if (!role) {
       return Promise.reject(new Error('缺少用户角色参数'))

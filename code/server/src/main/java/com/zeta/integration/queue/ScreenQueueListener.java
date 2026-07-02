@@ -61,7 +61,8 @@ public class ScreenQueueListener {
 
     private void handleMessage(ScreenQueueMessage message) {
         String command = message.getCommand();
-        log.info("Received monitord message: command={} req_id={}", command, message.getReqId());
+        log.info("<<< MQ INBOUND: command={} req_id={} success={} data={}",
+                command, message.getReqId(), message.getSuccess(), message.getData());
 
         if (command != null && (
                 command.equals("summon_pressboard_status") ||

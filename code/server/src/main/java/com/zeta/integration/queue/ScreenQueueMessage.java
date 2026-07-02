@@ -1,6 +1,7 @@
 package com.zeta.integration.queue;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Map;
  * 响应格式：{ command, req_id, success, data, error?, error_message? }
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ScreenQueueMessage {
 
     private String command;

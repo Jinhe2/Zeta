@@ -18,6 +18,7 @@ import TeacherPage from './pages/TeacherPage'
 import AdminLayout from './components/AdminLayout'
 import UsersPage from './pages/admin/business/UsersPage'
 import AdminPlaceholderPage from './pages/admin/business/AdminPlaceholderPage'
+import QueueDebugPanel from './components/QueueDebugPanel'
 import DisplayCabinetListPage from './pages/admin/business/display/DisplayCabinetListPage'
 import CabinetDisplayItemsPage from './pages/admin/business/display/CabinetDisplayItemsPage'
 import CognitionDevicesPage from './pages/admin/business/display/CognitionDevicesPage'
@@ -183,6 +184,7 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <QueueDebugPanel />
       </AuthProvider>
     </Router>
   )

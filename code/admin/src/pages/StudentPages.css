@@ -204,6 +204,19 @@
   margin-left: auto;
 }
 
+.diagram-canvas__trigger-btn--stop {
+  background: linear-gradient(135deg, #ef5350, #c62828);
+}
+
+.diagram-canvas__trigger-btn--stop:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.diagram-page__history-source--monitor {
+  background: rgba(255, 213, 79, 0.2);
+  color: #ffd54f;
+}
+
 /* ── Sidebar: config + history ── */
 
 .diagram-page__sidebar {

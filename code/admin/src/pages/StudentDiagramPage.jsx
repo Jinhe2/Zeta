@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ZetaGraphView } from '@zeta/diagram'
 import { api } from '../api/client'
@@ -10,6 +10,55 @@ import { useAuth } from '../auth/AuthContext'
 import './student/TabletShell.css'
 import './StudentPages.css'
 
+const HEARTBEAT_INTERVAL = 5000
+const POLL_INTERVAL = 3000
+
+/** 将 v2.3 snapshot JSON 解析为 sections 数组 */
+function parseSnapshotSections(snapshotJson) {
+  let data
+  if (typeof snapshotJson === 'string') {
+    try { data = JSON.parse(snapshotJson) } catch { return [] }
+  } else {
+    data = snapshotJson
+  }
+
+  const nodes = data.nodes ?? []
+  const timestamps = data.timestamps ?? []
+  const channels = data.channels ?? []
+
+  if (!timestamps.length || !nodes.length) return []
+
+  const baseTime = parseTimestampMs(timestamps[0])
+
+  return timestamps.map((ts, k) => {
+    const states = {}
+    for (let i = 0; i < nodes.length && i < channels.length; i++) {
+      const nodeId = nodes[i].id
+      const values = channels[i]?.values
+      states[nodeId] = values && k < values.length ? values[k] !== 0 : false
+    }
+    const elapsedSec = (parseTimestampMs(ts) - baseTime) / 1000
+    return {
+      id: `section-${k}`,
+      label: `T = ${elapsedSec.toFixed(3)} s`,
+      time: elapsedSec,
+      timestamp: ts,
+      states,
+    }
+  })
+}
+
+function parseTimestampMs(ts) {
+  const spaceIdx = ts.indexOf(' ')
+  const timePart = spaceIdx >= 0 ? ts.substring(spaceIdx + 1) : ts
+  const parts = timePart.split(/[:.]/)
+  const h = parseInt(parts[0]) || 0
+  const m = parseInt(parts[1]) || 0
+  const s = parseInt(parts[2]) || 0
+  const ms = parseInt(parts[3]) || 0
+  return ((h * 60 + m) * 60 + s) * 1000 + ms
+}
+
 export default function StudentDiagramPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -20,10 +69,16 @@ export default function StudentDiagramPage() {
   const [sections, setSections] = useState([])
   const [selectedSectionId, setSelectedSectionId] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [triggering, setTriggering] = useState(false)
   const [error, setError] = useState(null)
   const [jsonViewer, setJsonViewer] = useState({ open: false, title: '', json: '' })
   const [importOpen, setImportOpen] = useState(false)
+
+  // 实验监视状态
+  const [monitoring, setMonitoring] = useState(false)
+  const [monitorStatus, setMonitorStatus] = useState('') // '' | 'starting' | 'watching' | 'completed' | 'failed'
+  const taskUuidRef = useRef(null)
+  const heartbeatRef = useRef(null)
+  const pollRef = useRef(null)
 
   // Load detail + existing snapshots
   useEffect(() => {
@@ -47,6 +102,17 @@ export default function StudentDiagramPage() {
     return () => { cancelled = true }
   }, [id])
 
+  // 清理：组件卸载时停止心跳和轮询
+  useEffect(() => {
+    return () => {
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current)
+      if (pollRef.current) clearInterval(pollRef.current)
+      if (taskUuidRef.current) {
+        api.endLogicMonitor(taskUuidRef.current).catch(() => {})
+      }
+    }
+  }, [])
+
   // Load sections when switching snapshots
   const loadSnapshotSections = useCallback((snapshotId) => {
     setSelectedSnapshotId(snapshotId)
@@ -63,8 +129,8 @@ export default function StudentDiagramPage() {
   // View raw JSON
   const handleViewJson = useCallback((snapshotId, label) => {
     api.getSnapshotDetail(snapshotId)
-      .then((detail) => {
-        setJsonViewer({ open: true, title: label || `断面 #${snapshotId}`, json: detail.snapshotJson })
+      .then((detailData) => {
+        setJsonViewer({ open: true, title: label || `断面 #${snapshotId}`, json: detailData.snapshotJson })
       })
       .catch((err) => setError(err.message))
   }, [])
@@ -91,32 +157,133 @@ export default function StudentDiagramPage() {
     })
   }, [id, detail])
 
-  // Trigger new experiment
-  const handleTrigger = useCallback(() => {
-    setTriggering(true)
-    setError(null)
-    api.triggerExperiment(id)
-      .then((result) => {
-        // Add to snapshot list and load its sections
+  // 加载 monitor task 结果并渲染断面
+  const loadMonitorTaskResult = useCallback(async (snapshotPath) => {
+    try {
+      const task = await api.getMonitorTask(snapshotPath)
+      if (task.snapshotJson) {
+        const secs = parseSnapshotSections(task.snapshotJson)
+        setSections(secs)
+        setSelectedSectionId(secs[0]?.id ?? null)
+
+        // 添加到快照列表
         const newSnap = {
-          id: result.id,
-          status: result.status,
-          totalTransitions: result.totalTransitions,
-          createdAt: new Date().toISOString(),
+          id: task.id,
+          status: task.state === 'COMPLETED' ? 'COMPLETED' : task.state,
+          source: 'MONITOR',
+          totalTransitions: task.totalTransitions ?? 0,
+          createdAt: task.createdAt,
           logicId: Number(id),
           logicCode: detail?.code,
           logicName: detail?.title,
         }
         setSnapshots((prev) => [newSnap, ...prev])
-        setSelectedSnapshotId(result.id)
-        return api.getSnapshotSections(result.id).then((secs) => {
-          setSections(secs)
-          setSelectedSectionId(secs[0]?.id ?? null)
-        })
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setTriggering(false))
+        setSelectedSnapshotId(task.id)
+      }
+    } catch (err) {
+      setError('加载实验结果失败: ' + err.message)
+    }
   }, [id, detail])
+
+  // 轮询任务结果
+  const startResultPolling = useCallback((taskUuid) => {
+    if (pollRef.current) clearInterval(pollRef.current)
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const result = await api.getMonitorTaskResult(taskUuid)
+        // 有结果了
+        clearInterval(pollRef.current)
+        pollRef.current = null
+        if (heartbeatRef.current) {
+          clearInterval(heartbeatRef.current)
+          heartbeatRef.current = null
+        }
+
+        const resultType = result.result_type
+        const snapshotPath = result.snapshot_path
+
+        if (result.result === 'success' && snapshotPath) {
+          setMonitorStatus('completed')
+          setMonitoring(false)
+          await loadMonitorTaskResult(snapshotPath)
+        } else if (result.result === 'failed') {
+          setMonitorStatus('failed')
+          setMonitoring(false)
+          setError('实验失败: ' + (result.error_message || '未知错误'))
+        } else {
+          setMonitorStatus('completed')
+          setMonitoring(false)
+        }
+      } catch {
+        // 404 = 结果尚未返回，继续轮询
+      }
+    }, POLL_INTERVAL)
+  }, [loadMonitorTaskResult])
+
+  // 开始实验
+  const handleStartExperiment = useCallback(async () => {
+    if (!detail?.iedName || !detail?.code) {
+      setError('缺少装置信息（iedName / logicId）')
+      return
+    }
+
+    setMonitoring(true)
+    setMonitorStatus('starting')
+    setError(null)
+
+    try {
+      const response = await api.startLogicMonitor(detail.iedName, detail.code)
+      // req_id 就是 taskUuid
+      const taskUuid = response.req_id || response.reqId
+      if (!taskUuid) {
+        throw new Error('未返回 taskUuid')
+      }
+
+      taskUuidRef.current = taskUuid
+      setMonitorStatus('watching')
+
+      // 启动心跳（5s）
+      heartbeatRef.current = setInterval(() => {
+        api.sendLogicMonitorHeartbeat(taskUuid).catch(() => {})
+      }, HEARTBEAT_INTERVAL)
+
+      // 启动结果轮询（3s）
+      startResultPolling(taskUuid)
+    } catch (err) {
+      setMonitoring(false)
+      setMonitorStatus('')
+      setError('启动实验失败: ' + err.message)
+    }
+  }, [detail, startResultPolling])
+
+  // 停止实验
+  const handleStopExperiment = useCallback(async () => {
+    const taskUuid = taskUuidRef.current
+    if (!taskUuid) return
+
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current)
+      heartbeatRef.current = null
+    }
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+
+    try {
+      await api.endLogicMonitor(taskUuid)
+      setMonitorStatus('stopping')
+      // 继续轮询等待最终结果
+      startResultPolling(taskUuid)
+    } catch (err) {
+      setError('停止实验失败: ' + err.message)
+      setMonitoring(false)
+      setMonitorStatus('')
+    }
+
+    taskUuidRef.current = null
+  }, [startResultPolling])
 
   // Reload data
   const handleReload = useCallback(() => {
@@ -150,6 +317,14 @@ export default function StudentDiagramPage() {
     if (!ts) return ''
     const d = new Date(ts)
     return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
+
+  const statusLabel = {
+    starting: '正在启动…',
+    watching: '实验监视中',
+    stopping: '正在停止…',
+    completed: '实验完成',
+    failed: '实验失败',
   }
 
   return (
@@ -190,16 +365,26 @@ export default function StudentDiagramPage() {
               <>
                 <div className="diagram-canvas__header">
                   <span>逻辑框图</span>
-                  {nodeStates ? (
+                  {monitoring ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: '#ffd54f', fontSize: 12 }}>● {statusLabel[monitorStatus] || '监视中'}</span>
+                      <button
+                        type="button"
+                        className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline diagram-canvas__trigger-btn--stop"
+                        onClick={handleStopExperiment}
+                      >
+                        ■ 停止实验
+                      </button>
+                    </div>
+                  ) : nodeStates ? (
                     <span>当前断面：满足 {satisfiedCount} / {totalCount}</span>
                   ) : (
                     <button
                       type="button"
                       className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline"
-                      disabled={triggering}
-                      onClick={handleTrigger}
+                      onClick={handleStartExperiment}
                     >
-                      {triggering ? '实验进行中…' : '▶ 开始实验'}
+                      ▶ 开始实验
                     </button>
                   )}
                 </div>
@@ -243,10 +428,10 @@ export default function StudentDiagramPage() {
                 <button
                   type="button"
                   className="diagram-page__history-trigger"
-                  disabled={triggering}
-                  onClick={handleTrigger}
+                  disabled={monitoring}
+                  onClick={handleStartExperiment}
                 >
-                  {triggering ? '…' : '+ 新实验'}
+                  {monitoring ? '…' : '+ 新实验'}
                 </button>
               </div>
             </div>
@@ -276,6 +461,11 @@ export default function StudentDiagramPage() {
                     {snap.source === 'MANUAL' && (
                       <span className="diagram-page__history-source diagram-page__history-source--manual" title="手动导入">
                         M
+                      </span>
+                    )}
+                    {snap.source === 'MONITOR' && (
+                      <span className="diagram-page__history-source diagram-page__history-source--monitor" title="实验监视">
+                        E
                       </span>
                     )}
                     <span className={`diagram-page__history-status diagram-page__history-status--${snap.status?.toLowerCase()}`}>

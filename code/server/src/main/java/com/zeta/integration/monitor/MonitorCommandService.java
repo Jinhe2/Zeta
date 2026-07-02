@@ -29,6 +29,20 @@ public class MonitorCommandService {
     /** 最近一次响应缓存（command:cabinetId → response data） */
     private final ConcurrentHashMap<String, Map<String, Object>> latestResponses = new ConcurrentHashMap<>();
 
+    /** 实验监视完成响应缓存（taskUuid → response data） */
+    private final ConcurrentHashMap<String, Map<String, Object>> monitorTaskResults = new ConcurrentHashMap<>();
+
+    /** 统计数据 */
+    private final java.util.concurrent.atomic.AtomicLong totalSent = new java.util.concurrent.atomic.AtomicLong(0);
+    private final java.util.concurrent.atomic.AtomicLong totalReceived = new java.util.concurrent.atomic.AtomicLong(0);
+    private volatile long lastSentAt = 0;
+    private volatile long lastReceivedAt = 0;
+    private final ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicLong> sentByCommand = new ConcurrentHashMap<>();
+
+    /** 最近消息日志（环形缓冲，保留最近 20 条） */
+    private final java.util.concurrent.ConcurrentLinkedDeque<Map<String, Object>> recentMessages = new java.util.concurrent.ConcurrentLinkedDeque<>();
+    private static final int MAX_RECENT = 20;
+
     public MonitorCommandService(Optional<ScreenQueuePublisher> publisher) {
         this.publisher = publisher.orElse(null);
     }
@@ -59,6 +73,60 @@ public class MonitorCommandService {
         return sendCommand("summon_terminal_status", data, "terminal:" + cabinetId);
     }
 
+    // ── 实验监视 summon_logic_monitor ──────────────────────────────────────
+
+    /**
+     * 启动实验监视任务。返回 accepted 响应（含 req_id 作为 taskUuid）。
+     */
+    public CompletableFuture<ScreenQueueMessage> startLogicMonitor(String iedName, String logicId) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("action", "start");
+        data.put("ied_name", iedName);
+        data.put("logic_id", logicId);
+
+        return sendCommand("summon_logic_monitor", data, null);
+    }
+
+    /**
+     * 发送心跳（fire-and-forget，不等待响应）。
+     */
+    public void sendLogicMonitorHeartbeat(String taskUuid) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("action", "heartbeat");
+        data.put("task_uuid", taskUuid);
+
+        fireAndForget("summon_logic_monitor", data);
+    }
+
+    /**
+     * 正常结束监视任务。
+     */
+    public void endLogicMonitor(String taskUuid) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("action", "end");
+        data.put("task_uuid", taskUuid);
+
+        fireAndForget("summon_logic_monitor", data);
+    }
+
+    /**
+     * 立即中止监视任务。
+     */
+    public void abortLogicMonitor(String taskUuid) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("action", "abort");
+        data.put("task_uuid", taskUuid);
+
+        fireAndForget("summon_logic_monitor", data);
+    }
+
+    /**
+     * 获取实验监视任务的完成结果。
+     */
+    public Map<String, Object> getMonitorTaskResult(String taskUuid) {
+        return monitorTaskResults.get(taskUuid);
+    }
+
     /**
      * 处理 monitord 返回的响应消息。
      */
@@ -67,8 +135,21 @@ public class MonitorCommandService {
         String command = message.getCommand();
         log.info("Received monitord response: command={} req_id={} success={}", command, reqId, message.getSuccess());
 
-        // 缓存最新响应
         Map<String, Object> data = message.getData();
+        totalReceived.incrementAndGet();
+        lastReceivedAt = System.currentTimeMillis();
+        addRecentMessage("IN", command, reqId, data);
+
+        // 实验监视完成响应：按 req_id（taskUuid）缓存
+        if ("summon_logic_monitor".equals(command) && data != null) {
+            String result = String.valueOf(data.getOrDefault("result", ""));
+            if ("success".equals(result) || "failed".equals(result)) {
+                monitorTaskResults.put(reqId, data);
+                log.info("Cached monitor task result for req_id={} result={}", reqId, result);
+            }
+        }
+
+        // 压板/端子 completed 响应缓存
         if (data != null) {
             String phase = String.valueOf(data.getOrDefault("phase", ""));
             if ("completed".equals(phase)) {
@@ -104,6 +185,70 @@ public class MonitorCommandService {
         return publisher != null;
     }
 
+    /**
+     * 当前等待响应的请求数。
+     */
+    public int getPendingRequestCount() {
+        return pendingRequests.size();
+    }
+
+    /**
+     * 获取统计信息和最近消息日志。
+     */
+    public Map<String, Object> getStats() {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        stats.put("totalSent", totalSent.get());
+        stats.put("totalReceived", totalReceived.get());
+        stats.put("lastSentAt", lastSentAt);
+        stats.put("lastReceivedAt", lastReceivedAt);
+        stats.put("pendingRequests", pendingRequests.size());
+
+        Map<String, Long> byCommand = new LinkedHashMap<>();
+        for (Map.Entry<String, java.util.concurrent.atomic.AtomicLong> e : sentByCommand.entrySet()) {
+            byCommand.put(e.getKey(), e.getValue().get());
+        }
+        stats.put("sentByCommand", byCommand);
+
+        List<Map<String, Object>> messages = new ArrayList<>();
+        for (Map<String, Object> msg : recentMessages) {
+            messages.add(msg);
+        }
+        stats.put("recentMessages", messages);
+
+        return stats;
+    }
+
+    private void addRecentMessage(String direction, String command, String reqId, Map<String, Object> data) {
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("time", System.currentTimeMillis());
+        entry.put("direction", direction);
+        entry.put("command", command);
+        entry.put("reqId", reqId);
+        entry.put("data", data);
+        recentMessages.addFirst(entry);
+        while (recentMessages.size() > MAX_RECENT) {
+            recentMessages.removeLast();
+        }
+    }
+
+    /**
+     * 发送命令但不等待响应（用于 heartbeat/end/abort）。
+     */
+    private void fireAndForget(String command, Map<String, Object> data) {
+        if (publisher == null) {
+            log.warn("Redis 队列未启用，无法发送 {} 命令", command);
+            return;
+        }
+        String reqId = UUID.randomUUID().toString();
+        ScreenQueueMessage message = new ScreenQueueMessage(command, reqId, data);
+        publisher.publish(message);
+        totalSent.incrementAndGet();
+        lastSentAt = System.currentTimeMillis();
+        sentByCommand.computeIfAbsent(command, k -> new java.util.concurrent.atomic.AtomicLong(0)).incrementAndGet();
+        addRecentMessage("OUT", command, reqId, data);
+        log.info("Sent monitord fire-and-forget: {} req_id={} data={}", command, reqId, data);
+    }
+
     private CompletableFuture<ScreenQueueMessage> sendCommand(String command, Map<String, Object> data, String cachePrefix) {
         if (publisher == null) {
             CompletableFuture<ScreenQueueMessage> future = new CompletableFuture<>();
@@ -126,6 +271,10 @@ public class MonitorCommandService {
         }, DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         publisher.publish(message);
+        totalSent.incrementAndGet();
+        lastSentAt = System.currentTimeMillis();
+        sentByCommand.computeIfAbsent(command, k -> new java.util.concurrent.atomic.AtomicLong(0)).incrementAndGet();
+        addRecentMessage("OUT", command, reqId, data);
         log.info("Sent monitord command: {} req_id={} data={}", command, reqId, data);
 
         return future;

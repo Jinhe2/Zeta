@@ -35,6 +35,8 @@ public class ScreenQueuePublisher {
             String payload = objectMapper.writeValueAsString(message);
             redisTemplate.opsForList().leftPush(properties.getOutboundKey(), payload);
             log.debug("Published screen queue message command={}", message.getCommand());
+            log.info(">>> MQ OUTBOUND: command={} req_id={} data={}",
+                    message.getCommand(), message.getReqId(), message.getData());
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("无法序列化队列消息", e);
         }

@@ -14,4 +14,6 @@ public class ProtectionLogicDetailResponse {
     private String description;
     private String category;
     private ConfigDto config;
+    private Long deviceId;
+    private String iedName;
 }

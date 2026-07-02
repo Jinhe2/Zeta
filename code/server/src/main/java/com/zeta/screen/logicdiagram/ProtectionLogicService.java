@@ -2,6 +2,7 @@ package com.zeta.screen.logicdiagram;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zeta.screen.ieddevice.Device;
 import com.zeta.screen.logicdiagram.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -186,13 +187,16 @@ public class ProtectionLogicService {
     }
 
     private ProtectionLogicDetailResponse toDetail(ProtectionLogic logic) {
+        Device device = logic.getDevice();
         return new ProtectionLogicDetailResponse(
                 logic.getId(),
                 logic.getCode(),
                 logic.getTitle(),
                 logic.getDescription(),
                 logic.getCategory(),
-                parseConfig(logic.getConfigJson()));
+                parseConfig(logic.getConfigJson()),
+                device != null ? device.getId() : null,
+                device != null ? device.getIedName() : null);
     }
 
     private static <T> int sizeOf(List<T> list) {

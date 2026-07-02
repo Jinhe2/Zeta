@@ -64,17 +64,30 @@ export default function PanoramaListPage() {
         {error && <p className="panorama-list__status panorama-list__status--error">{error}</p>}
         {!loading && !error && (
           <div className="panorama-list__grid">
-            {list.map((item) => (
-              <Link
-                key={item.id}
-                to={`/student/modes/panorama/${item.id}`}
-                className="panorama-list__card"
-              >
-                <span className="panorama-list__category">{item.category}</span>
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-              </Link>
-            ))}
+            {list.length === 0 ? (
+              <p className="panorama-list__empty">暂无保护逻辑配置</p>
+            ) : (
+              list.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/student/modes/panorama/${item.id}`}
+                  className="panorama-list__card"
+                >
+                  <div className="panorama-list__card-header">
+                    <h3>{item.title}</h3>
+                    {item.category && (
+                      <span className="panorama-list__category">{item.category}</span>
+                    )}
+                  </div>
+                  <p>{item.description || '暂无描述'}</p>
+                  <div className="panorama-list__meta">
+                    <span className="panorama-list__meta-item">输入 <span>{item.inputCount}</span></span>
+                    <span className="panorama-list__meta-item">逻辑门 <span>{item.gateCount}</span></span>
+                    <span className="panorama-list__meta-item">输出 <span>{item.outputCount}</span></span>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         )}
       </main>

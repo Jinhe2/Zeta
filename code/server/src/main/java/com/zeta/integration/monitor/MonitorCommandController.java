@@ -157,7 +157,7 @@ public class MonitorCommandController {
         return result;
     }
 
-    /** 队列状态监控 */
+    /** 队列状态监控（Redis Pub/Sub 模式） */
     @GetMapping("/queue/status")
     public Map<String, Object> getQueueStatus(
             @RequestHeader(value = "Authorization", required = false) String authorization) {
@@ -165,15 +165,13 @@ public class MonitorCommandController {
 
         Map<String, Object> status = new LinkedHashMap<>();
         status.put("enabled", commandService.isQueueEnabled());
-        status.put("outboundKey", queueProperties.getOutboundKey());
-        status.put("inboundKey", queueProperties.getInboundKey());
+        status.put("mode", "pubsub");
+        status.put("publishChannel", queueProperties.getOutboundKey());
+        status.put("subscribeChannel", queueProperties.getInboundKey());
 
         if (commandService.isQueueEnabled()) {
             try {
-                Long outboundLen = redisTemplate.opsForList().size(queueProperties.getOutboundKey());
-                Long inboundLen = redisTemplate.opsForList().size(queueProperties.getInboundKey());
-                status.put("outboundPending", outboundLen);
-                status.put("inboundPending", inboundLen);
+                redisTemplate.getConnectionFactory().getConnection().ping();
                 status.put("redisConnected", true);
             } catch (Exception e) {
                 status.put("redisConnected", false);

@@ -88,18 +88,6 @@ export default function QueueDebugPanel() {
           <div className="qdp__metric-label">已接收</div>
         </div>
         <div className="qdp__metric">
-          <div className={`qdp__metric-value ${(status?.outboundPending ?? 0) > 0 ? 'qdp__metric-value--warn' : ''}`}>
-            {status?.outboundPending ?? '—'}
-          </div>
-          <div className="qdp__metric-label">发送队列</div>
-        </div>
-        <div className="qdp__metric">
-          <div className={`qdp__metric-value ${(status?.inboundPending ?? 0) > 0 ? 'qdp__metric-value--warn' : ''}`}>
-            {status?.inboundPending ?? '—'}
-          </div>
-          <div className="qdp__metric-label">接收队列</div>
-        </div>
-        <div className="qdp__metric">
           <div className={`qdp__metric-value ${(status?.pendingRequests ?? 0) > 0 ? 'qdp__metric-value--active' : ''}`}>
             {status?.pendingRequests ?? 0}
           </div>
@@ -136,8 +124,9 @@ export default function QueueDebugPanel() {
               ))
             )}
             <div className="qdp__keys">
-              <div>OUT: <code>{status?.outboundKey ?? '—'}</code></div>
-              <div>IN: <code>{status?.inboundKey ?? '—'}</code></div>
+              <div>PUBLISH: <code>{status?.publishChannel ?? '—'}</code></div>
+              <div>SUBSCRIBE: <code>{status?.subscribeChannel ?? '—'}</code></div>
+              <div>模式: <code>{status?.mode ?? '—'}</code></div>
             </div>
           </div>
         )}

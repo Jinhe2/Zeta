@@ -115,7 +115,7 @@
 /* ── Metrics ── */
 .qdp__metrics {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0;
   padding: 10px 10px 6px;
   flex-shrink: 0;

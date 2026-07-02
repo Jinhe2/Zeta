@@ -9,7 +9,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * 向屏柜系统 Redis 队列发送消息。
+ * 通过 Redis Pub/Sub 向 monitord 发送命令。
+ * monitord 使用 SUBSCRIBE 监听 channel，因此必须使用 PUBLISH 发送。
  */
 @Component
 @ConditionalOnProperty(name = "zeta.screen-queue.enabled", havingValue = "true")
@@ -33,10 +34,10 @@ public class ScreenQueuePublisher {
     public void publish(ScreenQueueMessage message) {
         try {
             String payload = objectMapper.writeValueAsString(message);
-            redisTemplate.opsForList().leftPush(properties.getOutboundKey(), payload);
-            log.debug("Published screen queue message command={}", message.getCommand());
-            log.info(">>> MQ OUTBOUND: command={} req_id={} data={}",
-                    message.getCommand(), message.getReqId(), message.getData());
+            // Redis Pub/Sub: PUBLISH channel message
+            redisTemplate.convertAndSend(properties.getOutboundKey(), payload);
+            log.info(">>> MQ OUTBOUND [PUBLISH {}]: command={} req_id={} data={}",
+                    properties.getOutboundKey(), message.getCommand(), message.getReqId(), message.getData());
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("无法序列化队列消息", e);
         }

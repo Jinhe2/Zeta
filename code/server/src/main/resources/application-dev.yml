@@ -31,8 +31,8 @@ zeta:
       show-sql: false
 
   screen-queue:
-    enabled: false
-    inbound-key: ct:screen:business:inbound
-    outbound-key: ct:business:screen:outbound
+    enabled: true
+    inbound-key: monitor_command_response
+    outbound-key: monitor_command_request
     poll-timeout-seconds: 5
     poll-interval-ms: 2000

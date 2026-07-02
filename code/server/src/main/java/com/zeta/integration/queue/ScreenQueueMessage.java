@@ -1,46 +1,87 @@
 package com.zeta.integration.queue;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Map;
 
 /**
- * 屏柜系统 ↔ 业务系统 Redis 队列消息体（JSON）。
+ * monitord 命令消息体（JSON）。
+ *
+ * 请求格式：{ command, req_id, data }
+ * 响应格式：{ command, req_id, success, data, error?, error_message? }
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ScreenQueueMessage {
 
-    private String type;
-    private Map<String, Object> payload;
-    private Long timestamp;
+    private String command;
+
+    @JsonProperty("req_id")
+    private String reqId;
+
+    private Map<String, Object> data;
+
+    private Boolean success;
+
+    private String error;
+
+    @JsonProperty("error_message")
+    private String errorMessage;
 
     public ScreenQueueMessage() {
     }
 
-    public ScreenQueueMessage(String type, Map<String, Object> payload) {
-        this.type = type;
-        this.payload = payload;
-        this.timestamp = System.currentTimeMillis();
+    public ScreenQueueMessage(String command, String reqId, Map<String, Object> data) {
+        this.command = command;
+        this.reqId = reqId;
+        this.data = data;
     }
 
-    public String getType() {
-        return type;
+    public String getCommand() {
+        return command;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setCommand(String command) {
+        this.command = command;
     }
 
-    public Map<String, Object> getPayload() {
-        return payload;
+    public String getReqId() {
+        return reqId;
     }
 
-    public void setPayload(Map<String, Object> payload) {
-        this.payload = payload;
+    public void setReqId(String reqId) {
+        this.reqId = reqId;
     }
 
-    public Long getTimestamp() {
-        return timestamp;
+    public Map<String, Object> getData() {
+        return data;
     }
 
-    public void setTimestamp(Long timestamp) {
-        this.timestamp = timestamp;
+    public void setData(Map<String, Object> data) {
+        this.data = data;
+    }
+
+    public Boolean getSuccess() {
+        return success;
+    }
+
+    public void setSuccess(Boolean success) {
+        this.success = success;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 }

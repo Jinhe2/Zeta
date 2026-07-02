@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<svg width="202" height="162" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+ <!-- Created with SVG-edit - https://github.com/SVG-Edit/svgedit-->
+ <g class="layer" transform="translate(-37.35 -150.5)">
+  <title>Layer 1</title>
+  <rect fill="#ffff00" height="32" id="svg_1" rx="6" ry="6" stroke="#000000" transform="matrix(1 0 0 0.772424 52 43.2327)" width="54" x="132.5" y="149.41"/>
+  <ellipse cx="184.5" cy="278" fill="#000000" id="svg_3" rx="9" ry="9" stroke="#000000" transform="matrix(1 0 0 1 40 -107)"/>
+  <path d="m185.5,171c-20,0.7 -40.4,6.1 -58.55,22.49c-21.9,11.6 -36.6,29.6 -49.2,51.2c-10.1,17.3 -18.8,39.8 -33.9,61.4" fill="none" id="svg_14" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="11"/>
+  <path d="m185.5,171c-20,0.7 -40.4,6.1 -58.55,22.49c-21.9,11.6 -36.6,29.6 -49.2,51.2c-10.1,17.3 -18.8,39.8 -33.9,61.4" fill="none" id="svg_17" stroke="#ffff00" stroke-linecap="round" stroke-linejoin="round" stroke-width="9"/>
+  <ellipse cx="76.5" cy="70" fill="#ffff00" id="svg_2" rx="19" ry="19" stroke="#000000" transform="matrix(1 0 0 1 109 101)"/>
+ </g>
+</svg>

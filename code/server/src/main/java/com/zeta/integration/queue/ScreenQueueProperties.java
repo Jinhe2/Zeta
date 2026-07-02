@@ -8,11 +8,11 @@ public class ScreenQueueProperties {
     /** 是否启用与屏柜系统的 Redis 队列交互 */
     private boolean enabled = false;
 
-    /** 业务系统消费：屏柜系统 → 业务系统 */
-    private String inboundKey = "ct:screen:business:inbound";
+    /** 业务系统消费：monitord → 业务系统 */
+    private String inboundKey = "monitor_command_response";
 
-    /** 业务系统发送：业务系统 → 屏柜系统 */
-    private String outboundKey = "ct:business:screen:outbound";
+    /** 业务系统发送：业务系统 → monitord */
+    private String outboundKey = "monitor_command_request";
 
     /** BRPOP 阻塞超时（秒） */
     private long pollTimeoutSeconds = 5;

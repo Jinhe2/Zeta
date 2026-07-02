@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
 import { normalizeRegion } from '../../../utils/imageRegionUtils'
@@ -14,6 +14,24 @@ function findCabinetId(tree, cabinetCode) {
   return tree?.cabinets?.[0]?.id ?? null
 }
 
+function wiringStatusColor(status) {
+  switch (status) {
+    case 'CORRECT': return '#66bb6a'
+    case 'INCORRECT': return '#ef5350'
+    case 'ABNORMAL': return '#ffa726'
+    default: return '#78909c'
+  }
+}
+
+function wiringStatusLabel(status) {
+  switch (status) {
+    case 'CORRECT': return '正确'
+    case 'INCORRECT': return '错误'
+    case 'ABNORMAL': return '异常'
+    default: return '未知'
+  }
+}
+
 export default function TerminalCognitionContent() {
   const [cabinetItems, setCabinetItems] = useState([])
   const [cognitionDevices, setCognitionDevices] = useState([])
@@ -24,6 +42,15 @@ export default function TerminalCognitionContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // 端子数据
+  const [terminalStrips, setTerminalStrips] = useState([])
+  const [terminals, setTerminals] = useState([])
+  const [terminalStates, setTerminalStates] = useState({})
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [statusError, setStatusError] = useState(null)
+  const [cabinetId, setCabinetId] = useState(null)
+
+  // 加载屏柜条目
   useEffect(() => {
     let cancelled = false
     async function load() {
@@ -31,9 +58,10 @@ export default function TerminalCognitionContent() {
       setError(null)
       try {
         const tree = await api.getKnowledgeTree()
-        const cabinetId = findCabinetId(tree, DEFAULT_CABINET_CODE)
-        if (!cabinetId) throw new Error('未找到屏柜学习数据')
-        const items = await api.listKnowledgeCabinetDisplayItems(cabinetId)
+        const cid = findCabinetId(tree, DEFAULT_CABINET_CODE)
+        if (!cid) throw new Error('未找到屏柜学习数据')
+        if (!cancelled) setCabinetId(cid)
+        const items = await api.listKnowledgeCabinetDisplayItems(cid)
         if (!cancelled) {
           setCabinetItems(items)
           setSelectedCabinetItemId(items[0]?.id ?? null)
@@ -48,6 +76,49 @@ export default function TerminalCognitionContent() {
     return () => { cancelled = true }
   }, [])
 
+  // 加载端子排和端子
+  useEffect(() => {
+    if (!cabinetId) return
+    let cancelled = false
+    Promise.all([
+      api.listTerminalStrips(cabinetId),
+      api.listTerminals(cabinetId),
+    ])
+      .then(([strips, terms]) => {
+        if (!cancelled) {
+          setTerminalStrips(strips)
+          setTerminals(terms)
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError('端子数据加载失败: ' + err.message)
+      })
+    return () => { cancelled = true }
+  }, [cabinetId])
+
+  // 读取端子状态
+  const fetchTerminalStatus = useCallback(async () => {
+    if (!cabinetId) return
+    setStatusLoading(true)
+    setStatusError(null)
+    try {
+      const data = await api.triggerTerminalStatus(cabinetId)
+      if (data?.terminals) {
+        const states = {}
+        for (const t of data.terminals) {
+          states[t.terminal_id] = t
+        }
+        setTerminalStates(states)
+      }
+    } catch (err) {
+      setStatusError(err.message)
+      console.warn('端子状态读取失败:', err.message)
+    } finally {
+      setStatusLoading(false)
+    }
+  }, [cabinetId])
+
+  // 加载端子组设备
   useEffect(() => {
     if (!selectedCabinetItemId) {
       setCognitionDevices([])
@@ -71,6 +142,7 @@ export default function TerminalCognitionContent() {
     return () => { cancelled = true }
   }, [selectedCabinetItemId])
 
+  // 加载认知条目
   useEffect(() => {
     if (!selectedDeviceId) {
       setDisplayItems([])
@@ -113,6 +185,7 @@ export default function TerminalCognitionContent() {
 
   return (
     <div className="cabinet-section cabinet-section--device">
+      {/* 左侧：屏柜图 + 区域高亮 */}
       <div className="cabinet-section__media cabinet-section__media--cabinet">
         {loading && <p className="cabinet-section__paragraph">加载中…</p>}
         {error && <p className="cabinet-section__paragraph cabinet-section__paragraph--error">{error}</p>}
@@ -146,7 +219,75 @@ export default function TerminalCognitionContent() {
         )}
       </div>
 
+      {/* 右侧：端子状态 + 认知条目 */}
       <div className="cabinet-section__media cabinet-section__media--device">
+        {/* 端子状态区域 */}
+        {terminals.length > 0 && (
+          <div className="terminal-status">
+            <div className="terminal-status__header">
+              <span>端子状态</span>
+              <button
+                type="button"
+                className="terminal-status__btn"
+                disabled={statusLoading}
+                onClick={fetchTerminalStatus}
+              >
+                {statusLoading ? '读取中…' : '读取端子状态'}
+              </button>
+            </div>
+            {statusError && (
+              <p className="terminal-status__error">读取失败: {statusError}</p>
+            )}
+            {/* 按端子排分组 */}
+            {terminalStrips.map((strip) => {
+              const stripTerminals = terminals.filter((t) => t.terminalStripId === strip.id)
+              if (stripTerminals.length === 0) return null
+              return (
+                <div key={strip.id} className="terminal-status__group">
+                  <div className="terminal-status__group-label">
+                    {strip.name}
+                    {strip.functionDesc && <span className="terminal-status__group-desc">{strip.functionDesc}</span>}
+                  </div>
+                  <div className="terminal-status__list">
+                    {stripTerminals.map((t) => {
+                      const state = terminalStates[t.id]
+                      return (
+                        <div key={t.id} className="terminal-status__item">
+                          <span className="terminal-status__label">{t.terminalLabel}</span>
+                          <span className={`terminal-status__type terminal-status__type--${(t.signalType || '').toLowerCase()}`}>
+                            {t.signalType}
+                          </span>
+                          {state && (
+                            <>
+                              <span
+                                className="terminal-status__wiring"
+                                style={{ color: wiringStatusColor(state.wiring_status) }}
+                              >
+                                {wiringStatusLabel(state.wiring_status)}
+                              </span>
+                              {state.realtime && (
+                                <span className="terminal-status__realtime">
+                                  {state.realtime.type === 'DIGITAL'
+                                    ? state.realtime.state
+                                    : `${state.realtime.magnitude ?? '-'}∠${state.realtime.angle ?? '-'}°`}
+                                </span>
+                              )}
+                              {state.wiring_message && (
+                                <span className="terminal-status__message">{state.wiring_message}</span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* 认知条目 */}
         {!loading && !error && cognitionDevices.length > 1 && (
           <div className="cabinet-section__item-tabs cabinet-section__item-tabs--compact" role="tablist">
             {cognitionDevices.map((device) => (
@@ -188,11 +329,12 @@ export default function TerminalCognitionContent() {
             )}
           </>
         )}
-        {!loading && !error && !currentDisplayItem && (
+        {!loading && !error && !currentDisplayItem && terminals.length === 0 && (
           <p className="cabinet-section__paragraph">暂无端子排认知条目</p>
         )}
       </div>
 
+      {/* 文字说明 */}
       <div className="cabinet-section__text cabinet-section__text--device">
         <h2 className="cabinet-section__title">端子排认知</h2>
         {selectedDevice && (

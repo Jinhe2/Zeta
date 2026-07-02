@@ -242,6 +242,42 @@ export const api = {
     return request(`/api/snapshots/${snapshotId}`)
   },
 
+  // ── Monitor 命令交互 ──────────────────────────────────
+
+  triggerPressboardStatus(cabinetId) {
+    return request('/api/monitor/commands/pressboard-status', {
+      method: 'POST',
+      body: JSON.stringify({ cabinetId }),
+    })
+  },
+
+  getPressboardStatus(cabinetId) {
+    return request(`/api/monitor/pressboard-status/${cabinetId}`)
+  },
+
+  triggerTerminalStatus(cabinetId) {
+    return request('/api/monitor/commands/terminal-status', {
+      method: 'POST',
+      body: JSON.stringify({ cabinetId }),
+    })
+  },
+
+  getTerminalStatus(cabinetId) {
+    return request(`/api/monitor/terminal-status/${cabinetId}`)
+  },
+
+  listHardPressboards(cabinetId) {
+    return request(`/api/hard-pressboards?cabinetId=${cabinetId}`)
+  },
+
+  listTerminalStrips(cabinetId) {
+    return request(`/api/terminals/strips?cabinetId=${cabinetId}`)
+  },
+
+  listTerminals(cabinetId) {
+    return request(`/api/terminals?cabinetId=${cabinetId}`)
+  },
+
   listUsers(role) {
     if (!role) {
       return Promise.reject(new Error('缺少用户角色参数'))

@@ -1,6 +1,7 @@
 package com.zeta.integration.queue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zeta.integration.monitor.MonitorCommandService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -11,7 +12,8 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 
 /**
- * 消费屏柜系统推送到业务系统的 Redis 队列消息（骨架实现，具体业务待屏柜侧协议确定后补充）。
+ * 消费 monitord 推送到业务系统的 Redis 队列消息。
+ * 按 command 字段分发到对应的处理服务。
  */
 @Component
 @ConditionalOnProperty(name = "zeta.screen-queue.enabled", havingValue = "true")
@@ -22,34 +24,53 @@ public class ScreenQueueListener {
     private final StringRedisTemplate redisTemplate;
     private final ScreenQueueProperties properties;
     private final ObjectMapper objectMapper;
+    private final MonitorCommandService monitorCommandService;
+    private volatile boolean connectionErrorLoggeded = false;
 
     public ScreenQueueListener(
             StringRedisTemplate redisTemplate,
             ScreenQueueProperties properties,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            MonitorCommandService monitorCommandService) {
         this.redisTemplate = redisTemplate;
         this.properties = properties;
         this.objectMapper = objectMapper;
+        this.monitorCommandService = monitorCommandService;
     }
 
     @Scheduled(fixedDelayString = "${zeta.screen-queue.poll-interval-ms:2000}")
     public void pollInbound() {
-        String payload = redisTemplate.opsForList().rightPop(
-                properties.getInboundKey(),
-                Duration.ofSeconds(properties.getPollTimeoutSeconds()));
-        if (payload == null) {
-            return;
-        }
         try {
+            String payload = redisTemplate.opsForList().rightPop(
+                    properties.getInboundKey(),
+                    Duration.ofSeconds(properties.getPollTimeoutSeconds()));
+            if (payload == null) {
+                return;
+            }
             ScreenQueueMessage message = objectMapper.readValue(payload, ScreenQueueMessage.class);
             handleMessage(message);
+        } catch (org.springframework.data.redis.RedisConnectionFailureException e) {
+            if (!connectionErrorLoggeded) {
+                log.warn("Redis 队列连接失败，监听器暂停（{}）。消息发送不受影响。", e.getRootCause() != null ? e.getRootCause().getMessage() : e.getMessage());
+                connectionErrorLoggeded = true;
+            }
         } catch (Exception e) {
-            log.warn("Failed to handle screen queue message: {}", payload, e);
+            log.warn("Failed to handle screen queue message: {}", e.getMessage());
         }
     }
 
     private void handleMessage(ScreenQueueMessage message) {
-        log.info("Received screen queue message type={} payload={}", message.getType(), message.getPayload());
-        // TODO: 按 type 分发（如设备数值更新、录播状态变更等）
+        String command = message.getCommand();
+        log.info("Received monitord message: command={} req_id={}", command, message.getReqId());
+
+        if (command != null && (
+                command.equals("summon_pressboard_status") ||
+                command.equals("summon_terminal_status") ||
+                command.equals("compare_baseline_settings") ||
+                command.equals("summon_logic_monitor"))) {
+            monitorCommandService.handleResponse(message);
+        } else {
+            log.warn("Unknown monitord command: {}", command);
+        }
     }
 }

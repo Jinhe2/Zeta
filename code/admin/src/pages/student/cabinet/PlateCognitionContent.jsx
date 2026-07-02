@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
 import { normalizeRegion } from '../../../utils/imageRegionUtils'
 
 const DEFAULT_CABINET_CODE = 'cabinet-line-220'
+const POLL_INTERVAL = 5000
 
 function findCabinetId(tree, cabinetCode) {
   for (const cabinet of tree?.cabinets ?? []) {
@@ -12,6 +13,24 @@ function findCabinetId(tree, cabinetCode) {
     }
   }
   return tree?.cabinets?.[0]?.id ?? null
+}
+
+/** 根据压板类型和状态选择 SVG */
+function pressboardSvg(type, state) {
+  if (type === 'SPARE') return '/images/pressboard/idel_y.svg'
+  if (state === 'ON' || state === 'CONNECTED') return '/images/pressboard/close_y.svg'
+  if (state === 'OFF' || state === 'DISCONNECTED') return '/images/pressboard/open_y.svg'
+  return '/images/pressboard/idel_y.svg'
+}
+
+/** 压板类型颜色标识 */
+function pressboardColor(type) {
+  switch (type) {
+    case 'FUNCTION': return '#fdd835' // 黄色
+    case 'EXPORT': return '#e53935'   // 红色
+    case 'SPARE': return '#bcaaa4'    // 驼色
+    default: return '#90a4ae'
+  }
 }
 
 export default function PlateCognitionContent() {
@@ -24,6 +43,13 @@ export default function PlateCognitionContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // 压板状态
+  const [pressboards, setPressboards] = useState([])
+  const [pressboardStates, setPressboardStates] = useState({})
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [cabinetId, setCabinetId] = useState(null)
+  const pollRef = useRef(null)
+
   // 加载屏柜条目
   useEffect(() => {
     let cancelled = false
@@ -32,9 +58,10 @@ export default function PlateCognitionContent() {
       setError(null)
       try {
         const tree = await api.getKnowledgeTree()
-        const cabinetId = findCabinetId(tree, DEFAULT_CABINET_CODE)
-        if (!cabinetId) throw new Error('未找到屏柜学习数据')
-        const items = await api.listKnowledgeCabinetDisplayItems(cabinetId)
+        const cid = findCabinetId(tree, DEFAULT_CABINET_CODE)
+        if (!cid) throw new Error('未找到屏柜学习数据')
+        if (!cancelled) setCabinetId(cid)
+        const items = await api.listKnowledgeCabinetDisplayItems(cid)
         if (!cancelled) {
           setCabinetItems(items)
           setSelectedCabinetItemId(items[0]?.id ?? null)
@@ -49,7 +76,45 @@ export default function PlateCognitionContent() {
     return () => { cancelled = true }
   }, [])
 
-  // 加载压板组设备（仅 PLATE_GROUP 类型）
+  // 加载压板列表
+  useEffect(() => {
+    if (!cabinetId) return
+    let cancelled = false
+    api.listHardPressboards(cabinetId)
+      .then((data) => { if (!cancelled) setPressboards(data) })
+      .catch((err) => { if (!cancelled) setError('压板数据加载失败: ' + err.message) })
+    return () => { cancelled = true }
+  }, [cabinetId])
+
+  // 轮询压板状态
+  const fetchStatus = useCallback(async () => {
+    if (!cabinetId) return
+    setStatusLoading(true)
+    try {
+      const data = await api.triggerPressboardStatus(cabinetId)
+      if (data?.pressboards) {
+        const states = {}
+        for (const pb of data.pressboards) {
+          states[pb.pressboard_id] = pb.state
+        }
+        setPressboardStates(states)
+      }
+    } catch (err) {
+      // 静默处理轮询错误（monitord 未启动时预期会失败）
+      console.warn('压板状态读取失败:', err.message)
+    } finally {
+      setStatusLoading(false)
+    }
+  }, [cabinetId])
+
+  useEffect(() => {
+    if (!cabinetId) return
+    fetchStatus()
+    pollRef.current = setInterval(fetchStatus, POLL_INTERVAL)
+    return () => clearInterval(pollRef.current)
+  }, [cabinetId, fetchStatus])
+
+  // 加载压板组设备
   useEffect(() => {
     if (!selectedCabinetItemId) {
       setCognitionDevices([])
@@ -114,6 +179,19 @@ export default function PlateCognitionContent() {
     setSelectedCabinetItemId(itemId)
   }
 
+  // 构建压板网格（按行列排列）
+  const maxRow = Math.max(0, ...pressboards.map((pb) => pb.rowNo ?? 0))
+  const maxCol = Math.max(0, ...pressboards.map((pb) => pb.colNo ?? 0))
+  const pressboardGrid = []
+  for (let r = 1; r <= maxRow; r++) {
+    const row = []
+    for (let c = 1; c <= maxCol; c++) {
+      const pb = pressboards.find((p) => p.rowNo === r && p.colNo === c)
+      row.push(pb ?? null)
+    }
+    pressboardGrid.push(row)
+  }
+
   return (
     <div className="cabinet-section cabinet-section--device">
       {/* 左侧：屏柜图 + 区域高亮 */}
@@ -150,8 +228,50 @@ export default function PlateCognitionContent() {
         )}
       </div>
 
-      {/* 右侧上方：压板组选择 + 幻灯图片 */}
+      {/* 右侧：压板状态网格 + 认知条目 */}
       <div className="cabinet-section__media cabinet-section__media--device">
+        {/* 压板状态网格 */}
+        {pressboards.length > 0 && (
+          <div className="pressboard-grid">
+            <div className="pressboard-grid__header">
+              <span>压板状态</span>
+              <span className="pressboard-grid__status">
+                {statusLoading ? '读取中…' : `已更新 ${Object.keys(pressboardStates).length}/${pressboards.length}`}
+              </span>
+            </div>
+            <div className="pressboard-grid__board">
+              {pressboardGrid.map((row, ri) => (
+                <div key={ri} className="pressboard-grid__row">
+                  {row.map((pb, ci) => (
+                    <div
+                      key={ci}
+                      className={`pressboard-grid__cell${pb ? '' : ' pressboard-grid__cell--empty'}`}
+                      title={pb ? `${pb.name} (${pb.pressboardType})` : ''}
+                    >
+                      {pb && (
+                        <>
+                          <img
+                            src={pressboardSvg(pb.pressboardType, pressboardStates[pb.id])}
+                            alt={pb.name}
+                            className="pressboard-grid__svg"
+                          />
+                          <span
+                            className="pressboard-grid__label"
+                            style={{ borderBottomColor: pressboardColor(pb.pressboardType) }}
+                          >
+                            {pb.name}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 认知条目幻灯 */}
         {!loading && !error && cognitionDevices.length > 1 && (
           <div className="cabinet-section__item-tabs cabinet-section__item-tabs--compact" role="tablist">
             {cognitionDevices.map((device) => (
@@ -193,7 +313,7 @@ export default function PlateCognitionContent() {
             )}
           </>
         )}
-        {!loading && !error && !currentDisplayItem && (
+        {!loading && !error && !currentDisplayItem && pressboards.length === 0 && (
           <p className="cabinet-section__paragraph">暂无压板认知条目</p>
         )}
       </div>

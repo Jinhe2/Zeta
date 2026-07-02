@@ -6,7 +6,9 @@ spring:
   redis:
     host: r-bp1lsbm2y1hbkk4mu5pd.redis.rds.aliyuncs.com
     port: 6379
-    password: Cn3x2321
+    username: ct
+    password: CT2026dev
+    #password: Cn3x2321
     database: 0
     timeout: 10s
     lettuce:

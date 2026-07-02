@@ -148,7 +148,7 @@ export default function StudentDiagramPage() {
         logicCode: detail?.code,
         logicName: detail?.title,
       }
-      setSnapshots((prev) => [newSnap, ...prev])
+      setSnapshots((prev) => prev.some((s) => s.id === result.id) ? prev : [newSnap, ...prev])
       setSelectedSnapshotId(result.id)
       return api.getSnapshotSections(result.id).then((secs) => {
         setSections(secs)
@@ -166,18 +166,20 @@ export default function StudentDiagramPage() {
         setSections(secs)
         setSelectedSectionId(secs[0]?.id ?? null)
 
-        // 添加到快照列表
-        const newSnap = {
-          id: task.id,
-          status: task.state === 'COMPLETED' ? 'COMPLETED' : task.state,
-          source: 'MONITOR',
-          totalTransitions: task.totalTransitions ?? 0,
-          createdAt: task.createdAt,
-          logicId: Number(id),
-          logicCode: detail?.code,
-          logicName: detail?.title,
-        }
-        setSnapshots((prev) => [newSnap, ...prev])
+        // 添加到快照列表（去重）
+        setSnapshots((prev) => {
+          if (prev.some((s) => s.id === task.id)) return prev
+          return [{
+            id: task.id,
+            status: task.state === 'COMPLETED' ? 'COMPLETED' : task.state,
+            source: 'MONITOR',
+            totalTransitions: task.totalTransitions ?? 0,
+            createdAt: task.createdAt,
+            logicId: Number(id),
+            logicCode: detail?.code,
+            logicName: detail?.title,
+          }, ...prev]
+        })
         setSelectedSnapshotId(task.id)
       }
     } catch (err) {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import ServerSettingsModal from '../components/ServerSettingsModal'
 import './LoginPage.css'
 
 const HOME_BY_ROLE = {
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   if (initializing) {
     return (
@@ -82,6 +84,14 @@ export default function LoginPage() {
           <div className="login-card__logo">Zeta</div>
           <h1 className="login-card__title">继电保护逻辑教学系统</h1>
           <p className="login-card__subtitle">使用用户名和密码登录</p>
+          <button
+            type="button"
+            className="login-card__settings-btn"
+            onClick={() => setSettingsOpen(true)}
+            title="服务器设置"
+          >
+            ⚙
+          </button>
         </header>
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>
@@ -148,6 +158,15 @@ export default function LoginPage() {
           </p>
         )}
       </div>
+
+      <ServerSettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onSaved={() => {
+          // 配置保存后，可以选择刷新页面以应用新配置
+          // 或者提示用户重新登录
+        }}
+      />
     </div>
   )
 }

@@ -67,6 +67,34 @@
   color: #8fa3bf;
 }
 
+.login-card__settings-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #8fa3bf;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card__settings-btn:hover {
+  background: rgba(74, 126, 187, 0.15);
+  color: #9ec5f0;
+  transform: rotate(45deg);
+}
+
+.login-card__settings-btn:active {
+  transform: rotate(45deg) scale(0.95);
+}
+
 .login-form__error {
   margin-bottom: 16px;
   padding: 10px 12px;

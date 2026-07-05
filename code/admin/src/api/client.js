@@ -1,32 +1,53 @@
 const ACCESS_TOKEN_KEY = 'zeta_access_token'
 const REFRESH_TOKEN_KEY = 'zeta_refresh_token'
+const API_BASE_URL_KEY = 'zeta_api_base_url'
 
 /**
- * API 基地址，优先级：
+ * 获取 API 基地址，优先级：
  *  1. Electron 运行时配置（window.electronAPI.getSettings().apiBaseUrl）
- *  2. Vite 编译时环境变量（VITE_API_BASE_URL）
- *  3. 空字符串（开发环境，走 Vite proxy）
+ *  2. localStorage 用户配置（局域网部署场景）
+ *  3. Vite 编译时环境变量（VITE_API_BASE_URL）
+ *  4. 空字符串（开发环境，走 Vite proxy）
  */
-const BASE = window.electronAPI?.getSettings?.()?.apiBaseUrl
-          || import.meta.env.VITE_API_BASE_URL
-          || ''
+export function getApiBaseUrl() {
+  return window.electronAPI?.getSettings?.()?.apiBaseUrl
+    || localStorage.getItem(API_BASE_URL_KEY)
+    || import.meta.env.VITE_API_BASE_URL
+    || ''
+}
+
+export function setApiBaseUrl(url) {
+  if (url) {
+    localStorage.setItem(API_BASE_URL_KEY, url)
+  } else {
+    localStorage.removeItem(API_BASE_URL_KEY)
+  }
+}
+
+export function clearApiBaseUrl() {
+  localStorage.removeItem(API_BASE_URL_KEY)
+}
+
+// 动态获取 BASE，每次请求时读取最新值
+const getBase = () => getApiBaseUrl()
 
 /** 拼接完整 API URL：开发走代理，生产直连 */
 export function apiUrl(path) {
-  return BASE + path
+  return getBase() + path
 }
 
 /** 将后端返回的图片 ID 转为完整 URL（新方式）或兼容旧路径 */
 export function imageUrl(typeOrPath, id) {
+  const base = getBase()
   // 新方式：传入 type 和 id
   if (id !== undefined) {
     if (!id) return ''
-    return BASE + `/api/images/${typeOrPath}/${id}`
+    return base + `/api/images/${typeOrPath}/${id}`
   }
   // 旧方式：兼容传入完整路径
   if (!typeOrPath) return ''
   if (typeOrPath.startsWith('http://') || typeOrPath.startsWith('https://') || typeOrPath.startsWith('data:')) return typeOrPath
-  return BASE + typeOrPath
+  return base + typeOrPath
 }
 
 let refreshPromise = null

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { getApiBaseUrl } from '../api/client'
 import ServerSettingsModal from '../components/ServerSettingsModal'
 import './LoginPage.css'
 
@@ -40,6 +41,13 @@ export default function LoginPage() {
   }
 
   const doLogin = async (user, pass) => {
+    // 检查服务器地址是否已配置
+    const baseUrl = getApiBaseUrl()
+    if (!baseUrl) {
+      setError('请先配置服务器地址（点击右上角 ⚙ 按钮）')
+      return
+    }
+
     setError(null)
     setLoading(true)
     try {

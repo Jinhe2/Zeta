@@ -1,0 +1,69 @@
+package com.zeta.business;
+
+import com.zeta.business.cabinetdisplay.CabinetDisplayItem;
+import com.zeta.business.cabinetdisplay.CabinetDisplayItemRepository;
+import com.zeta.business.devicedisplay.DeviceDisplayItem;
+import com.zeta.business.devicedisplay.DeviceDisplayItemRepository;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.concurrent.TimeUnit;
+
+/**
+ * 图片访问 API — 从数据库读取图片二进制数据。
+ */
+@RestController
+@RequestMapping("/api/images")
+public class ImageController {
+
+    private final CabinetDisplayItemRepository cabinetRepository;
+    private final DeviceDisplayItemRepository deviceRepository;
+
+    public ImageController(CabinetDisplayItemRepository cabinetRepository,
+                           DeviceDisplayItemRepository deviceRepository) {
+        this.cabinetRepository = cabinetRepository;
+        this.deviceRepository = deviceRepository;
+    }
+
+    @GetMapping("/cabinet-display/{id}")
+    public ResponseEntity<byte[]> getCabinetImage(@PathVariable Long id) {
+        CabinetDisplayItem item = cabinetRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "图片不存在"));
+
+        if (item.getImageData() == null || item.getImageData().length == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
+        }
+
+        String contentType = item.getImageContentType() != null
+                ? item.getImageContentType()
+                : "image/jpeg";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                .body(item.getImageData());
+    }
+
+    @GetMapping("/device-display/{id}")
+    public ResponseEntity<byte[]> getDeviceImage(@PathVariable Long id) {
+        DeviceDisplayItem item = deviceRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "图片不存在"));
+
+        if (item.getImageData() == null || item.getImageData().length == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
+        }
+
+        String contentType = item.getImageContentType() != null
+                ? item.getImageContentType()
+                : "image/jpeg";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                .body(item.getImageData());
+    }
+}

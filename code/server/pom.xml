@@ -13,7 +13,7 @@
 
     <groupId>com.zeta</groupId>
     <artifactId>zeta-server</artifactId>
-    <version>1.0.8</version>
+    <version>1.1.0</version>
     <name>zeta-server</name>
     <description>Zeta relay protection logic teaching platform API</description>
 

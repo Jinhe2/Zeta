@@ -161,7 +161,7 @@ export default function DeviceCognitionContent() {
             )}
             <ImageRegionViewer
               key={selectedCabinetItemId}
-              imageUrl={imageUrl(selectedCabinetItem.imageUrl)}
+              imageUrl={imageUrl('cabinet-display', selectedCabinetItem.id)}
               region={highlightRegion}
               alt={selectedCabinetItem.title}
             />
@@ -193,7 +193,7 @@ export default function DeviceCognitionContent() {
             <img
               key={currentSlide}
               className="cabinet-section__image cabinet-section__image--device"
-              src={imageUrl(currentDisplayItem.imageUrl)}
+              src={imageUrl('device-display', currentDisplayItem.id)}
               alt={currentDisplayItem.title}
             />
             {displayItems.length > 1 && (

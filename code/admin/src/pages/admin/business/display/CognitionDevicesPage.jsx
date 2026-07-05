@@ -247,7 +247,7 @@ export default function CognitionDevicesPage() {
               <>
                 <ImageRegionEditor
                   key={selectedId}
-                  imageUrl={imageUrl(cabinetItem.imageUrl)}
+                  imageUrl={imageUrl('cabinet-display', cabinetItem.id)}
                   region={regionDraft}
                   onChange={setRegionDraft}
                 />

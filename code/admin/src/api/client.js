@@ -16,11 +16,17 @@ export function apiUrl(path) {
   return BASE + path
 }
 
-/** 将后端返回的图片相对路径转为完整 URL */
-export function imageUrl(path) {
-  if (!path) return ''
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path
-  return BASE + path
+/** 将后端返回的图片 ID 转为完整 URL（新方式）或兼容旧路径 */
+export function imageUrl(typeOrPath, id) {
+  // 新方式：传入 type 和 id
+  if (id !== undefined) {
+    if (!id) return ''
+    return BASE + `/api/images/${typeOrPath}/${id}`
+  }
+  // 旧方式：兼容传入完整路径
+  if (!typeOrPath) return ''
+  if (typeOrPath.startsWith('http://') || typeOrPath.startsWith('https://') || typeOrPath.startsWith('data:')) return typeOrPath
+  return BASE + typeOrPath
 }
 
 let refreshPromise = null

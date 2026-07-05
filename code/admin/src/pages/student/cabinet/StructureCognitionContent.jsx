@@ -58,7 +58,7 @@ export default function StructureCognitionContent() {
         {!loading && !error && selectedItem && (
           <img
             className="cabinet-section__image"
-            src={imageUrl(selectedItem.imageUrl)}
+            src={imageUrl('cabinet-display', selectedItem.id)}
             alt={selectedItem.title}
           />
         )}

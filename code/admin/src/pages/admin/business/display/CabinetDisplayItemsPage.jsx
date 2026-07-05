@@ -224,7 +224,7 @@ export default function CabinetDisplayItemsPage() {
                       <td>
                         <img
                           className="cabinet-display-items__thumb"
-                          src={imageUrl(item.imageUrl)}
+                          src={imageUrl('cabinet-display', item.id)}
                           alt={item.title}
                         />
                       </td>

@@ -27,8 +27,18 @@ public class DeviceDisplayItem {
     @Column(nullable = false, length = 128)
     private String title;
 
-    @Column(name = "image_url", nullable = false, length = 512)
+    /** 图片访问路径（兼容旧数据） */
+    @Column(name = "image_url", length = 512)
     private String imageUrl;
+
+    /** 图片二进制数据 */
+    @Lob
+    @Column(name = "image_data")
+    private byte[] imageData;
+
+    /** 图片 MIME 类型 */
+    @Column(name = "image_content_type", length = 100)
+    private String imageContentType;
 
     @Lob
     @Column(nullable = false)

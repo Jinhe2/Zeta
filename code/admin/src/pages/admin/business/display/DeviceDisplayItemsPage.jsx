@@ -227,7 +227,7 @@ export default function DeviceDisplayItemsPage() {
                 items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <img className="device-display-items__thumb" src={imageUrl(item.imageUrl)} alt={item.title} />
+                      <img className="device-display-items__thumb" src={imageUrl('device-display', item.id)} alt={item.title} />
                     </td>
                     <td>{item.title}</td>
                     <td>{previewContent(item.content)}</td>

@@ -58,6 +58,49 @@ public class CabinetDisplayImageStorage {
         return uploadProperties.getPublicPathPrefix() + "/cabinet-display/" + filename;
     }
 
+    /**
+     * 数据库存储模式：保存文件到 CabinetDisplayItem 记录，返回记录 ID。
+     * 注意：此方法仅保存二进制数据，不创建完整的 CabinetDisplayItem 记录。
+     * 实际使用时，应在 Controller 层创建完整记录并保存。
+     */
+    public byte[] readImageBytes(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择图片文件");
+        }
+        String extension = resolveExtension(file.getOriginalFilename());
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "仅支持 JPG、PNG、GIF、WebP、SVG 图片");
+        }
+
+        try {
+            return file.getBytes();
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "图片读取失败");
+        }
+    }
+
+    /**
+     * 从文件名推断 MIME 类型。
+     */
+    public String resolveContentType(String filename) {
+        String extension = resolveExtension(filename);
+        switch (extension) {
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg";
+            case "png":
+                return "image/png";
+            case "gif":
+                return "image/gif";
+            case "webp":
+                return "image/webp";
+            case "svg":
+                return "image/svg+xml";
+            default:
+                return "image/jpeg";
+        }
+    }
+
     public void deleteIfManaged(String imageUrl) {
         if (!isManagedUrl(imageUrl)) {
             return;

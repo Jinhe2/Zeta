@@ -17,14 +17,17 @@ public class CabinetDisplayItemService {
     private final ScreenCabinetLookupService screenCabinetLookupService;
     private final CabinetDisplayItemRepository displayItemRepository;
     private final CabinetDisplayImageStorage imageStorage;
+    private final TemporaryImageRepository temporaryImageRepository;
 
     public CabinetDisplayItemService(
             ScreenCabinetLookupService screenCabinetLookupService,
             CabinetDisplayItemRepository displayItemRepository,
-            CabinetDisplayImageStorage imageStorage) {
+            CabinetDisplayImageStorage imageStorage,
+            TemporaryImageRepository temporaryImageRepository) {
         this.screenCabinetLookupService = screenCabinetLookupService;
         this.displayItemRepository = displayItemRepository;
         this.imageStorage = imageStorage;
+        this.temporaryImageRepository = temporaryImageRepository;
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
@@ -50,7 +53,7 @@ public class CabinetDisplayItemService {
         CabinetDisplayItem item = new CabinetDisplayItem();
         item.setScreenCabinetId(screenCabinetId);
         item.setTitle(request.getTitle().trim());
-        item.setImageUrl(normalizeImageUrl(request.getImageUrl()));
+        applyImageData(item, request.getImageId(), request.getImageUrl());
         item.setContent(request.getContent().trim());
         item.setSortOrder(request.getSortOrder());
         item.setEnabled(request.getEnabled() == null || request.getEnabled());
@@ -62,16 +65,16 @@ public class CabinetDisplayItemService {
     public CabinetDisplayItemAdminResponse update(Long id, UpdateCabinetDisplayItemRequest request) {
         CabinetDisplayItem item = requireItem(id);
         String previousImageUrl = item.getImageUrl();
-        String nextImageUrl = normalizeImageUrl(request.getImageUrl());
 
         item.setTitle(request.getTitle().trim());
-        item.setImageUrl(nextImageUrl);
+        applyImageData(item, request.getImageId(), request.getImageUrl());
         item.setContent(request.getContent().trim());
         item.setSortOrder(request.getSortOrder());
         item.setEnabled(request.getEnabled());
 
         CabinetDisplayItem saved = displayItemRepository.save(item);
-        if (!nextImageUrl.equals(previousImageUrl)) {
+        String nextImageUrl = item.getImageUrl();
+        if (nextImageUrl != null && !nextImageUrl.equals(previousImageUrl)) {
             imageStorage.deleteIfManaged(previousImageUrl);
         }
         return toAdminResponse(saved);
@@ -92,6 +95,30 @@ public class CabinetDisplayItemService {
     private CabinetDisplayItem requireItem(Long id) {
         return displayItemRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "屏柜学习条目不存在"));
+    }
+
+    /**
+     * 应用图片数据到新方式（从临时表）或旧方式（从 URL）。
+     * 优先使用 imageId（新方式），如果为空则使用 imageUrl（旧方式）。
+     */
+    private void applyImageData(CabinetDisplayItem item, Long imageId, String imageUrl) {
+        if (imageId != null) {
+            // 新方式：从临时表获取图片字节
+            TemporaryImage tempImage = temporaryImageRepository.findById(imageId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "临时图片不存在或已过期"));
+            item.setImageData(tempImage.getImageData());
+            item.setImageContentType(tempImage.getContentType());
+            item.setImageUrl(null);  // 清空旧 URL
+            // 删除临时记录
+            temporaryImageRepository.deleteById(imageId);
+        } else if (StringUtils.hasText(imageUrl)) {
+            // 旧方式：兼容文件系统存储
+            item.setImageUrl(normalizeImageUrl(imageUrl));
+            item.setImageData(null);
+            item.setImageContentType(null);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请上传认知图片");
+        }
     }
 
     private String normalizeImageUrl(String imageUrl) {

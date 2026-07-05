@@ -2,102 +2,92 @@
 
 ## 环境要求
 
-| 组件 | 版本要求 | 用途 |
+| 组件 | 版本要求 | 说明 |
 |------|---------|------|
-| Java | 8+ | 后端运行环境 |
-| MySQL | 8.0+ | 业务数据库 |
-| Redis | 6.0+ | 缓存和消息队列 |
-| Node.js | 18+ | 前端构建（可选） |
-| Nginx | 任意稳定版 | 前端静态文件托管（可选） |
+| **Java** | 8 (1.8.0_202+) | 必须使用 Java 8，不兼容 Java 11+ |
+| **MySQL** | 8.0.x | 不兼容 5.7，不兼容 8.4+ |
+| **Redis** | 6.0.x - 6.2.x | 不兼容 5.x，不兼容 7.0+ |
+| **操作系统** | Windows 10/11, Linux (CentOS 7+, Ubuntu 18.04+) | 64 位系统 |
+| **浏览器** | Chrome 90+, Edge 90+, Firefox 88+ | Web 端访问 |
 
-## 后端部署
+## 后端运行
 
-### 1. 构建
+### 1. 准备配置文件
 
-```bash
-cd code/server
-mvn clean package -DskipTests
-```
-
-构建产物：`target/zeta-server-1.0.0.jar`
-
-### 2. 配置
-
-编辑 `src/main/resources/application-prod.yml`：
+创建 `application-prod.yml`：
 
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/zeta_business
+    url: jdbc:mysql://localhost:3306/zeta_business?useSSL=false&serverTimezone=GMT%2B8
     username: your_username
     password: your_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
   redis:
     host: localhost
     port: 6379
     password: your_redis_password
+    timeout: 3000ms
+
+server:
+  port: 8080
 ```
 
-### 3. 运行
+### 2. 启动后端
 
 ```bash
-java -jar target/zeta-server-1.0.0.jar --spring.profiles.active=prod
+java -jar zeta-server-1.0.0.jar --spring.profiles.active=prod --spring.config.location=./application-prod.yml
 ```
 
-后端默认端口：`8080`
+启动成功标志：日志输出 `Started ZetaApplication in X.XXX seconds`
 
 ## 前端部署
 
-### 方式一：开发模式
+### 1. 解压前端文件
 
-```bash
-cd code/admin
-npm install
-npm run dev
+将 `dist.zip` 解压到 Web 服务器目录（如 Nginx 的 `/var/www/zeta/`）
+
+### 2. 配置 Nginx（可选）
+
+```nginx
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        root /var/www/zeta;
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
 ```
 
-访问：`http://localhost:5173`
+### 3. 直接打开（无 Nginx）
 
-### 方式二：生产构建
+直接用浏览器打开 `dist/index.html` 文件（需配置后端地址）
 
-```bash
-cd code/admin
-npm install
-npm run build
-```
+## 客户端安装
 
-构建产物：`dist/` 目录
-
-使用 Nginx 或其他 Web 服务器托管 `dist/` 目录下的静态文件。
-
-## 客户端部署（Electron）
-
-### 1. 构建
-
-```bash
-cd code/front
-npm install
-npm run build
-```
-
-构建产物：`dist/Zeta 教学系统 Setup x.x.x.exe`
-
-### 2. 安装
-
-将安装包分发到客户端机器，运行安装程序即可。
+1. 运行 `Zeta 教学系统 Setup 1.0.0.exe`
+2. 按提示完成安装
+3. 启动客户端，配置后端地址
 
 ## 配置后端地址
 
-### 方式一：Web 端（浏览器访问）
+### Web 端（浏览器）
 
 1. 打开登录页面
 2. 点击右上角 **⚙** 按钮
-3. 输入后端地址（格式：`IP:端口`，如 `192.168.1.100:8080`）
-4. 点击"测试连接"验证
+3. 输入后端地址：`IP:端口`（如 `192.168.1.100:8080`）
+4. 点击"测试连接"
 5. 点击"保存"
 
-配置保存在浏览器 localStorage 中，重启后保留。
-
-### 方式二：Electron 客户端
+### Electron 客户端
 
 编辑安装目录下的 `settings.json`：
 
@@ -111,10 +101,10 @@ npm run build
 
 ## 验证部署
 
-1. 后端启动成功：日志显示 `Started ZetaApplication`
-2. 前端访问正常：浏览器打开页面无报错
-3. 连接测试通过：在设置中测试连接显示"连接成功"
-4. 登录测试：使用默认账号 `admin/123456` 登录成功
+- [ ] 后端日志显示 `Started ZetaApplication`
+- [ ] 浏览器能访问前端页面
+- [ ] 配置后端地址后，测试连接成功
+- [ ] 使用 `admin/123456` 登录成功
 
 ## 默认账号
 

@@ -6,12 +6,24 @@ import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
 const POLL_INTERVAL = 5000
 
+const PRESSBOARD_TYPE_SUFFIX = {
+  FUNCTION: 'y',
+  EXPORT: 'r',
+  SPARE: 't',
+}
+
+const PRESSBOARD_STATE_NAME = {
+  ON: 'close',
+  CONNECTED: 'close',
+  OFF: 'open',
+  DISCONNECTED: 'open',
+}
+
 /** 根据压板类型和状态选择 SVG */
 function pressboardSvg(type, state) {
-  if (type === 'SPARE') return '/images/pressboard/idel_y.svg'
-  if (state === 'ON' || state === 'CONNECTED') return '/images/pressboard/close_y.svg'
-  if (state === 'OFF' || state === 'DISCONNECTED') return '/images/pressboard/open_y.svg'
-  return '/images/pressboard/idel_y.svg'
+  const typeSuffix = PRESSBOARD_TYPE_SUFFIX[type] ?? PRESSBOARD_TYPE_SUFFIX.FUNCTION
+  const stateName = PRESSBOARD_STATE_NAME[state] ?? 'idel'
+  return `/images/pressboard/${stateName}_${typeSuffix}.svg`
 }
 
 /** 压板类型颜色标识 */
@@ -21,6 +33,19 @@ function pressboardColor(type) {
     case 'EXPORT': return '#e53935'   // 红色
     case 'SPARE': return '#bcaaa4'    // 驼色
     default: return '#90a4ae'
+  }
+}
+
+/** 按首个中文字符拆分压板名称 */
+function splitPressboardName(name) {
+  const text = String(name ?? '')
+  const chineseIndex = text.search(/[\u3400-\u9fff]/)
+  if (chineseIndex <= 0) {
+    return { prefix: text, suffix: '' }
+  }
+  return {
+    prefix: text.slice(0, chineseIndex),
+    suffix: text.slice(chineseIndex),
   }
 }
 
@@ -298,29 +323,35 @@ export default function PlateCognitionContent({ navigationTarget, onPageChange }
               <div className="pressboard-grid__board">
                 {pressboardGrid.map((row, ri) => (
                   <div key={ri} className="pressboard-grid__row">
-                    {row.map((pb, ci) => (
-                      <div
-                        key={ci}
-                        className={`pressboard-grid__cell${pb ? '' : ' pressboard-grid__cell--empty'}`}
-                        title={pb ? `${pb.name} (${pb.pressboardType})` : ''}
-                      >
-                        {pb && (
-                          <>
-                            <img
-                              src={pressboardSvg(pb.pressboardType, pressboardStates[pb.id])}
-                              alt={pb.name}
-                              className="pressboard-grid__svg"
-                            />
-                            <span
-                              className="pressboard-grid__label"
-                              style={{ borderBottomColor: pressboardColor(pb.pressboardType) }}
-                            >
-                              {pb.name}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    ))}
+                    {row.map((pb, ci) => {
+                      const nameParts = pb ? splitPressboardName(pb.name) : null
+                      return (
+                        <div
+                          key={ci}
+                          className={`pressboard-grid__cell${pb ? '' : ' pressboard-grid__cell--empty'}`}
+                          title={pb ? `${pb.name} (${pb.pressboardType})` : ''}
+                        >
+                          {pb && (
+                            <>
+                              <img
+                                src={pressboardSvg(pb.pressboardType, pressboardStates[pb.id])}
+                                alt={pb.name}
+                                className="pressboard-grid__svg"
+                              />
+                              <span
+                                className="pressboard-grid__label"
+                                style={{ borderBottomColor: pressboardColor(pb.pressboardType) }}
+                              >
+                                <span className="pressboard-grid__label-line">{nameParts.prefix}</span>
+                                {nameParts.suffix && (
+                                  <span className="pressboard-grid__label-line">{nameParts.suffix}</span>
+                                )}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 ))}
               </div>

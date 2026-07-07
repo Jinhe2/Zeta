@@ -24,9 +24,9 @@ logging:
       max-history: 14
 
 zeta:
-  # 前端直连 API，需将前端域名加入 CORS 白名单
+  # 前端直连 API。这里使用 Spring allowedOriginPatterns 语法，避免现场部署时按机器 IP 修改。
   cors:
-    allowed-origins: https://zeta-app.qyabc.cn,http://zeta-app.qyabc.cn
+    allowed-origins: http://*:3000,http://*:3001,http://*:5173,http://localhost:3000,http://localhost:3001,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:5173,https://zeta-app.qyabc.cn,http://zeta-app.qyabc.cn
 
   upload:
     storage-dir: /opt/zeta/data/uploads

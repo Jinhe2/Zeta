@@ -31,7 +31,7 @@ public class WebConfig implements WebMvcConfigurer {
         .allowCredentials(true);
     registry
         .addMapping("/uploads/**")
-        .allowedOrigins(origins)
+        .allowedOriginPatterns(origins)
         .allowedMethods("GET")
         .allowedHeaders("*")
         .allowCredentials(false);

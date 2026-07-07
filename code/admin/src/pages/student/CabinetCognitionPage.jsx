@@ -6,6 +6,7 @@ import StructureCognitionContent from './cabinet/StructureCognitionContent'
 import DeviceCognitionContent from './cabinet/DeviceCognitionContent'
 import PlateCognitionContent from './cabinet/PlateCognitionContent'
 import TerminalCognitionContent from './cabinet/TerminalCognitionContent'
+import './TabletShell.css'
 import './CabinetCognitionPage.css'
 
 const DEFAULT_CABINET_CODE = 'cabinet-line-220'
@@ -250,32 +251,25 @@ export default function CabinetCognitionPage() {
   }
 
   return (
-    <div className="cabinet-page">
-      <header className="cabinet-page__header">
-        <div className="cabinet-page__user">
-          <div className="cabinet-page__user-name">{displayName}</div>
-          <div className="cabinet-page__user-level">{levelLabel}</div>
-        </div>
-
-        <div className="cabinet-page__title-badge">
-          <div className="cabinet-page__title-badge-inner">
-            <h1 className="cabinet-page__title">屏柜学习</h1>
-          </div>
-        </div>
-
-        <div className="cabinet-page__actions">
-          <button
-            type="button"
-            className="cabinet-page__close"
-            aria-label="关闭"
-            onClick={() => navigate('/student/modes/coach')}
-          >
-            ✕
-          </button>
-        </div>
+    <div className="tablet-shell">
+      <header className="tablet-shell__header">
+        <button type="button" className="tablet-shell__back" onClick={() => navigate('/student/modes/coach')}>
+          ← 返回
+        </button>
+        <h1>屏柜学习</h1>
+        <button
+          type="button"
+          className="tablet-shell__logout"
+          onClick={async () => {
+            await logout()
+            navigate('/login', { replace: true })
+          }}
+        >
+          退出登录
+        </button>
       </header>
 
-      <main className="cabinet-page__main">
+      <main className="tablet-shell__main">
         <nav className="cabinet-page__nav" aria-label="屏柜学习分类">
           {SECTIONS.map((section) => (
             <button

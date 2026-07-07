@@ -97,7 +97,7 @@ export default function App() {
             <Route path="modes/coach/circuit" element={<CircuitLearningPage />} />
             <Route path="modes/coach/circuit/:category/:name" element={<CircuitViewerPage />} />
             <Route path="modes/exam" element={<StudentPlaceholderPage title="测评模式" description="模拟测评考核，功能开发中。" />} />
-            <Route path="modes/panorama" element={<PanoramaListPage />} />
+            <Route path="modes/panorama" element={<StudentPlaceholderPage title="全景模式" description="功能已移入教练模式「采样测试」。" />} />
             <Route path="modes/panorama/:id" element={<StudentDiagramPage />} />
             <Route path="settings/password" element={<ChangePasswordPage />} />
             <Route path="profile" element={<ProfilePage />} />

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
+import './TabletShell.css'
 import './CoachModePage.css'
 
 /* ── 各模块 SVG 图标 ── */
@@ -112,53 +113,28 @@ const COACH_ENTRIES = [
 
 export default function CoachModePage() {
   const navigate = useNavigate()
-  const { session } = useAuth()
-
-  const displayName = session?.displayName || '学员'
-  const levelLabel = '初级学员 Lv.3'
-  const progress = 62
+  const { logout } = useAuth()
 
   return (
-    <div className="coach-mode">
-      <div className="coach-mode__bg-decor" aria-hidden="true">
-        <div className="coach-mode__bg-circle coach-mode__bg-circle--1" />
-        <div className="coach-mode__bg-circle coach-mode__bg-circle--2" />
-        <div className="coach-mode__bg-circle coach-mode__bg-circle--3" />
-      </div>
-
-      <header className="coach-mode__header">
-        <div className="coach-mode__user">
-          <div className="coach-mode__user-meta">
-            <div className="coach-mode__user-name">{displayName}</div>
-            <div className="coach-mode__user-level">{levelLabel}</div>
-          </div>
-          <div className="coach-mode__progress-wrap">
-            <div className="coach-mode__progress">
-              <div className="coach-mode__progress-bar" style={{ width: `${progress}%` }} />
-            </div>
-            <span className="coach-mode__progress-text">{progress}%</span>
-          </div>
-        </div>
-
-        <div className="coach-mode__title-badge">
-          <div className="coach-mode__title-badge-inner">
-            <h1 className="coach-mode__title">教练模式</h1>
-          </div>
-        </div>
-
-        <div className="coach-mode__actions">
-          <button
-            type="button"
-            className="coach-mode__close"
-            aria-label="返回"
-            onClick={() => navigate('/student')}
-          >
-            ✕
-          </button>
-        </div>
+    <div className="tablet-shell">
+      <header className="tablet-shell__header">
+        <button type="button" className="tablet-shell__back" onClick={() => navigate('/student')}>
+          ← 返回首页
+        </button>
+        <h1>教练模式</h1>
+        <button
+          type="button"
+          className="tablet-shell__logout"
+          onClick={async () => {
+            await logout()
+            navigate('/login', { replace: true })
+          }}
+        >
+          退出登录
+        </button>
       </header>
 
-      <main className="coach-mode__main">
+      <main className="tablet-shell__main">
         <div className="coach-mode__grid">
           {COACH_ENTRIES.map((entry) => {
             const { Icon } = entry

@@ -377,14 +377,18 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .cabinet-section--device .cabinet-section__media--device .cabinet-section__image--device {
-  flex: 1;
-  min-height: 0;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
-  align-self: center;
+  align-self: stretch;
 }
 
 .cabinet-section--device .cabinet-section__text--device {
@@ -396,7 +400,7 @@
 }
 
 .cabinet-section__image--device {
-  max-width: 280px;
+  max-width: none;
 }
 
 /* 幻灯片分页指示器 */

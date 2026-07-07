@@ -89,18 +89,18 @@ const COACH_ENTRIES = [
     navigateState: { from: 'coach' },
   },
   {
-    id: 'operation',
+    id: 'sampling',
     label: '采样测试',
     Icon: IconOperation,
     desc: '对保护装置进行采样值测试与信号校验',
-    route: null,
+    route: '/student/modes/coach/sampling',
   },
   {
     id: 'drawing',
     label: '图纸学习',
     Icon: IconDrawing,
     desc: '识读二次回路图纸与接线图',
-    route: null,
+    route: '/student/modes/coach/drawing',
   },
   {
     id: 'circuit',
@@ -108,6 +108,13 @@ const COACH_ENTRIES = [
     Icon: IconCircuit,
     desc: '掌握保护回路、控制回路与信号回路',
     route: '/student/modes/coach/circuit',
+  },
+  {
+    id: 'accident',
+    label: '事故处理',
+    Icon: IconCabinet,
+    desc: '学习事故处理流程与案例分析',
+    route: '/student/modes/coach/accident',
   },
 ]
 
@@ -135,25 +142,21 @@ export default function CoachModePage() {
       </header>
 
       <main className="tablet-shell__main">
-        <div className="coach-mode__grid">
-          {COACH_ENTRIES.map((entry) => {
+        <div className="coach-mode__floating">
+          {COACH_ENTRIES.map((entry, index) => {
             const { Icon } = entry
             return (
               <button
                 key={entry.id}
                 type="button"
-                className={`coach-mode__card coach-mode__card--${entry.id}${!entry.route ? ' coach-mode__card--disabled' : ''}`}
-                onClick={() => {
-                  if (entry.route) navigate(entry.route, { state: entry.navigateState })
-                }}
-                disabled={!entry.route}
+                className={`coach-mode__card coach-mode__card--${entry.id}`}
+                onClick={() => navigate(entry.route, { state: entry.navigateState })}
               >
                 <span className="coach-mode__card-icon">
                   <Icon />
                 </span>
                 <span className="coach-mode__card-label">{entry.label}</span>
                 <span className="coach-mode__card-desc">{entry.desc}</span>
-                {!entry.route && <span className="coach-mode__card-soon">即将开放</span>}
               </button>
             )
           })}

@@ -167,11 +167,20 @@
   overflow: hidden;
 }
 
+.cabinet-page__layout {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
 .cabinet-page__nav,
 .cabinet-page__content {
   border-radius: 12px;
-  border: 1px solid rgba(100, 181, 246, 0.22);
-  background: rgba(10, 22, 38, 0.45);
+  border: 1px solid rgba(100, 181, 246, 0.3);
+  background: rgba(10, 22, 38, 0.85);  /* 降低透明度，减少背景干扰 */
+  backdrop-filter: blur(4px);  /* 添加模糊效果，进一步减少背景干扰 */
   min-height: 0;
 }
 

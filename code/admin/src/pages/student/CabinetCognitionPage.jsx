@@ -270,36 +270,37 @@ export default function CabinetCognitionPage() {
       </header>
 
       <main className="tablet-shell__main">
-        <nav className="cabinet-page__nav" aria-label="屏柜学习分类">
-          {SECTIONS.map((section) => (
-            <button
-              key={section.id}
-              type="button"
-              className={`cabinet-page__nav-btn${activeSection === section.id ? ' cabinet-page__nav-btn--active' : ''}`}
-              onClick={() => handleSectionSelect(section.id)}
-            >
-              {section.label}
-            </button>
-          ))}
-        </nav>
+        <div className="cabinet-page__layout">
+          <nav className="cabinet-page__nav" aria-label="屏柜学习分类">
+            {SECTIONS.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                className={`cabinet-page__nav-btn${activeSection === section.id ? ' cabinet-page__nav-btn--active' : ''}`}
+                onClick={() => handleSectionSelect(section.id)}
+              >
+                {section.label}
+              </button>
+            ))}
+          </nav>
 
-        <section className="cabinet-page__content" aria-live="polite">
-          {navigationError && (
-            <p className="cabinet-page__nav-error">{navigationError}</p>
-          )}
-          {renderSectionContent()}
-          <div className="cabinet-page__step-actions" aria-label="屏柜学习步骤导航">
-            <button
-              type="button"
-              className="cabinet-page__step-btn"
-              disabled={navigationLoading || currentPageIndex <= 0}
-              onClick={goPrevious}
-            >
-              上一步
-            </button>
-            <button
-              type="button"
-              className="cabinet-page__step-btn cabinet-page__step-btn--primary"
+          <section className="cabinet-page__content" aria-live="polite">
+            {navigationError && (
+              <p className="cabinet-page__nav-error">{navigationError}</p>
+            )}
+            {renderSectionContent()}
+            <div className="cabinet-page__step-actions" aria-label="屏柜学习步骤导航">
+              <button
+                type="button"
+                className="cabinet-page__step-btn"
+                disabled={navigationLoading || currentPageIndex <= 0}
+                onClick={goPrevious}
+              >
+                上一步
+              </button>
+              <button
+                type="button"
+                className="cabinet-page__step-btn cabinet-page__step-btn--primary"
               disabled={navigationLoading || currentPageIndex < 0 || currentPageIndex >= navigationPages.length - 1}
               onClick={goNext}
             >
@@ -307,6 +308,7 @@ export default function CabinetCognitionPage() {
             </button>
           </div>
         </section>
+        </div>
       </main>
     </div>
   )

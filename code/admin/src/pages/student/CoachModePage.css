@@ -3,16 +3,34 @@
   inset: 0;
   display: flex;
   flex-direction: column;
-  background-image: url('/zetabg.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
   color: #e8f0f8;
   overflow: hidden;
   user-select: none;
   /* 禁止平板双击缩放 */
   touch-action: manipulation;
+}
+
+/* 背景图片层 - 应用高斯模糊 */
+.coach-mode::before {
+  content: '';
+  position: absolute;
+  inset: -20px;  /* 扩大以避免模糊边缘留白 */
+  background-image: url('/zetabg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  filter: blur(6px);  /* 高斯模糊 */
+  z-index: 0;
+}
+
+/* 半透明遮罩层 - 进一步降低背景干扰 */
+.coach-mode::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 15, 25, 0.35);
+  z-index: 1;
 }
 
 /* ── 背景装饰 ── */
@@ -59,7 +77,7 @@
 
 .coach-mode__header {
   position: relative;
-  z-index: 2;
+  z-index: 10;  /* 确保在最上层 */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -217,15 +235,88 @@
   justify-content: center;
   padding: 16px 24px 32px;
   position: relative;
-  z-index: 1;
+  z-index: 10;  /* 确保在最上层 */
 }
 
-.coach-mode__grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 18px;
+.coach-mode__floating {
+  position: relative;
   width: 100%;
-  max-width: 1100px;
+  height: 100%;
+  min-height: 600px;
+}
+
+/* 动态浮动布局 - 各卡片聚集在中间区域，确保无重叠 */
+.coach-mode__floating .coach-mode__card:nth-child(1) {
+  position: absolute;
+  top: 8%;
+  left: 15%;
+  animation: float-1 6s ease-in-out infinite;
+}
+
+.coach-mode__floating .coach-mode__card:nth-child(2) {
+  position: absolute;
+  top: 8%;
+  right: 15%;
+  animation: float-2 7s ease-in-out infinite;
+}
+
+.coach-mode__floating .coach-mode__card:nth-child(3) {
+  position: absolute;
+  top: 32%;
+  left: 20%;
+  animation: float-3 8s ease-in-out infinite;
+}
+
+.coach-mode__floating .coach-mode__card:nth-child(4) {
+  position: absolute;
+  top: 32%;
+  right: 20%;
+  animation: float-4 7.5s ease-in-out infinite;
+}
+
+.coach-mode__floating .coach-mode__card:nth-child(5) {
+  position: absolute;
+  bottom: 8%;
+  left: 15%;
+  animation: float-5 6.5s ease-in-out infinite;
+}
+
+.coach-mode__floating .coach-mode__card:nth-child(6) {
+  position: absolute;
+  bottom: 8%;
+  right: 15%;
+  animation: float-6 7s ease-in-out infinite;
+}
+
+/* 浮动动画 */
+@keyframes float-1 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-15px) translateX(8px); }
+}
+
+@keyframes float-2 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(12px) translateX(-10px); }
+}
+
+@keyframes float-3 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-10px) translateX(-12px); }
+}
+
+@keyframes float-4 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(15px) translateX(10px); }
+}
+
+@keyframes float-5 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-12px) translateX(15px); }
+}
+
+@keyframes float-6 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(10px) translateX(-8px); }
 }
 
 /* ── 卡片 ── */
@@ -236,10 +327,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 32px 16px 26px;
-  border-radius: 18px;
-  border: 1px solid var(--card-border);
+  gap: 14px;
+  padding: 40px 24px 32px;  /* 加大内边距 */
+  border-radius: 20px;
+  border: 2px solid var(--card-border);  /* 加粗边框 */
   background: var(--card-bg);
   color: #fff;
   cursor: pointer;
@@ -248,10 +339,28 @@
   /* 平板触控反馈 */
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  transition: transform 0.1s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.3s;
+  /* 超强视觉重心 - 多层深阴影 + 强发光效果 */
   box-shadow:
-    0 10px 32px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 16px 48px rgba(0, 0, 0, 0.7),
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 50px var(--card-glow),
+    0 0 80px var(--card-glow),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.coach-mode__card:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow:
+    0 20px 56px rgba(0, 0, 0, 0.8),
+    0 10px 28px rgba(0, 0, 0, 0.6),
+    0 5px 14px rgba(0, 0, 0, 0.5),
+    0 0 60px var(--card-glow),
+    0 0 100px var(--card-glow),
+    inset 0 2px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35);
 }
 
 .coach-mode__card::before {
@@ -279,31 +388,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
+  width: 68px;  /* 加大 */
+  height: 68px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
   color: var(--card-icon-color, #fff);
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.3));
 }
 
 .coach-mode__card-icon svg {
   display: block;
+  width: 44px;  /* 加大 */
+  height: 44px;
 }
 
 /* 标签 */
 .coach-mode__card-label {
-  font-size: 21px;
+  font-size: 22px;  /* 加大 */
   font-weight: 700;
   letter-spacing: 0.06em;
 }
 
 /* 描述 */
 .coach-mode__card-desc {
-  font-size: 14px;
+  font-size: 15px;  /* 加大 */
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.55);
-  max-width: 160px;
+  color: rgba(255, 255, 255, 0.65);
+  max-width: 200px;  /* 加大 */
 }
 
 /* 即将开放角标 */
@@ -320,41 +431,48 @@
   letter-spacing: 0.04em;
 }
 
-/* ── 各卡片配色 ── */
+/* ── 各卡片配色（硬色卡片） ── */
 
 .coach-mode__card--cabinet {
-  --card-bg: linear-gradient(165deg, rgba(30, 90, 160, 0.75) 0%, rgba(15, 50, 100, 0.85) 100%);
-  --card-border: rgba(100, 181, 246, 0.5);
-  --card-glow: rgba(66, 165, 245, 0.3);
-  --card-icon-color: #90caf9;
+  --card-bg: #1e5a9e;  /* 硬色：深蓝 */
+  --card-border: #64b5f6;
+  --card-glow: rgba(100, 181, 246, 0.6);
+  --card-icon-color: #e3f2fd;
 }
 
 .coach-mode__card--logic {
-  --card-bg: linear-gradient(165deg, rgba(100, 60, 170, 0.75) 0%, rgba(60, 30, 120, 0.85) 100%);
-  --card-border: rgba(179, 157, 219, 0.5);
-  --card-glow: rgba(149, 117, 205, 0.3);
-  --card-icon-color: #ce93d8;
+  --card-bg: #643caa;  /* 硬色：紫色 */
+  --card-border: #b39ddb;
+  --card-glow: rgba(179, 157, 219, 0.6);
+  --card-icon-color: #ede7f6;
 }
 
-.coach-mode__card--operation {
-  --card-bg: linear-gradient(165deg, rgba(40, 120, 50, 0.75) 0%, rgba(20, 70, 30, 0.85) 100%);
-  --card-border: rgba(129, 199, 132, 0.5);
-  --card-glow: rgba(102, 187, 106, 0.32);
-  --card-icon-color: #a5d6a7;
+.coach-mode__card--sampling {
+  --card-bg: #287832;  /* 硬色：绿色 */
+  --card-border: #81c784;
+  --card-glow: rgba(129, 199, 132, 0.6);
+  --card-icon-color: #e8f5e9;
 }
 
 .coach-mode__card--drawing {
-  --card-bg: linear-gradient(165deg, rgba(180, 110, 20, 0.75) 0%, rgba(130, 70, 10, 0.85) 100%);
-  --card-border: rgba(255, 183, 77, 0.5);
-  --card-glow: rgba(255, 183, 77, 0.3);
-  --card-icon-color: #ffcc80;
+  --card-bg: #b46e14;  /* 硬色：橙色 */
+  --card-border: #ffb74d;
+  --card-glow: rgba(255, 183, 77, 0.6);
+  --card-icon-color: #fff3e0;
 }
 
 .coach-mode__card--circuit {
-  --card-bg: linear-gradient(165deg, rgba(0, 120, 140, 0.75) 0%, rgba(0, 80, 95, 0.85) 100%);
-  --card-border: rgba(77, 208, 225, 0.5);
-  --card-glow: rgba(77, 208, 225, 0.3);
-  --card-icon-color: #80deea;
+  --card-bg: #00788c;  /* 硬色：青色 */
+  --card-border: #4dd0e1;
+  --card-glow: rgba(77, 208, 225, 0.6);
+  --card-icon-color: #e0f7fa;
+}
+
+.coach-mode__card--accident {
+  --card-bg: #b42828;  /* 硬色：红色 */
+  --card-border: #ef5350;
+  --card-glow: rgba(239, 83, 80, 0.6);
+  --card-icon-color: #ffebee;
 }
 
 /* ── 响应式 ── */
@@ -377,9 +495,39 @@
     right: 16px;
   }
 
-  .coach-mode__grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
+  .coach-mode__floating {
+    min-height: 500px;
+  }
+
+  /* 小屏幕时调整为更紧凑的浮动位置 */
+  .coach-mode__floating .coach-mode__card:nth-child(1) {
+    top: 3%;
+    left: 5%;
+  }
+
+  .coach-mode__floating .coach-mode__card:nth-child(2) {
+    top: 10%;
+    right: 8%;
+  }
+
+  .coach-mode__floating .coach-mode__card:nth-child(3) {
+    top: 35%;
+    left: 12%;
+  }
+
+  .coach-mode__floating .coach-mode__card:nth-child(4) {
+    top: 45%;
+    right: 5%;
+  }
+
+  .coach-mode__floating .coach-mode__card:nth-child(5) {
+    bottom: 15%;
+    left: 8%;
+  }
+
+  .coach-mode__floating .coach-mode__card:nth-child(6) {
+    bottom: 5%;
+    right: 12%;
   }
 
   .coach-mode__card {
@@ -407,8 +555,62 @@
 }
 
 @media (max-width: 600px) {
-  .coach-mode__grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+  .coach-mode__floating {
+    min-height: 450px;
+  }
+
+  /* 更小屏幕时进一步调整位置 */
+  .coach-mode__floating .coach-mode__card:nth-child(1) {
+    top: 2%;
+    left: 3%;
+  }
+
+  .coach-mode__floating .coach-mode__card:nth-child(2) {
+    top: 8%;
+    right: 5%;
+  }
+
+  .coach-mode__floating .coach-mode__card:nth-child(3) {
+    top: 30%;
+    left: 8%;
+  }
+
+  .coach-mode__floating .coach-mode__card:nth-child(4) {
+    top: 40%;
+    right: 3%;
+  }
+
+  .coach-mode__floating .coach-mode__card:nth-child(5) {
+    bottom: 10%;
+    left: 5%;
+  }
+
+  .coach-mode__floating .coach-mode__card:nth-child(6) {
+    bottom: 3%;
+    right: 8%;
+  }
+
+  .coach-mode__card {
+    padding: 20px 10px 16px;
+    gap: 8px;
+  }
+
+  .coach-mode__card-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .coach-mode__card-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .coach-mode__card-label {
+    font-size: 14px;
+  }
+
+  .coach-mode__card-desc {
+    font-size: 10px;
+    max-width: 120px;
   }
 }

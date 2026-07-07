@@ -2,13 +2,12 @@
 
 ## 环境要求
 
-| 组件 | 版本要求 | 说明 |
-|------|---------|------|
-| **Java** | 8 (1.8.0_202+) | 必须使用 Java 8，不兼容 Java 11+ |
-| **MySQL** | 8.0.x | 不兼容 5.7，不兼容 8.4+ |
-| **Redis** | 6.0.x - 6.2.x | 不兼容 5.x，不兼容 7.0+ |
-| **操作系统** | Windows 10/11, Linux (CentOS 7+, Ubuntu 18.04+) | 64 位系统 |
-| **浏览器** | Chrome 90+, Edge 90+, Firefox 88+ | Web 端访问 |
+- Java
+- MySQL
+- Redis
+- Nginx（可选）
+
+> 环境运行起来后，数据库部分需要把冷启动数据导入
 
 ## 后端运行
 
@@ -17,15 +16,27 @@
 创建 `application-prod.yml`：
 
 ```yaml
-spring:
+zeta:
   datasource:
-    url: jdbc:mysql://localhost:3306/zeta_business?useSSL=false&serverTimezone=GMT%2B8
-    username: your_username
-    password: your_password
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    business:
+      url: jdbc:mysql://localhost:3306/ct-screen-monitor?useSSL=false&serverTimezone=GMT%2B8
+      username: your_username
+      password: your_password
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      ddl-auto: update
+    screen:
+      url: jdbc:mysql://localhost:3306/ct-screen?useSSL=false&serverTimezone=GMT%2B8
+      username: your_username
+      password: your_password
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      ddl-auto: none
+      read-only: true
+
+spring:
   redis:
     host: localhost
     port: 6379
+    username: your_redis_username
     password: your_redis_password
     timeout: 3000ms
 
@@ -33,13 +44,22 @@ server:
   port: 8080
 ```
 
+**数据库说明**：
+
+- **ct-screen-monitor**（业务库）：存储用户、快照、认知条目等业务数据，可读写
+- **ct-screen**（屏柜库）：存储屏柜、设备、保护逻辑等基础数据，只读
+
 ### 2. 启动后端
+
+启动命令行，进入后端程序包目录，执行以下指令：
 
 ```bash
 java -jar zeta-server-1.0.0.jar --spring.profiles.active=prod --spring.config.location=./application-prod.yml
 ```
 
 启动成功标志：日志输出 `Started ZetaApplication in X.XXX seconds`
+
+> 命令行程序不要关闭
 
 ## 前端部署
 
@@ -91,6 +111,8 @@ server {
 
 编辑安装目录下的 `settings.json`：
 
+填入后端地址：`协议://IP:端口`（如 `http://192.168.1.100:8080`）
+
 ```json
 {
   "apiBaseUrl": "http://192.168.1.100:8080"
@@ -108,13 +130,13 @@ server {
 
 ## 默认账号
 
-| 用户名 | 密码 | 角色 |
-|--------|------|------|
-| student | 123456 | 学员 |
-| teacher | 123456 | 教师 |
-| admin | 123456 | 管理员 |
+| 用户名  | 密码   | 角色   |
+| ------- | ------ | ------ |
+| student | 123456 | 学员   |
+| teacher | 123456 | 教师   |
+| admin   | 123456 | 管理员 |
 
 ---
 
-**版本**：1.0.0  
+**版本**：1.0.0
 **更新日期**：2026-07-03

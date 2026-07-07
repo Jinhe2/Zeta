@@ -2,18 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
 import { normalizeRegion } from '../../../utils/imageRegionUtils'
+import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
-const DEFAULT_CABINET_CODE = 'cabinet-line-220'
 const POLL_INTERVAL = 5000
-
-function findCabinetId(tree, cabinetCode) {
-  for (const cabinet of tree?.cabinets ?? []) {
-    if (cabinet.code === cabinetCode) {
-      return cabinet.id
-    }
-  }
-  return tree?.cabinets?.[0]?.id ?? null
-}
 
 /** 根据压板类型和状态选择 SVG */
 function pressboardSvg(type, state) {
@@ -34,47 +25,26 @@ function pressboardColor(type) {
 }
 
 export default function PlateCognitionContent() {
-  const [cabinetItems, setCabinetItems] = useState([])
-  const [cognitionDevices, setCognitionDevices] = useState([])
-  const [displayItems, setDisplayItems] = useState([])
-  const [selectedCabinetItemId, setSelectedCabinetItemId] = useState(null)
+  const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedDeviceId, setSelectedDeviceId] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const {
+    cabinetId,
+    cabinetItems,
+    cognitionDevices,
+    selectedCabinetItem,
+    selectedCabinetItemId,
+    setSelectedCabinetItemId,
+    loading,
+    error,
+    setError,
+  } = useFilteredCabinetCognition('PLATE_GROUP')
 
   // 压板状态
   const [pressboards, setPressboards] = useState([])
   const [pressboardStates, setPressboardStates] = useState({})
   const [statusLoading, setStatusLoading] = useState(false)
-  const [cabinetId, setCabinetId] = useState(null)
   const pollRef = useRef(null)
-
-  // 加载屏柜条目
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      setLoading(true)
-      setError(null)
-      try {
-        const tree = await api.getKnowledgeTree()
-        const cid = findCabinetId(tree, DEFAULT_CABINET_CODE)
-        if (!cid) throw new Error('未找到屏柜学习数据')
-        if (!cancelled) setCabinetId(cid)
-        const items = await api.listKnowledgeCabinetDisplayItems(cid)
-        if (!cancelled) {
-          setCabinetItems(items)
-          setSelectedCabinetItemId(items[0]?.id ?? null)
-        }
-      } catch (err) {
-        if (!cancelled) setError(err.message)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [])
 
   // 加载压板列表
   useEffect(() => {
@@ -84,7 +54,7 @@ export default function PlateCognitionContent() {
       .then((data) => { if (!cancelled) setPressboards(data) })
       .catch((err) => { if (!cancelled) setError('压板数据加载失败: ' + err.message) })
     return () => { cancelled = true }
-  }, [cabinetId])
+  }, [cabinetId, setError])
 
   // 轮询压板状态
   const fetchStatus = useCallback(async () => {
@@ -109,47 +79,29 @@ export default function PlateCognitionContent() {
 
   useEffect(() => {
     if (!cabinetId) return
-    fetchStatus()
+    const firstTimer = setTimeout(fetchStatus, 0)
     pollRef.current = setInterval(fetchStatus, POLL_INTERVAL)
-    return () => clearInterval(pollRef.current)
+    return () => {
+      clearTimeout(firstTimer)
+      clearInterval(pollRef.current)
+    }
   }, [cabinetId, fetchStatus])
 
-  // 加载压板组设备
-  useEffect(() => {
-    if (!selectedCabinetItemId) {
-      setCognitionDevices([])
-      setSelectedDeviceId(null)
-      return undefined
-    }
-    let cancelled = false
-    async function loadDevices() {
-      try {
-        const all = await api.listKnowledgeCognitionDevices(selectedCabinetItemId)
-        const devices = all.filter((d) => d.deviceType === 'PLATE_GROUP')
-        if (!cancelled) {
-          setCognitionDevices(devices)
-          setSelectedDeviceId(devices[0]?.id ?? null)
-        }
-      } catch (err) {
-        if (!cancelled) setError(err.message)
-      }
-    }
-    loadDevices()
-    return () => { cancelled = true }
-  }, [selectedCabinetItemId])
+  const selectedDevice =
+    cognitionDevices.find((d) => d.id === selectedDeviceId) ?? cognitionDevices[0] ?? null
+  const activeDeviceId = selectedDevice?.id ?? null
 
   // 加载认知条目
   useEffect(() => {
-    if (!selectedDeviceId) {
-      setDisplayItems([])
+    if (!activeDeviceId) {
       return undefined
     }
     let cancelled = false
     async function loadItems() {
       try {
-        const items = await api.listKnowledgeCognitionDeviceDisplayItems(selectedDeviceId)
+        const items = await api.listKnowledgeCognitionDeviceDisplayItems(activeDeviceId)
         if (!cancelled) {
-          setDisplayItems(items)
+          setDisplayItemsState({ deviceId: activeDeviceId, items })
           setCurrentSlide(0)
         }
       } catch (err) {
@@ -158,12 +110,9 @@ export default function PlateCognitionContent() {
     }
     loadItems()
     return () => { cancelled = true }
-  }, [selectedDeviceId])
+  }, [activeDeviceId, setError])
 
-  const selectedCabinetItem =
-    cabinetItems.find((item) => item.id === selectedCabinetItemId) ?? cabinetItems[0] ?? null
-  const selectedDevice =
-    cognitionDevices.find((d) => d.id === selectedDeviceId) ?? cognitionDevices[0] ?? null
+  const displayItems = displayItemsState.deviceId === activeDeviceId ? displayItemsState.items : []
   const currentDisplayItem = displayItems[currentSlide] ?? displayItems[0] ?? null
 
   const highlightRegion =
@@ -172,9 +121,8 @@ export default function PlateCognitionContent() {
       : null
 
   const handleCabinetItemSelect = (itemId) => {
-    setCognitionDevices([])
     setSelectedDeviceId(null)
-    setDisplayItems([])
+    setDisplayItemsState({ deviceId: null, items: [] })
     setCurrentSlide(0)
     setSelectedCabinetItemId(itemId)
   }
@@ -226,12 +174,15 @@ export default function PlateCognitionContent() {
             />
           </>
         )}
+        {!loading && !error && !selectedCabinetItem && (
+          <p className="cabinet-section__paragraph">暂无压板认知条目</p>
+        )}
       </div>
 
       {/* 右侧：压板状态网格 + 认知条目 */}
       <div className="cabinet-section__media cabinet-section__media--device">
         {/* 压板状态网格 */}
-        {pressboards.length > 0 && (
+        {selectedCabinetItem && pressboards.length > 0 && (
           <div className="pressboard-grid">
             <div className="pressboard-grid__header">
               <span>压板状态</span>
@@ -313,7 +264,7 @@ export default function PlateCognitionContent() {
             )}
           </>
         )}
-        {!loading && !error && !currentDisplayItem && pressboards.length === 0 && (
+        {!loading && !error && selectedCabinetItem && !currentDisplayItem && pressboards.length === 0 && (
           <p className="cabinet-section__paragraph">暂无压板认知条目</p>
         )}
       </div>

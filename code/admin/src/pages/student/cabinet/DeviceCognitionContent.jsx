@@ -2,98 +2,38 @@ import { useEffect, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
 import { normalizeRegion } from '../../../utils/imageRegionUtils'
-
-const DEFAULT_CABINET_CODE = 'cabinet-line-220'
-
-function findCabinetId(tree, cabinetCode) {
-  for (const cabinet of tree?.cabinets ?? []) {
-    if (cabinet.code === cabinetCode) {
-      return cabinet.id
-    }
-  }
-  return tree?.cabinets?.[0]?.id ?? null
-}
+import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
 export default function DeviceCognitionContent() {
-  const [cabinetItems, setCabinetItems] = useState([])
-  const [cognitionDevices, setCognitionDevices] = useState([])
-  const [displayItems, setDisplayItems] = useState([])
-  const [selectedCabinetItemId, setSelectedCabinetItemId] = useState(null)
+  const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedCognitionDeviceId, setSelectedCognitionDeviceId] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const {
+    cabinetItems,
+    cognitionDevices,
+    selectedCabinetItem,
+    selectedCabinetItemId,
+    setSelectedCabinetItemId,
+    loading,
+    error,
+    setError,
+  } = useFilteredCabinetCognition('IED')
+
+  const selectedCognitionDevice =
+    cognitionDevices.find((d) => d.id === selectedCognitionDeviceId) ?? cognitionDevices[0] ?? null
+  const activeCognitionDeviceId = selectedCognitionDevice?.id ?? null
 
   useEffect(() => {
-    let cancelled = false
-
-    async function loadCabinetItems() {
-      setLoading(true)
-      setError(null)
-      try {
-        const tree = await api.getKnowledgeTree()
-        const cabinetId = findCabinetId(tree, DEFAULT_CABINET_CODE)
-        if (!cabinetId) {
-          throw new Error('未找到屏柜学习数据')
-        }
-        const items = await api.listKnowledgeCabinetDisplayItems(cabinetId)
-        if (!cancelled) {
-          setCabinetItems(items)
-          setSelectedCabinetItemId(items[0]?.id ?? null)
-        }
-      } catch (err) {
-        if (!cancelled) setError(err.message)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    loadCabinetItems()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!selectedCabinetItemId) {
-      setCognitionDevices([])
-      setSelectedCognitionDeviceId(null)
-      return undefined
-    }
-
-    let cancelled = false
-    async function loadDevices() {
-      try {
-        const allDevices = await api.listKnowledgeCognitionDevices(selectedCabinetItemId)
-        // 设备认知页签只显示 IED 类型的保护装置
-        const devices = allDevices.filter((d) => d.deviceType === 'IED')
-        if (!cancelled) {
-          setCognitionDevices(devices)
-          setSelectedCognitionDeviceId(devices[0]?.id ?? null)
-        }
-      } catch (err) {
-        if (!cancelled) setError(err.message)
-      }
-    }
-
-    loadDevices()
-    return () => {
-      cancelled = true
-    }
-  }, [selectedCabinetItemId])
-
-  useEffect(() => {
-    if (!selectedCognitionDeviceId) {
-      setDisplayItems([])
+    if (!activeCognitionDeviceId) {
       return undefined
     }
 
     let cancelled = false
     async function loadDisplayItems() {
       try {
-        const items = await api.listKnowledgeCognitionDeviceDisplayItems(selectedCognitionDeviceId)
+        const items = await api.listKnowledgeCognitionDeviceDisplayItems(activeCognitionDeviceId)
         if (!cancelled) {
-          setDisplayItems(items)
+          setDisplayItemsState({ deviceId: activeCognitionDeviceId, items })
           setCurrentSlide(0)
         }
       } catch (err) {
@@ -105,25 +45,19 @@ export default function DeviceCognitionContent() {
     return () => {
       cancelled = true
     }
-  }, [selectedCognitionDeviceId])
+  }, [activeCognitionDeviceId, setError])
 
-  const selectedCabinetItem =
-    cabinetItems.find((item) => item.id === selectedCabinetItemId) ?? cabinetItems[0] ?? null
-  const selectedCognitionDevice =
-    cognitionDevices.find((d) => d.id === selectedCognitionDeviceId) ?? cognitionDevices[0] ?? null
+  const displayItems = displayItemsState.deviceId === activeCognitionDeviceId ? displayItemsState.items : []
   const currentDisplayItem = displayItems[currentSlide] ?? displayItems[0] ?? null
 
-  // 只有屏柜条目和设备都已选定，且设备属于当前屏柜条目时，才显示高亮区域
   const highlightRegion =
     selectedCabinetItem && selectedCognitionDevice && cognitionDevices.length > 0
       ? normalizeRegion(selectedCognitionDevice)
       : null
 
   const handleCabinetItemSelect = (itemId) => {
-    // 立即清除旧设备和区域，避免切换瞬间错位
-    setCognitionDevices([])
     setSelectedCognitionDeviceId(null)
-    setDisplayItems([])
+    setDisplayItemsState({ deviceId: null, items: [] })
     setCurrentSlide(0)
     setSelectedCabinetItemId(itemId)
   }
@@ -160,6 +94,9 @@ export default function DeviceCognitionContent() {
               alt={selectedCabinetItem.title}
             />
           </>
+        )}
+        {!loading && !error && !selectedCabinetItem && (
+          <p className="cabinet-section__paragraph">暂无设备认知条目</p>
         )}
       </div>
 
@@ -205,7 +142,7 @@ export default function DeviceCognitionContent() {
             )}
           </>
         )}
-        {!loading && !error && !currentDisplayItem && (
+        {!loading && !error && selectedCabinetItem && !currentDisplayItem && (
           <p className="cabinet-section__paragraph">暂无设备认知条目</p>
         )}
       </div>

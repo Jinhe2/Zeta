@@ -2,17 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
 import { normalizeRegion } from '../../../utils/imageRegionUtils'
-
-const DEFAULT_CABINET_CODE = 'cabinet-line-220'
-
-function findCabinetId(tree, cabinetCode) {
-  for (const cabinet of tree?.cabinets ?? []) {
-    if (cabinet.code === cabinetCode) {
-      return cabinet.id
-    }
-  }
-  return tree?.cabinets?.[0]?.id ?? null
-}
+import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
 function wiringStatusColor(status) {
   switch (status) {
@@ -33,14 +23,20 @@ function wiringStatusLabel(status) {
 }
 
 export default function TerminalCognitionContent() {
-  const [cabinetItems, setCabinetItems] = useState([])
-  const [cognitionDevices, setCognitionDevices] = useState([])
-  const [displayItems, setDisplayItems] = useState([])
-  const [selectedCabinetItemId, setSelectedCabinetItemId] = useState(null)
+  const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedDeviceId, setSelectedDeviceId] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const {
+    cabinetId,
+    cabinetItems,
+    cognitionDevices,
+    selectedCabinetItem,
+    selectedCabinetItemId,
+    setSelectedCabinetItemId,
+    loading,
+    error,
+    setError,
+  } = useFilteredCabinetCognition('TERMINAL_GROUP')
 
   // 端子数据
   const [terminalStrips, setTerminalStrips] = useState([])
@@ -48,33 +44,6 @@ export default function TerminalCognitionContent() {
   const [terminalStates, setTerminalStates] = useState({})
   const [statusLoading, setStatusLoading] = useState(false)
   const [statusError, setStatusError] = useState(null)
-  const [cabinetId, setCabinetId] = useState(null)
-
-  // 加载屏柜条目
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      setLoading(true)
-      setError(null)
-      try {
-        const tree = await api.getKnowledgeTree()
-        const cid = findCabinetId(tree, DEFAULT_CABINET_CODE)
-        if (!cid) throw new Error('未找到屏柜学习数据')
-        if (!cancelled) setCabinetId(cid)
-        const items = await api.listKnowledgeCabinetDisplayItems(cid)
-        if (!cancelled) {
-          setCabinetItems(items)
-          setSelectedCabinetItemId(items[0]?.id ?? null)
-        }
-      } catch (err) {
-        if (!cancelled) setError(err.message)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [])
 
   // 加载端子排和端子
   useEffect(() => {
@@ -94,7 +63,7 @@ export default function TerminalCognitionContent() {
         if (!cancelled) setError('端子数据加载失败: ' + err.message)
       })
     return () => { cancelled = true }
-  }, [cabinetId])
+  }, [cabinetId, setError])
 
   // 读取端子状态
   const fetchTerminalStatus = useCallback(async () => {
@@ -118,42 +87,21 @@ export default function TerminalCognitionContent() {
     }
   }, [cabinetId])
 
-  // 加载端子组设备
-  useEffect(() => {
-    if (!selectedCabinetItemId) {
-      setCognitionDevices([])
-      setSelectedDeviceId(null)
-      return undefined
-    }
-    let cancelled = false
-    async function loadDevices() {
-      try {
-        const all = await api.listKnowledgeCognitionDevices(selectedCabinetItemId)
-        const devices = all.filter((d) => d.deviceType === 'TERMINAL_GROUP')
-        if (!cancelled) {
-          setCognitionDevices(devices)
-          setSelectedDeviceId(devices[0]?.id ?? null)
-        }
-      } catch (err) {
-        if (!cancelled) setError(err.message)
-      }
-    }
-    loadDevices()
-    return () => { cancelled = true }
-  }, [selectedCabinetItemId])
+  const selectedDevice =
+    cognitionDevices.find((d) => d.id === selectedDeviceId) ?? cognitionDevices[0] ?? null
+  const activeDeviceId = selectedDevice?.id ?? null
 
   // 加载认知条目
   useEffect(() => {
-    if (!selectedDeviceId) {
-      setDisplayItems([])
+    if (!activeDeviceId) {
       return undefined
     }
     let cancelled = false
     async function loadItems() {
       try {
-        const items = await api.listKnowledgeCognitionDeviceDisplayItems(selectedDeviceId)
+        const items = await api.listKnowledgeCognitionDeviceDisplayItems(activeDeviceId)
         if (!cancelled) {
-          setDisplayItems(items)
+          setDisplayItemsState({ deviceId: activeDeviceId, items })
           setCurrentSlide(0)
         }
       } catch (err) {
@@ -162,12 +110,9 @@ export default function TerminalCognitionContent() {
     }
     loadItems()
     return () => { cancelled = true }
-  }, [selectedDeviceId])
+  }, [activeDeviceId, setError])
 
-  const selectedCabinetItem =
-    cabinetItems.find((item) => item.id === selectedCabinetItemId) ?? cabinetItems[0] ?? null
-  const selectedDevice =
-    cognitionDevices.find((d) => d.id === selectedDeviceId) ?? cognitionDevices[0] ?? null
+  const displayItems = displayItemsState.deviceId === activeDeviceId ? displayItemsState.items : []
   const currentDisplayItem = displayItems[currentSlide] ?? displayItems[0] ?? null
 
   const highlightRegion =
@@ -176,9 +121,8 @@ export default function TerminalCognitionContent() {
       : null
 
   const handleCabinetItemSelect = (itemId) => {
-    setCognitionDevices([])
     setSelectedDeviceId(null)
-    setDisplayItems([])
+    setDisplayItemsState({ deviceId: null, items: [] })
     setCurrentSlide(0)
     setSelectedCabinetItemId(itemId)
   }
@@ -217,12 +161,15 @@ export default function TerminalCognitionContent() {
             />
           </>
         )}
+        {!loading && !error && !selectedCabinetItem && (
+          <p className="cabinet-section__paragraph">暂无端子排认知条目</p>
+        )}
       </div>
 
       {/* 右侧：端子状态 + 认知条目 */}
       <div className="cabinet-section__media cabinet-section__media--device">
         {/* 端子状态区域 */}
-        {terminals.length > 0 && (
+        {selectedCabinetItem && terminals.length > 0 && (
           <div className="terminal-status">
             <div className="terminal-status__header">
               <span>端子状态</span>
@@ -329,7 +276,7 @@ export default function TerminalCognitionContent() {
             )}
           </>
         )}
-        {!loading && !error && !currentDisplayItem && terminals.length === 0 && (
+        {!loading && !error && selectedCabinetItem && !currentDisplayItem && terminals.length === 0 && (
           <p className="cabinet-section__paragraph">暂无端子排认知条目</p>
         )}
       </div>

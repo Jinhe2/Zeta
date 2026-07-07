@@ -4,7 +4,7 @@ import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
 import { normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
-export default function DeviceCognitionContent() {
+export default function DeviceCognitionContent({ navigationTarget, onPageChange }) {
   const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedCognitionDeviceId, setSelectedCognitionDeviceId] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -47,6 +47,43 @@ export default function DeviceCognitionContent() {
     }
   }, [activeCognitionDeviceId, setError])
 
+  useEffect(() => {
+    if (navigationTarget?.sectionId !== 'device') return
+
+    let cancelled = false
+    queueMicrotask(() => {
+      if (cancelled) return
+
+      if (
+        navigationTarget.cabinetItemId != null
+        && navigationTarget.cabinetItemId !== selectedCabinetItemId
+      ) {
+        setSelectedCognitionDeviceId(navigationTarget.deviceId ?? null)
+        setDisplayItemsState({ deviceId: null, items: [] })
+        setCurrentSlide(navigationTarget.slideIndex ?? 0)
+        setSelectedCabinetItemId(navigationTarget.cabinetItemId)
+        return
+      }
+
+      if (navigationTarget.deviceId != null) {
+        setSelectedCognitionDeviceId(navigationTarget.deviceId)
+      }
+      setCurrentSlide(navigationTarget.slideIndex ?? 0)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [
+    navigationTarget?.sectionId,
+    navigationTarget?.cabinetItemId,
+    navigationTarget?.deviceId,
+    navigationTarget?.slideIndex,
+    navigationTarget?.key,
+    selectedCabinetItemId,
+    setSelectedCabinetItemId,
+    displayItemsState.deviceId,
+  ])
+
   const displayItems = displayItemsState.deviceId === activeCognitionDeviceId ? displayItemsState.items : []
   const currentDisplayItem = displayItems[currentSlide] ?? displayItems[0] ?? null
 
@@ -60,6 +97,30 @@ export default function DeviceCognitionContent() {
     setDisplayItemsState({ deviceId: null, items: [] })
     setCurrentSlide(0)
     setSelectedCabinetItemId(itemId)
+    onPageChange?.({
+      sectionId: 'device',
+      cabinetItemId: itemId,
+    })
+  }
+
+  const handleDeviceSelect = (deviceId) => {
+    setSelectedCognitionDeviceId(deviceId)
+    setCurrentSlide(0)
+    onPageChange?.({
+      sectionId: 'device',
+      cabinetItemId: selectedCabinetItem?.id,
+      deviceId,
+    })
+  }
+
+  const handleSlideSelect = (slideIndex) => {
+    setCurrentSlide(slideIndex)
+    onPageChange?.({
+      sectionId: 'device',
+      cabinetItemId: selectedCabinetItem?.id,
+      deviceId: activeCognitionDeviceId,
+      slideIndex,
+    })
   }
 
   return (
@@ -112,7 +173,7 @@ export default function DeviceCognitionContent() {
                 className={`cabinet-section__item-tab${
                   device.id === selectedCognitionDevice?.id ? ' cabinet-section__item-tab--active' : ''
                 }`}
-                onClick={() => setSelectedCognitionDeviceId(device.id)}
+                onClick={() => handleDeviceSelect(device.id)}
               >
                 {device.title}
               </button>
@@ -134,7 +195,7 @@ export default function DeviceCognitionContent() {
                     key={i}
                     type="button"
                     className={`cabinet-section__slide-dot${i === currentSlide ? ' cabinet-section__slide-dot--active' : ''}`}
-                    onClick={() => setCurrentSlide(i)}
+                    onClick={() => handleSlideSelect(i)}
                     aria-label={`第 ${i + 1} 张`}
                   />
                 ))}

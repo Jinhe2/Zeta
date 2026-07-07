@@ -12,7 +12,7 @@ function findCabinetId(tree, cabinetCode) {
   return tree?.cabinets?.[0]?.id ?? null
 }
 
-export default function StructureCognitionContent() {
+export default function StructureCognitionContent({ navigationTarget, onPageChange }) {
   const [items, setItems] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -48,7 +48,30 @@ export default function StructureCognitionContent() {
     }
   }, [])
 
+  useEffect(() => {
+    if (navigationTarget?.sectionId !== 'structure') return
+    if (navigationTarget.cabinetItemId == null) return
+
+    let cancelled = false
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setSelectedId(navigationTarget.cabinetItemId)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [navigationTarget])
+
   const selectedItem = items.find((item) => item.id === selectedId) ?? items[0] ?? null
+
+  const handleItemSelect = (itemId) => {
+    setSelectedId(itemId)
+    onPageChange?.({
+      sectionId: 'structure',
+      cabinetItemId: itemId,
+    })
+  }
 
   return (
     <div className="cabinet-section cabinet-section--structure">
@@ -79,7 +102,7 @@ export default function StructureCognitionContent() {
                 className={`cabinet-section__item-tab${
                   item.id === selectedItem?.id ? ' cabinet-section__item-tab--active' : ''
                 }`}
-                onClick={() => setSelectedId(item.id)}
+                onClick={() => handleItemSelect(item.id)}
               >
                 {item.title}
               </button>

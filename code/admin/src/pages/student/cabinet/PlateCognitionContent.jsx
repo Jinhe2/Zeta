@@ -24,7 +24,7 @@ function pressboardColor(type) {
   }
 }
 
-export default function PlateCognitionContent() {
+export default function PlateCognitionContent({ navigationTarget, onPageChange }) {
   const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedDeviceId, setSelectedDeviceId] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -69,6 +69,43 @@ export default function PlateCognitionContent() {
     loadItems()
     return () => { cancelled = true }
   }, [activeDeviceId, setError])
+
+  useEffect(() => {
+    if (navigationTarget?.sectionId !== 'plate') return
+
+    let cancelled = false
+    queueMicrotask(() => {
+      if (cancelled) return
+
+      if (
+        navigationTarget.cabinetItemId != null
+        && navigationTarget.cabinetItemId !== selectedCabinetItemId
+      ) {
+        setSelectedDeviceId(navigationTarget.deviceId ?? null)
+        setDisplayItemsState({ deviceId: null, items: [] })
+        setCurrentSlide(navigationTarget.slideIndex ?? 0)
+        setSelectedCabinetItemId(navigationTarget.cabinetItemId)
+        return
+      }
+
+      if (navigationTarget.deviceId != null) {
+        setSelectedDeviceId(navigationTarget.deviceId)
+      }
+      setCurrentSlide(navigationTarget.slideIndex ?? 0)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [
+    navigationTarget?.sectionId,
+    navigationTarget?.cabinetItemId,
+    navigationTarget?.deviceId,
+    navigationTarget?.slideIndex,
+    navigationTarget?.key,
+    selectedCabinetItemId,
+    setSelectedCabinetItemId,
+    displayItemsState.deviceId,
+  ])
 
   useEffect(() => {
     if (!cabinetId) return undefined
@@ -149,6 +186,32 @@ export default function PlateCognitionContent() {
     setDisplayItemsState({ deviceId: null, items: [] })
     setCurrentSlide(0)
     setSelectedCabinetItemId(itemId)
+    onPageChange?.({
+      sectionId: 'plate',
+      cabinetItemId: itemId,
+    })
+  }
+
+  const handleDeviceSelect = (deviceId) => {
+    setSelectedDeviceId(deviceId)
+    setDisplayItemsState({ deviceId: null, items: [] })
+    setCurrentSlide(0)
+    onPageChange?.({
+      sectionId: 'plate',
+      cabinetItemId: selectedCabinetItem?.id,
+      deviceId,
+    })
+  }
+
+  const handleSlideSelect = (slideIndex) => {
+    setCurrentSlide(slideIndex)
+    onPageChange?.({
+      sectionId: 'plate',
+      cabinetItemId: selectedCabinetItem?.id,
+      deviceId: activeDeviceId,
+      slideIndex,
+      kind: slideIndex === statusSlideIndex ? 'status' : 'display',
+    })
   }
 
   return (
@@ -201,11 +264,7 @@ export default function PlateCognitionContent() {
                 className={`cabinet-section__item-tab${
                   device.id === selectedDevice?.id ? ' cabinet-section__item-tab--active' : ''
                 }`}
-                onClick={() => {
-                  setSelectedDeviceId(device.id)
-                  setDisplayItemsState({ deviceId: null, items: [] })
-                  setCurrentSlide(0)
-                }}
+                onClick={() => handleDeviceSelect(device.id)}
               >
                 {device.title}
               </button>
@@ -275,7 +334,7 @@ export default function PlateCognitionContent() {
                 key={i}
                 type="button"
                 className={`cabinet-section__slide-dot${i === activeSlide ? ' cabinet-section__slide-dot--active' : ''}`}
-                onClick={() => setCurrentSlide(i)}
+                onClick={() => handleSlideSelect(i)}
                 aria-label={i === statusSlideIndex ? '压板状态' : `第 ${i + 1} 张`}
               />
             ))}

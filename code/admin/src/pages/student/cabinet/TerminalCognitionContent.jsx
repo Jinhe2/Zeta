@@ -22,7 +22,7 @@ function wiringStatusLabel(status) {
   }
 }
 
-export default function TerminalCognitionContent() {
+export default function TerminalCognitionContent({ navigationTarget, onPageChange }) {
   const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedDeviceId, setSelectedDeviceId] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -112,6 +112,43 @@ export default function TerminalCognitionContent() {
     return () => { cancelled = true }
   }, [activeDeviceId, setError])
 
+  useEffect(() => {
+    if (navigationTarget?.sectionId !== 'terminal') return
+
+    let cancelled = false
+    queueMicrotask(() => {
+      if (cancelled) return
+
+      if (
+        navigationTarget.cabinetItemId != null
+        && navigationTarget.cabinetItemId !== selectedCabinetItemId
+      ) {
+        setSelectedDeviceId(navigationTarget.deviceId ?? null)
+        setDisplayItemsState({ deviceId: null, items: [] })
+        setCurrentSlide(navigationTarget.slideIndex ?? 0)
+        setSelectedCabinetItemId(navigationTarget.cabinetItemId)
+        return
+      }
+
+      if (navigationTarget.deviceId != null) {
+        setSelectedDeviceId(navigationTarget.deviceId)
+      }
+      setCurrentSlide(navigationTarget.slideIndex ?? 0)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [
+    navigationTarget?.sectionId,
+    navigationTarget?.cabinetItemId,
+    navigationTarget?.deviceId,
+    navigationTarget?.slideIndex,
+    navigationTarget?.key,
+    selectedCabinetItemId,
+    setSelectedCabinetItemId,
+    displayItemsState.deviceId,
+  ])
+
   const displayItems = displayItemsState.deviceId === activeDeviceId ? displayItemsState.items : []
   const currentDisplayItem = displayItems[currentSlide] ?? displayItems[0] ?? null
 
@@ -125,6 +162,31 @@ export default function TerminalCognitionContent() {
     setDisplayItemsState({ deviceId: null, items: [] })
     setCurrentSlide(0)
     setSelectedCabinetItemId(itemId)
+    onPageChange?.({
+      sectionId: 'terminal',
+      cabinetItemId: itemId,
+    })
+  }
+
+  const handleDeviceSelect = (deviceId) => {
+    setSelectedDeviceId(deviceId)
+    setDisplayItemsState({ deviceId: null, items: [] })
+    setCurrentSlide(0)
+    onPageChange?.({
+      sectionId: 'terminal',
+      cabinetItemId: selectedCabinetItem?.id,
+      deviceId,
+    })
+  }
+
+  const handleSlideSelect = (slideIndex) => {
+    setCurrentSlide(slideIndex)
+    onPageChange?.({
+      sectionId: 'terminal',
+      cabinetItemId: selectedCabinetItem?.id,
+      deviceId: activeDeviceId,
+      slideIndex,
+    })
   }
 
   return (
@@ -246,7 +308,7 @@ export default function TerminalCognitionContent() {
                 className={`cabinet-section__item-tab${
                   device.id === selectedDevice?.id ? ' cabinet-section__item-tab--active' : ''
                 }`}
-                onClick={() => setSelectedDeviceId(device.id)}
+                onClick={() => handleDeviceSelect(device.id)}
               >
                 {device.title}
               </button>
@@ -268,7 +330,7 @@ export default function TerminalCognitionContent() {
                     key={i}
                     type="button"
                     className={`cabinet-section__slide-dot${i === currentSlide ? ' cabinet-section__slide-dot--active' : ''}`}
-                    onClick={() => setCurrentSlide(i)}
+                    onClick={() => handleSlideSelect(i)}
                     aria-label={`第 ${i + 1} 张`}
                   />
                 ))}

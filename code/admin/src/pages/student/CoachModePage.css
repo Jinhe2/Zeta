@@ -136,15 +136,6 @@
   gap: 12px;
 }
 
-.coach-mode__avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 2px solid rgba(129, 199, 132, 0.5);
-  background: #1a3050;
-  flex-shrink: 0;
-}
-
 .coach-mode__user-meta {
   display: flex;
   flex-direction: column;

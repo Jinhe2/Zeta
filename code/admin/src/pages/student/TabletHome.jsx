@@ -81,13 +81,6 @@ export default function TabletHome() {
     <div className="tablet-home">
       <header className="tablet-home__header">
         <div className="tablet-home__user">
-          <img
-            className="tablet-home__avatar"
-            src="/images/student-avatar.svg"
-            alt=""
-            width={52}
-            height={52}
-          />
           <div className="tablet-home__user-meta">
             <div className="tablet-home__user-name">{displayName}</div>
             <div className="tablet-home__user-level">{levelLabel}</div>

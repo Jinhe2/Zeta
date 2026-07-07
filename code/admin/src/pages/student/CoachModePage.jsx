@@ -128,13 +128,6 @@ export default function CoachModePage() {
 
       <header className="coach-mode__header">
         <div className="coach-mode__user">
-          <img
-            className="coach-mode__avatar"
-            src="/images/student-avatar.svg"
-            alt=""
-            width={48}
-            height={48}
-          />
           <div className="coach-mode__user-meta">
             <div className="coach-mode__user-name">{displayName}</div>
             <div className="coach-mode__user-level">{levelLabel}</div>

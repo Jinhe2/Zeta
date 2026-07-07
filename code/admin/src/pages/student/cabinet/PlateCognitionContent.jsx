@@ -320,12 +320,6 @@ export default function PlateCognitionContent() {
 
       {/* 右侧下方：文字说明 */}
       <div className="cabinet-section__text cabinet-section__text--device">
-        <h2 className="cabinet-section__title">压板认知</h2>
-        {selectedDevice && (
-          <p className="cabinet-section__paragraph cabinet-section__meta">
-            压板组 · {selectedDevice.title}
-          </p>
-        )}
         {!loading && !error && currentDisplayItem && (
           <div className="cabinet-section__cognition-item">
             {currentDisplayItem.title && (

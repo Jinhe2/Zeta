@@ -336,12 +336,6 @@ export default function TerminalCognitionContent() {
 
       {/* 文字说明 */}
       <div className="cabinet-section__text cabinet-section__text--device">
-        <h2 className="cabinet-section__title">端子排认知</h2>
-        {selectedDevice && (
-          <p className="cabinet-section__paragraph cabinet-section__meta">
-            端子排 · {selectedDevice.title}
-          </p>
-        )}
         {!loading && !error && currentDisplayItem && (
           <div className="cabinet-section__cognition-item">
             {currentDisplayItem.title && (

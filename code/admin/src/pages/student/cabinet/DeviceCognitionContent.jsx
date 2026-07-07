@@ -5,12 +5,6 @@ import { normalizeRegion } from '../../../utils/imageRegionUtils'
 
 const DEFAULT_CABINET_CODE = 'cabinet-line-220'
 
-const DEVICE_TYPE_LABELS = {
-  IED: 'IED 设备',
-  TERMINAL_GROUP: '端子组',
-  PLATE_GROUP: '压板组',
-}
-
 function findCabinetId(tree, cabinetCode) {
   for (const cabinet of tree?.cabinets ?? []) {
     if (cabinet.code === cabinetCode) {
@@ -217,14 +211,6 @@ export default function DeviceCognitionContent() {
       </div>
 
       <div className="cabinet-section__text cabinet-section__text--device">
-        <h2 className="cabinet-section__title">设备认知</h2>
-        {selectedCognitionDevice && (
-          <p className="cabinet-section__paragraph cabinet-section__meta">
-            {DEVICE_TYPE_LABELS[selectedCognitionDevice.deviceType] ?? selectedCognitionDevice.deviceType}
-            {' · '}
-            {selectedCognitionDevice.title}
-          </p>
-        )}
         {!loading && !error && currentDisplayItem && (
           <div className="cabinet-section__cognition-item">
             {currentDisplayItem.title && (

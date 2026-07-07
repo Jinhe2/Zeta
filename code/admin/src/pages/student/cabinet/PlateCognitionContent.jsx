@@ -39,53 +39,11 @@ export default function PlateCognitionContent() {
     error,
     setError,
   } = useFilteredCabinetCognition('PLATE_GROUP')
-
-  // 压板状态
   const [pressboards, setPressboards] = useState([])
   const [pressboardStates, setPressboardStates] = useState({})
   const [statusLoading, setStatusLoading] = useState(false)
+  const [statusError, setStatusError] = useState(null)
   const pollRef = useRef(null)
-
-  // 加载压板列表
-  useEffect(() => {
-    if (!cabinetId) return
-    let cancelled = false
-    api.listHardPressboards(cabinetId)
-      .then((data) => { if (!cancelled) setPressboards(data) })
-      .catch((err) => { if (!cancelled) setError('压板数据加载失败: ' + err.message) })
-    return () => { cancelled = true }
-  }, [cabinetId, setError])
-
-  // 轮询压板状态
-  const fetchStatus = useCallback(async () => {
-    if (!cabinetId) return
-    setStatusLoading(true)
-    try {
-      const data = await api.triggerPressboardStatus(cabinetId)
-      if (data?.pressboards) {
-        const states = {}
-        for (const pb of data.pressboards) {
-          states[pb.pressboard_id] = pb.state
-        }
-        setPressboardStates(states)
-      }
-    } catch (err) {
-      // 静默处理轮询错误（monitord 未启动时预期会失败）
-      console.warn('压板状态读取失败:', err.message)
-    } finally {
-      setStatusLoading(false)
-    }
-  }, [cabinetId])
-
-  useEffect(() => {
-    if (!cabinetId) return
-    const firstTimer = setTimeout(fetchStatus, 0)
-    pollRef.current = setInterval(fetchStatus, POLL_INTERVAL)
-    return () => {
-      clearTimeout(firstTimer)
-      clearInterval(pollRef.current)
-    }
-  }, [cabinetId, fetchStatus])
 
   const selectedDevice =
     cognitionDevices.find((d) => d.id === selectedDeviceId) ?? cognitionDevices[0] ?? null
@@ -112,8 +70,74 @@ export default function PlateCognitionContent() {
     return () => { cancelled = true }
   }, [activeDeviceId, setError])
 
+  useEffect(() => {
+    if (!cabinetId) return undefined
+    let cancelled = false
+    api.listHardPressboards(cabinetId)
+      .then((data) => {
+        if (!cancelled) {
+          setPressboards(data)
+          setStatusError(null)
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setStatusError('压板数据加载失败: ' + err.message)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [cabinetId])
+
+  const fetchStatus = useCallback(async () => {
+    if (!cabinetId) return
+    setStatusLoading(true)
+    setStatusError(null)
+    try {
+      const data = await api.triggerPressboardStatus(cabinetId)
+      if (data?.pressboards) {
+        const states = {}
+        for (const pb of data.pressboards) {
+          states[pb.pressboard_id] = pb.state
+        }
+        setPressboardStates(states)
+      }
+    } catch (err) {
+      setStatusError('压板状态读取失败: ' + err.message)
+      console.warn('压板状态读取失败:', err.message)
+    } finally {
+      setStatusLoading(false)
+    }
+  }, [cabinetId])
+
+  useEffect(() => {
+    if (!cabinetId) return undefined
+    const firstTimer = setTimeout(fetchStatus, 0)
+    pollRef.current = setInterval(fetchStatus, POLL_INTERVAL)
+    return () => {
+      clearTimeout(firstTimer)
+      clearInterval(pollRef.current)
+    }
+  }, [cabinetId, fetchStatus])
+
   const displayItems = displayItemsState.deviceId === activeDeviceId ? displayItemsState.items : []
-  const currentDisplayItem = displayItems[currentSlide] ?? displayItems[0] ?? null
+  const hasStatusSlide = Boolean(selectedCabinetItem)
+  const totalSlides = displayItems.length + (hasStatusSlide ? 1 : 0)
+  const activeSlide = totalSlides > 0 ? Math.min(currentSlide, totalSlides - 1) : 0
+  const statusSlideIndex = displayItems.length
+  const isStatusSlide = hasStatusSlide && activeSlide === statusSlideIndex
+  const currentDisplayItem = isStatusSlide ? null : displayItems[activeSlide] ?? displayItems[0] ?? null
+
+  const maxRow = Math.max(0, ...pressboards.map((pb) => pb.rowNo ?? 0))
+  const maxCol = Math.max(0, ...pressboards.map((pb) => pb.colNo ?? 0))
+  const pressboardGrid = []
+  for (let r = 1; r <= maxRow; r++) {
+    const row = []
+    for (let c = 1; c <= maxCol; c++) {
+      const pb = pressboards.find((p) => p.rowNo === r && p.colNo === c)
+      row.push(pb ?? null)
+    }
+    pressboardGrid.push(row)
+  }
 
   const highlightRegion =
     selectedCabinetItem && selectedDevice && cognitionDevices.length > 0
@@ -127,22 +151,8 @@ export default function PlateCognitionContent() {
     setSelectedCabinetItemId(itemId)
   }
 
-  // 构建压板网格（按行列排列）
-  const maxRow = Math.max(0, ...pressboards.map((pb) => pb.rowNo ?? 0))
-  const maxCol = Math.max(0, ...pressboards.map((pb) => pb.colNo ?? 0))
-  const pressboardGrid = []
-  for (let r = 1; r <= maxRow; r++) {
-    const row = []
-    for (let c = 1; c <= maxCol; c++) {
-      const pb = pressboards.find((p) => p.rowNo === r && p.colNo === c)
-      row.push(pb ?? null)
-    }
-    pressboardGrid.push(row)
-  }
-
   return (
     <div className="cabinet-section cabinet-section--device">
-      {/* 左侧：屏柜图 + 区域高亮 */}
       <div className="cabinet-section__media cabinet-section__media--cabinet">
         {loading && <p className="cabinet-section__paragraph">加载中…</p>}
         {error && <p className="cabinet-section__paragraph cabinet-section__paragraph--error">{error}</p>}
@@ -179,50 +189,7 @@ export default function PlateCognitionContent() {
         )}
       </div>
 
-      {/* 右侧：压板状态网格 + 认知条目 */}
       <div className="cabinet-section__media cabinet-section__media--device">
-        {/* 压板状态网格 */}
-        {selectedCabinetItem && pressboards.length > 0 && (
-          <div className="pressboard-grid">
-            <div className="pressboard-grid__header">
-              <span>压板状态</span>
-              <span className="pressboard-grid__status">
-                {statusLoading ? '读取中…' : `已更新 ${Object.keys(pressboardStates).length}/${pressboards.length}`}
-              </span>
-            </div>
-            <div className="pressboard-grid__board">
-              {pressboardGrid.map((row, ri) => (
-                <div key={ri} className="pressboard-grid__row">
-                  {row.map((pb, ci) => (
-                    <div
-                      key={ci}
-                      className={`pressboard-grid__cell${pb ? '' : ' pressboard-grid__cell--empty'}`}
-                      title={pb ? `${pb.name} (${pb.pressboardType})` : ''}
-                    >
-                      {pb && (
-                        <>
-                          <img
-                            src={pressboardSvg(pb.pressboardType, pressboardStates[pb.id])}
-                            alt={pb.name}
-                            className="pressboard-grid__svg"
-                          />
-                          <span
-                            className="pressboard-grid__label"
-                            style={{ borderBottomColor: pressboardColor(pb.pressboardType) }}
-                          >
-                            {pb.name}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 认知条目幻灯 */}
         {!loading && !error && cognitionDevices.length > 1 && (
           <div className="cabinet-section__item-tabs cabinet-section__item-tabs--compact" role="tablist">
             {cognitionDevices.map((device) => (
@@ -234,7 +201,11 @@ export default function PlateCognitionContent() {
                 className={`cabinet-section__item-tab${
                   device.id === selectedDevice?.id ? ' cabinet-section__item-tab--active' : ''
                 }`}
-                onClick={() => setSelectedDeviceId(device.id)}
+                onClick={() => {
+                  setSelectedDeviceId(device.id)
+                  setDisplayItemsState({ deviceId: null, items: [] })
+                  setCurrentSlide(0)
+                }}
               >
                 {device.title}
               </button>
@@ -244,32 +215,77 @@ export default function PlateCognitionContent() {
         {!loading && !error && currentDisplayItem && (
           <>
             <img
-              key={currentSlide}
+              key={activeSlide}
               className="cabinet-section__image cabinet-section__image--device"
               src={imageUrl('device-display', currentDisplayItem.id)}
               alt={currentDisplayItem.title}
             />
-            {displayItems.length > 1 && (
-              <div className="cabinet-section__slide-dots">
-                {displayItems.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    className={`cabinet-section__slide-dot${i === currentSlide ? ' cabinet-section__slide-dot--active' : ''}`}
-                    onClick={() => setCurrentSlide(i)}
-                    aria-label={`第 ${i + 1} 张`}
-                  />
+          </>
+        )}
+        {!loading && !error && isStatusSlide && (
+          <div className="pressboard-grid pressboard-grid--full pressboard-grid--slide">
+            <div className="pressboard-grid__header">
+              <span>屏柜压板状态</span>
+              <span className="pressboard-grid__status">
+                {statusLoading ? '读取中…' : `已更新 ${Object.keys(pressboardStates).length}/${pressboards.length}`}
+              </span>
+            </div>
+            {statusError && (
+              <p className="pressboard-grid__error">{statusError}</p>
+            )}
+            {pressboards.length === 0 ? (
+              <p className="cabinet-section__paragraph">暂无可渲染的压板状态数据</p>
+            ) : (
+              <div className="pressboard-grid__board">
+                {pressboardGrid.map((row, ri) => (
+                  <div key={ri} className="pressboard-grid__row">
+                    {row.map((pb, ci) => (
+                      <div
+                        key={ci}
+                        className={`pressboard-grid__cell${pb ? '' : ' pressboard-grid__cell--empty'}`}
+                        title={pb ? `${pb.name} (${pb.pressboardType})` : ''}
+                      >
+                        {pb && (
+                          <>
+                            <img
+                              src={pressboardSvg(pb.pressboardType, pressboardStates[pb.id])}
+                              alt={pb.name}
+                              className="pressboard-grid__svg"
+                            />
+                            <span
+                              className="pressboard-grid__label"
+                              style={{ borderBottomColor: pressboardColor(pb.pressboardType) }}
+                            >
+                              {pb.name}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
-        {!loading && !error && selectedCabinetItem && !currentDisplayItem && pressboards.length === 0 && (
+        {!loading && !error && selectedCabinetItem && totalSlides > 1 && (
+          <div className="cabinet-section__slide-dots">
+            {Array.from({ length: totalSlides }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`cabinet-section__slide-dot${i === activeSlide ? ' cabinet-section__slide-dot--active' : ''}`}
+                onClick={() => setCurrentSlide(i)}
+                aria-label={i === statusSlideIndex ? '压板状态' : `第 ${i + 1} 张`}
+              />
+            ))}
+          </div>
+        )}
+        {!loading && !error && selectedCabinetItem && totalSlides === 0 && (
           <p className="cabinet-section__paragraph">暂无压板认知条目</p>
         )}
       </div>
 
-      {/* 右侧下方：文字说明 */}
       <div className="cabinet-section__text cabinet-section__text--device">
         {!loading && !error && currentDisplayItem && (
           <div className="cabinet-section__cognition-item">
@@ -277,6 +293,14 @@ export default function PlateCognitionContent() {
               <h3 className="cabinet-section__cognition-title">{currentDisplayItem.title}</h3>
             )}
             <p className="cabinet-section__paragraph">{currentDisplayItem.content}</p>
+          </div>
+        )}
+        {!loading && !error && isStatusSlide && (
+          <div className="cabinet-section__cognition-item">
+            <h3 className="cabinet-section__cognition-title">屏柜压板状态</h3>
+            <p className="cabinet-section__paragraph">
+              自动读取屏柜压板状态并按行列渲染，作为压板认知设备组所有数据库认知条目之后的最后一项。
+            </p>
           </div>
         )}
       </div>

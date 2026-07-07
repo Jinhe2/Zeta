@@ -678,6 +678,19 @@
   margin-bottom: 12px;
 }
 
+.pressboard-grid--full {
+  width: 100%;
+  margin: 0;
+}
+
+.pressboard-grid--slide {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+
 .pressboard-grid__header {
   display: flex;
   justify-content: space-between;
@@ -694,6 +707,12 @@
   font-weight: 400;
 }
 
+.pressboard-grid__error {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #ef9a9a;
+}
+
 .pressboard-grid__board {
   display: flex;
   flex-direction: column;
@@ -702,6 +721,14 @@
   border-radius: 10px;
   border: 1px solid rgba(94, 179, 255, 0.12);
   background: rgba(15, 30, 50, 0.5);
+}
+
+.pressboard-grid--full .pressboard-grid__board {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: center;
+  overflow: auto;
+  padding: 18px;
 }
 
 .pressboard-grid__row {
@@ -720,6 +747,11 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+.pressboard-grid--full .pressboard-grid__cell {
+  min-width: 72px;
+  padding: 8px;
+}
+
 .pressboard-grid__cell--empty {
   background: transparent;
 }
@@ -728,6 +760,11 @@
   width: 24px;
   height: 48px;
   object-fit: contain;
+}
+
+.pressboard-grid--full .pressboard-grid__svg {
+  width: 34px;
+  height: 68px;
 }
 
 .pressboard-grid__label {
@@ -741,6 +778,11 @@
   white-space: nowrap;
   border-bottom: 2px solid transparent;
   padding-bottom: 1px;
+}
+
+.pressboard-grid--full .pressboard-grid__label {
+  max-width: 76px;
+  font-size: 11px;
 }
 
 /* ── 端子状态 ── */

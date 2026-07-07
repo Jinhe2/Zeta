@@ -106,7 +106,7 @@ const COACH_ENTRIES = [
     label: '回路学习',
     Icon: IconCircuit,
     desc: '掌握保护回路、控制回路与信号回路',
-    route: null,
+    route: '/student/modes/coach/circuit',
   },
 ]
 

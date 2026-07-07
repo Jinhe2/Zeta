@@ -1,0 +1,84 @@
+.circuit-learning {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.circuit-category {
+  margin-bottom: 32px;
+}
+
+.circuit-category__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #f0f4f8;
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(0, 240, 255, 0.3);
+}
+
+.circuit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.circuit-card {
+  background: rgba(6, 18, 44, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.circuit-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00f0ff, #39ff14);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.circuit-card:hover {
+  border-color: rgba(0, 240, 255, 0.5);
+  background: rgba(6, 18, 44, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 240, 255, 0.15);
+}
+
+.circuit-card:hover::before {
+  opacity: 1;
+}
+
+.circuit-card__icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.5));
+}
+
+.circuit-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f0f4f8;
+  margin: 0 0 8px;
+}
+
+.circuit-card__desc {
+  font-size: 13px;
+  color: #8fa3bf;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.circuit-card__action {
+  font-size: 12px;
+  color: #00f0ff;
+  font-weight: 500;
+  text-align: right;
+}

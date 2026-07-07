@@ -93,7 +93,13 @@ export default function TabletHome() {
 
         <div className="tablet-home__title-badge">
           <div className="tablet-home__title-badge-inner">
-            <h1 className="tablet-home__title">智慧屏柜培训系统</h1>
+            <div className="tablet-home__rivets">
+              <span className="tablet-home__rivet tablet-home__rivet--tl" />
+              <span className="tablet-home__rivet tablet-home__rivet--tr" />
+              <span className="tablet-home__rivet tablet-home__rivet--bl" />
+              <span className="tablet-home__rivet tablet-home__rivet--br" />
+            </div>
+            <h1 className="tablet-home__title">继电保护智慧实操教学系统</h1>
           </div>
         </div>
 

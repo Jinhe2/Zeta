@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>操作回路全节点流向可视化系统</title>
+    <style>
+        :root {
+            --bg-color: #030816;
+            --panel-bg: rgba(6, 18, 44, 0.85);
+            --border-color: #00f0ff;
+            --text-dim: #5c7b9e;
+            --neon-blue: #00f0ff;
+            --neon-green: #39ff14;
+            --neon-orange: #ffb700;
+            --wire-inactive: #1c355e;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 50%, #08214d 0%, #030816 80%),
+                              linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%),
+                              linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
+            background-size: 100% 100%, 100% 4px, 6px 100%;
+            font-family: "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            height: 70px;
+            background: linear-gradient(180deg, rgba(0,240,255,0.15) 0%, rgba(0,0,0,0) 100%);
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-shadow: 0 0 20px rgba(0,240,255,0.2);
+            position: relative;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 5%;
+            width: 90%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--neon-blue);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--neon-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--neon-green);
+            display: inline-block;
+            margin-right: 5px;
+        }
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 70px);
+        }
+        .control-panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0,240,255,0.2);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .panel-title {
+            font-size: 16px;
+            color: var(--neon-blue);
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .signal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .signal-list::-webkit-scrollbar { width: 4px; }
+        .signal-list::-webkit-scrollbar-thumb { background: var(--neon-blue); border-radius: 2px; }
+        .signal-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(0,240,255,0.1);
+            border-radius: 4px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .signal-item:hover {
+            background: rgba(0,240,255,0.08);
+            border-color: rgba(0,240,255,0.4);
+            transform: translateX(5px);
+        }
+        .signal-item.active {
+            background: linear-gradient(90deg, rgba(0,240,255,0.15) 0%, rgba(0,240,255,0.02) 100%);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0,240,255,0.1);
+        }
+        .signal-name { font-size: 14px; color: #fff; }
+        .signal-item.active .signal-name { color: var(--neon-blue); font-weight: bold; text-shadow: 0 0 5px rgba(0,240,255,0.5); }
+        .signal-code {
+            font-size: 11px;
+            background: rgba(0,240,255,0.2);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: var(--neon-blue);
+            font-family: monospace;
+        }
+        .action-btn {
+            background: linear-gradient(180deg, rgba(0,240,255,0.3) 0%, rgba(0,240,255,0.1) 100%);
+            border: 1px solid var(--neon-blue);
+            color: #fff;
+            padding: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-shadow: 0 0 5px var(--neon-blue);
+        }
+        .action-btn:hover {
+            background: linear-gradient(180deg, rgba(0,240,255,0.5) 0%, rgba(0,240,255,0.2) 100%);
+            transform: translateY(-2px);
+        }
+        .info-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed rgba(0,240,255,0.2);
+            border-radius: 4px;
+            padding: 15px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .info-label { color: var(--text-dim); }
+        .info-val { font-weight: bold; color: #fff; }
+        .val-active { color: var(--neon-green); }
+        .val-orange { color: var(--neon-orange); }
+        .visual-container {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0,240,255,0.2);
+            border-radius: 8px;
+            overflow: auto;
+            position: relative;
+        }
+        #circuit-svg {
+            width: 100%;
+            height: 100%;
+            min-width: 1500px;
+            min-height: 850px;
+        }
+        .wire {
+            stroke: var(--wire-inactive);
+            stroke-width: 2;
+            fill: none;
+            transition: stroke 0.4s ease;
+        }
+        .wire.active {
+            stroke: var(--neon-blue);
+            filter: drop-shadow(0 0 3px var(--neon-blue));
+        }
+        .terminal-circle {
+            fill: #030816;
+            stroke: var(--neon-blue);
+            stroke-width: 2;
+        }
+        .terminal-cross {
+            stroke: var(--neon-blue);
+            stroke-width: 1.5;
+        }
+        .node-indicator {
+            fill: var(--wire-inactive);
+            stroke: #030816;
+            stroke-width: 2;
+            transition: all 0.4s;
+        }
+        .active .node-indicator {
+            fill: var(--neon-orange);
+            filter: drop-shadow(0 0 5px var(--neon-orange));
+        }
+        .switch-pole {
+            stroke: var(--neon-blue);
+            stroke-width: 2.5;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: 0px 0px;
+        }
+        .coil-box {
+            fill: rgba(0,240,255,0.05);
+            stroke: var(--neon-blue);
+            stroke-width: 1.5;
+            stroke-dasharray: 2,2;
+        }
+        .text-label {
+            fill: var(--text-dim);
+            font-size: 11px;
+            font-family: monospace;
+        }
+        .text-label.important {
+            fill: #fff;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .text-label.title {
+            fill: var(--neon-blue);
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .table-border {
+            stroke: rgba(0,240,255,0.25);
+            stroke-width: 1;
+        }
+        .table-fill { fill: rgba(6,18,44,0.5); }
+        .table-header-fill { fill: rgba(0,240,255,0.1); }
+        .meteor-signal {
+            fill: none;
+            stroke: url(#meteor-gradient);
+            stroke-width: 4;
+            stroke-linecap: round;
+            opacity: 0;
+            filter: drop-shadow(0 0 6px var(--neon-green));
+        }
+        .meteor-signal.moving { opacity: 1; }
+        .arrow-head {
+            fill: var(--neon-green);
+            filter: drop-shadow(0 0 3px var(--neon-green));
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; box-shadow: 0 0 0 0 rgba(0,240,255,0.7); }
+            70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 10px rgba(0,240,255,0); }
+            100% { transform: scale(1); opacity: 0.5; box-shadow: 0 0 0 0 rgba(0,240,255,0); }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo-area"><div class="logo-icon"></div><h1>操作回路全节点流向可视化系统</h1></div>
+    <div class="system-status"><div><span class="status-dot"></span>操作回路: 8路在线</div><div>链路: 操作命令 → 1-1CDx节点 → 辅助触点 → 操作箱 → 跳合闸线圈</div></div>
+</header>
+<main>
+    <div class="control-panel">
+        <div class="panel-title">操作回路信号源</div>
+        <div class="signal-list" id="signalList"></div>
+        <button class="action-btn" id="nextBtn">下一组操作回路 →</button>
+        <div class="panel-title">当前回路分析</div>
+        <div class="info-card">
+            <div class="info-row"><span class="info-label">操作名称:</span><span class="info-val val-orange" id="cardName">-</span></div>
+            <div class="info-row"><span class="info-label">操作命令点:</span><span class="info-val" id="cardCmd">-</span></div>
+            <div class="info-row"><span class="info-label">中间节点:</span><span class="info-val" id="cardNode">-</span></div>
+            <div class="info-row"><span class="info-label">闭锁触点:</span><span class="info-val" id="cardContact">-</span></div>
+            <div class="info-row"><span class="info-label">操作箱端子:</span><span class="info-val" id="cardTerm">-</span></div>
+            <div class="info-row"><span class="info-label">执行元件:</span><span class="info-val" id="cardAct">-</span></div>
+            <div class="info-row"><span class="info-label">回路状态:</span><span class="info-val val-active" id="cardState">-</span></div>
+        </div>
+    </div>
+    <div class="visual-container">
+        <svg id="circuit-svg" viewBox="0 0 1550 850" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="meteor-gradient" x1="100%" y1="0%" x2="0%" y2="0%">
+                    <stop offset="0%" stop-color="#39ff14" stop-opacity="1" />
+                    <stop offset="30%" stop-color="#00f0ff" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#00f0ff" stop-opacity="0" />
+                </linearGradient>
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,240,255,0.04)" stroke-width="1" />
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+
+            <!-- 公共负端 1-1n (最左侧) -->
+            <g transform="translate(260,80)">
+                <circle cx="0" cy="0" r="14" class="terminal-circle" />
+                <line x1="-10" y1="-10" x2="10" y2="10" class="terminal-cross" />
+                <text x="-55" y="5" class="text-label important">1-1n (公共负)</text>
+                <text x="-55" y="-10" class="text-label">PRS-713NA-GCN</text>
+            </g>
+            <path d="M 260,80 L 260,780" class="wire" id="busbar" />
+
+            <!-- 坐标规划：
+                 右侧命令区 X=1400
+                 操作命令点 X=1250 (如 HQ+, TQ+ 等)
+                 中间节点1 X=1080 (1-1CD1,1-1CD3,...)
+                 中间节点2 X=920 (1-1CD2,1-1CD4,...)
+                 辅助触点/闭锁触点 X=750 (常开/常闭触点)
+                 操作箱端子 X=580 (1-4QDx)
+                 执行线圈 X=400 (合闸线圈,跳闸线圈等)
+                 公共负 X=260
+            -->
+
+            <!-- 回路0: 合闸回路 (HQ) -->
+            <g id="loop0">
+                <path id="w0_1" d="M 1250,130 L 1080,130" class="wire" />
+                <path id="w0_2" d="M 1080,130 L 920,130" class="wire" />
+                <path id="w0_3" d="M 920,130 L 750,130" class="wire" />
+                <path id="w0_4" d="M 750,130 L 580,130" class="wire" />
+                <path id="w0_5" d="M 580,130 L 400,130" class="wire" />
+                <path id="w0_6" d="M 400,130 L 260,130" class="wire" />
+                <!-- 操作命令点 -->
+                <g transform="translate(1250,130)"><circle cx="0" cy="0" r="11" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-30" y="-15" class="text-label important">HQ+</text></g>
+                <!-- 中间节点 -->
+                <g transform="translate(1080,130)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD1</text></g>
+                <g transform="translate(920,130)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD2</text></g>
+                <!-- 辅助触点 (常开，合闸允许) -->
+                <g id="contact0" transform="translate(750,130)">
+                    <rect x="-30" y="-25" width="60" height="50" fill="none" stroke="rgba(0,240,255,0.3)" stroke-dasharray="2,2" />
+                    <text x="-20" y="-30" class="text-label">KFT (防跳)</text>
+                    <line x1="-25" y1="0" x2="0" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="50" y1="0" x2="75" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="0" y1="0" x2="50" y2="-15" class="switch-pole" id="pole0" />
+                </g>
+                <!-- 操作箱端子 -->
+                <g transform="translate(580,130)"><circle cx="0" cy="0" r="10" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-35" y="-15" class="text-label important">1-4QD31</text></g>
+                <!-- 合闸线圈 -->
+                <g transform="translate(400,130)">
+                    <rect x="-25" y="-15" width="50" height="30" class="coil-box" />
+                    <text x="-15" y="-22" class="text-label">HQ</text>
+                    <text x="-10" y="22" class="text-label">合闸线圈</text>
+                </g>
+                <circle cx="1080" cy="130" r="5" class="node-indicator" id="node0_1" />
+                <circle cx="920" cy="130" r="5" class="node-indicator" id="node0_2" />
+                <circle cx="750" cy="130" r="5" class="node-indicator" id="node0_3" />
+            </g>
+
+            <!-- 回路1: 跳闸回路 (TQ) y=210 -->
+            <g id="loop1">
+                <path id="w1_1" d="M 1250,210 L 1080,210" class="wire" /><path id="w1_2" d="M 1080,210 L 920,210" class="wire" /><path id="w1_3" d="M 920,210 L 750,210" class="wire" /><path id="w1_4" d="M 750,210 L 580,210" class="wire" /><path id="w1_5" d="M 580,210 L 400,210" class="wire" /><path id="w1_6" d="M 400,210 L 260,210" class="wire" />
+                <g transform="translate(1250,210)"><circle cx="0" cy="0" r="11" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-30" y="-15" class="text-label important">TQ+</text></g>
+                <g transform="translate(1080,210)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD3</text></g>
+                <g transform="translate(920,210)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD4</text></g>
+                <g id="contact1" transform="translate(750,210)">
+                    <rect x="-30" y="-25" width="60" height="50" fill="none" stroke="rgba(0,240,255,0.3)" stroke-dasharray="2,2" />
+                    <text x="-20" y="-30" class="text-label">TWJ (跳位)</text>
+                    <line x1="-25" y1="0" x2="0" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="50" y1="0" x2="75" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="0" y1="0" x2="50" y2="-15" class="switch-pole" id="pole1" />
+                </g>
+                <g transform="translate(580,210)"><circle cx="0" cy="0" r="10" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-35" y="-15" class="text-label important">1-4QD32</text></g>
+                <g transform="translate(400,210)"><rect x="-25" y="-15" width="50" height="30" class="coil-box" /><text x="-15" y="-22" class="text-label">TQ</text><text x="-10" y="22" class="text-label">跳闸线圈</text></g>
+                <circle cx="1080" cy="210" r="5" class="node-indicator" id="node1_1" /><circle cx="920" cy="210" r="5" class="node-indicator" id="node1_2" /><circle cx="750" cy="210" r="5" class="node-indicator" id="node1_3" />
+            </g>
+
+            <!-- 回路2: 合闸位置监视 (HWJ) y=290 -->
+            <g id="loop2">
+                <path id="w2_1" d="M 1250,290 L 1080,290" class="wire" /><path id="w2_2" d="M 1080,290 L 920,290" class="wire" /><path id="w2_3" d="M 920,290 L 750,290" class="wire" /><path id="w2_4" d="M 750,290 L 580,290" class="wire" /><path id="w2_5" d="M 580,290 L 400,290" class="wire" /><path id="w2_6" d="M 400,290 L 260,290" class="wire" />
+                <g transform="translate(1250,290)"><circle cx="0" cy="0" r="11" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-30" y="-15" class="text-label important">HWJ+</text></g>
+                <g transform="translate(1080,290)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD5</text></g>
+                <g transform="translate(920,290)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD6</text></g>
+                <g id="contact2" transform="translate(750,290)">
+                    <rect x="-30" y="-25" width="60" height="50" fill="none" stroke="rgba(0,240,255,0.3)" stroke-dasharray="2,2" />
+                    <text x="-20" y="-30" class="text-label">断路器常开</text>
+                    <line x1="-25" y1="0" x2="0" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="50" y1="0" x2="75" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="0" y1="0" x2="50" y2="-15" class="switch-pole" id="pole2" />
+                </g>
+                <g transform="translate(580,290)"><circle cx="0" cy="0" r="10" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-35" y="-15" class="text-label important">1-4QD33</text></g>
+                <g transform="translate(400,290)"><rect x="-25" y="-15" width="50" height="30" class="coil-box" /><text x="-15" y="-22" class="text-label">HWJ</text><text x="-10" y="22" class="text-label">合位继电器</text></g>
+                <circle cx="1080" cy="290" r="5" class="node-indicator" id="node2_1" /><circle cx="920" cy="290" r="5" class="node-indicator" id="node2_2" /><circle cx="750" cy="290" r="5" class="node-indicator" id="node2_3" />
+            </g>
+
+            <!-- 回路3: 跳闸位置监视 (TWJ) y=370 -->
+            <g id="loop3">
+                <path id="w3_1" d="M 1250,370 L 1080,370" class="wire" /><path id="w3_2" d="M 1080,370 L 920,370" class="wire" /><path id="w3_3" d="M 920,370 L 750,370" class="wire" /><path id="w3_4" d="M 750,370 L 580,370" class="wire" /><path id="w3_5" d="M 580,370 L 400,370" class="wire" /><path id="w3_6" d="M 400,370 L 260,370" class="wire" />
+                <g transform="translate(1250,370)"><circle cx="0" cy="0" r="11" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-30" y="-15" class="text-label important">TWJ+</text></g>
+                <g transform="translate(1080,370)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD7</text></g>
+                <g transform="translate(920,370)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD8</text></g>
+                <g id="contact3" transform="translate(750,370)">
+                    <rect x="-30" y="-25" width="60" height="50" fill="none" stroke="rgba(0,240,255,0.3)" stroke-dasharray="2,2" />
+                    <text x="-20" y="-30" class="text-label">断路器常闭</text>
+                    <line x1="-25" y1="0" x2="0" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="50" y1="0" x2="75" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="0" y1="0" x2="50" y2="-15" class="switch-pole" id="pole3" />
+                </g>
+                <g transform="translate(580,370)"><circle cx="0" cy="0" r="10" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-35" y="-15" class="text-label important">1-4QD34</text></g>
+                <g transform="translate(400,370)"><rect x="-25" y="-15" width="50" height="30" class="coil-box" /><text x="-15" y="-22" class="text-label">TWJ</text><text x="-10" y="22" class="text-label">跳位继电器</text></g>
+                <circle cx="1080" cy="370" r="5" class="node-indicator" id="node3_1" /><circle cx="920" cy="370" r="5" class="node-indicator" id="node3_2" /><circle cx="750" cy="370" r="5" class="node-indicator" id="node3_3" />
+            </g>
+
+            <!-- 回路4: 防跳闭锁回路 (KFT) y=450 -->
+            <g id="loop4">
+                <path id="w4_1" d="M 1250,450 L 1080,450" class="wire" /><path id="w4_2" d="M 1080,450 L 920,450" class="wire" /><path id="w4_3" d="M 920,450 L 750,450" class="wire" /><path id="w4_4" d="M 750,450 L 580,450" class="wire" /><path id="w4_5" d="M 580,450 L 400,450" class="wire" /><path id="w4_6" d="M 400,450 L 260,450" class="wire" />
+                <g transform="translate(1250,450)"><circle cx="0" cy="0" r="11" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-30" y="-15" class="text-label important">KFT+</text></g>
+                <g transform="translate(1080,450)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD9</text></g>
+                <g transform="translate(920,450)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD10</text></g>
+                <g id="contact4" transform="translate(750,450)">
+                    <rect x="-30" y="-25" width="60" height="50" fill="none" stroke="rgba(0,240,255,0.3)" stroke-dasharray="2,2" />
+                    <text x="-20" y="-30" class="text-label">KFT自保持</text>
+                    <line x1="-25" y1="0" x2="0" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="50" y1="0" x2="75" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="0" y1="0" x2="50" y2="-15" class="switch-pole" id="pole4" />
+                </g>
+                <g transform="translate(580,450)"><circle cx="0" cy="0" r="10" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-35" y="-15" class="text-label important">1-4QD35</text></g>
+                <g transform="translate(400,450)"><rect x="-25" y="-15" width="50" height="30" class="coil-box" /><text x="-15" y="-22" class="text-label">KFT</text><text x="-10" y="22" class="text-label">防跳继电器</text></g>
+                <circle cx="1080" cy="450" r="5" class="node-indicator" id="node4_1" /><circle cx="920" cy="450" r="5" class="node-indicator" id="node4_2" /><circle cx="750" cy="450" r="5" class="node-indicator" id="node4_3" />
+            </g>
+
+            <!-- 回路5: 压力低闭锁重合闸 y=530 -->
+            <g id="loop5">
+                <path id="w5_1" d="M 1250,530 L 1080,530" class="wire" /><path id="w5_2" d="M 1080,530 L 920,530" class="wire" /><path id="w5_3" d="M 920,530 L 750,530" class="wire" /><path id="w5_4" d="M 750,530 L 580,530" class="wire" /><path id="w5_5" d="M 580,530 L 400,530" class="wire" /><path id="w5_6" d="M 400,530 L 260,530" class="wire" />
+                <g transform="translate(1250,530)"><circle cx="0" cy="0" r="11" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-30" y="-15" class="text-label important">YL+</text></g>
+                <g transform="translate(1080,530)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD11</text></g>
+                <g transform="translate(920,530)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD12</text></g>
+                <g id="contact5" transform="translate(750,530)">
+                    <rect x="-30" y="-25" width="60" height="50" fill="none" stroke="rgba(0,240,255,0.3)" stroke-dasharray="2,2" />
+                    <text x="-20" y="-30" class="text-label">压力低触点</text>
+                    <line x1="-25" y1="0" x2="0" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="50" y1="0" x2="75" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="0" y1="0" x2="50" y2="-15" class="switch-pole" id="pole5" />
+                </g>
+                <g transform="translate(580,530)"><circle cx="0" cy="0" r="10" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-35" y="-15" class="text-label important">1-4QD36</text></g>
+                <g transform="translate(400,530)"><rect x="-25" y="-15" width="50" height="30" class="coil-box" /><text x="-15" y="-22" class="text-label">YL</text><text x="-10" y="22" class="text-label">压力继电器</text></g>
+                <circle cx="1080" cy="530" r="5" class="node-indicator" id="node5_1" /><circle cx="920" cy="530" r="5" class="node-indicator" id="node5_2" /><circle cx="750" cy="530" r="5" class="node-indicator" id="node5_3" />
+            </g>
+
+            <!-- 回路6: 弹簧未储能闭锁合闸 y=610 -->
+            <g id="loop6">
+                <path id="w6_1" d="M 1250,610 L 1080,610" class="wire" /><path id="w6_2" d="M 1080,610 L 920,610" class="wire" /><path id="w6_3" d="M 920,610 L 750,610" class="wire" /><path id="w6_4" d="M 750,610 L 580,610" class="wire" /><path id="w6_5" d="M 580,610 L 400,610" class="wire" /><path id="w6_6" d="M 400,610 L 260,610" class="wire" />
+                <g transform="translate(1250,610)"><circle cx="0" cy="0" r="11" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-30" y="-15" class="text-label important">SES+</text></g>
+                <g transform="translate(1080,610)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD13</text></g>
+                <g transform="translate(920,610)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD14</text></g>
+                <g id="contact6" transform="translate(750,610)">
+                    <rect x="-30" y="-25" width="60" height="50" fill="none" stroke="rgba(0,240,255,0.3)" stroke-dasharray="2,2" />
+                    <text x="-20" y="-30" class="text-label">弹簧未储能</text>
+                    <line x1="-25" y1="0" x2="0" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="50" y1="0" x2="75" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="0" y1="0" x2="50" y2="-15" class="switch-pole" id="pole6" />
+                </g>
+                <g transform="translate(580,610)"><circle cx="0" cy="0" r="10" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-35" y="-15" class="text-label important">1-4QD37</text></g>
+                <g transform="translate(400,610)"><rect x="-25" y="-15" width="50" height="30" class="coil-box" /><text x="-15" y="-22" class="text-label">SES</text><text x="-10" y="22" class="text-label">弹簧继电器</text></g>
+                <circle cx="1080" cy="610" r="5" class="node-indicator" id="node6_1" /><circle cx="920" cy="610" r="5" class="node-indicator" id="node6_2" /><circle cx="750" cy="610" r="5" class="node-indicator" id="node6_3" />
+            </g>
+
+            <!-- 回路7: 手车位置闭锁 y=690 -->
+            <g id="loop7">
+                <path id="w7_1" d="M 1250,690 L 1080,690" class="wire" /><path id="w7_2" d="M 1080,690 L 920,690" class="wire" /><path id="w7_3" d="M 920,690 L 750,690" class="wire" /><path id="w7_4" d="M 750,690 L 580,690" class="wire" /><path id="w7_5" d="M 580,690 L 400,690" class="wire" /><path id="w7_6" d="M 400,690 L 260,690" class="wire" />
+                <g transform="translate(1250,690)"><circle cx="0" cy="0" r="11" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-30" y="-15" class="text-label important">SC+</text></g>
+                <g transform="translate(1080,690)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD15</text></g>
+                <g transform="translate(920,690)"><circle cx="0" cy="0" r="9" class="terminal-circle"/><line x1="-6" y1="-6" x2="6" y2="6" class="terminal-cross"/><text x="-35" y="-18" class="text-label">1-1CD16</text></g>
+                <g id="contact7" transform="translate(750,690)">
+                    <rect x="-30" y="-25" width="60" height="50" fill="none" stroke="rgba(0,240,255,0.3)" stroke-dasharray="2,2" />
+                    <text x="-20" y="-30" class="text-label">手车位置</text>
+                    <line x1="-25" y1="0" x2="0" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="50" y1="0" x2="75" y2="0" stroke="var(--neon-blue)" stroke-width="2" />
+                    <line x1="0" y1="0" x2="50" y2="-15" class="switch-pole" id="pole7" />
+                </g>
+                <g transform="translate(580,690)"><circle cx="0" cy="0" r="10" class="terminal-circle"/><line x1="-7" y1="-7" x2="7" y2="7" class="terminal-cross"/><text x="-35" y="-15" class="text-label important">1-4QD38</text></g>
+                <g transform="translate(400,690)"><rect x="-25" y="-15" width="50" height="30" class="coil-box" /><text x="-15" y="-22" class="text-label">SC</text><text x="-10" y="22" class="text-label">手车继电器</text></g>
+                <circle cx="1080" cy="690" r="5" class="node-indicator" id="node7_1" /><circle cx="920" cy="690" r="5" class="node-indicator" id="node7_2" /><circle cx="750" cy="690" r="5" class="node-indicator" id="node7_3" />
+            </g>
+
+            <!-- 右侧操作回路表格 -->
+            <g transform="translate(1400, 50)">
+                <rect x="0" y="0" width="120" height="720" class="table-border table-fill" />
+                <text x="55" y="340" fill="var(--neon-blue)" font-size="16" font-weight="bold" letter-spacing="8" style="writing-mode: tb; glyph-orientation-vertical: 0;">操作命令</text>
+                <rect x="0" y="0" width="120" height="80" class="table-border" /><text x="10" y="45" class="text-label title" id="label-btn-0">合闸 (HQ)</text>
+                <rect x="0" y="80" width="120" height="80" class="table-border" /><text x="10" y="125" class="text-label title" id="label-btn-1">跳闸 (TQ)</text>
+                <rect x="0" y="160" width="120" height="80" class="table-border" /><text x="10" y="205" class="text-label title" id="label-btn-2">合位监视 (HWJ)</text>
+                <rect x="0" y="240" width="120" height="80" class="table-border" /><text x="10" y="285" class="text-label title" id="label-btn-3">跳位监视 (TWJ)</text>
+                <rect x="0" y="320" width="120" height="80" class="table-border" /><text x="10" y="365" class="text-label title" id="label-btn-4">防跳闭锁 (KFT)</text>
+                <rect x="0" y="400" width="120" height="80" class="table-border" /><text x="10" y="445" class="text-label title" id="label-btn-5">压力低闭锁 (YL)</text>
+                <rect x="0" y="480" width="120" height="80" class="table-border" /><text x="10" y="525" class="text-label title" id="label-btn-6">弹簧未储能 (SES)</text>
+                <rect x="0" y="560" width="120" height="80" class="table-border" /><text x="10" y="605" class="text-label title" id="label-btn-7">手车位置闭锁 (SC)</text>
+            </g>
+
+            <!-- 流星运动路径 (完整链路) -->
+            <path id="path0" d="M 1400,130 L 1250,130 L 1080,130 L 920,130 L 750,130 L 580,130 L 400,130 L 260,130" fill="none" stroke="none" />
+            <path id="path1" d="M 1400,210 L 1250,210 L 1080,210 L 920,210 L 750,210 L 580,210 L 400,210 L 260,210" fill="none" stroke="none" />
+            <path id="path2" d="M 1400,290 L 1250,290 L 1080,290 L 920,290 L 750,290 L 580,290 L 400,290 L 260,290" fill="none" stroke="none" />
+            <path id="path3" d="M 1400,370 L 1250,370 L 1080,370 L 920,370 L 750,370 L 580,370 L 400,370 L 260,370" fill="none" stroke="none" />
+            <path id="path4" d="M 1400,450 L 1250,450 L 1080,450 L 920,450 L 750,450 L 580,450 L 400,450 L 260,450" fill="none" stroke="none" />
+            <path id="path5" d="M 1400,530 L 1250,530 L 1080,530 L 920,530 L 750,530 L 580,530 L 400,530 L 260,530" fill="none" stroke="none" />
+            <path id="path6" d="M 1400,610 L 1250,610 L 1080,610 L 920,610 L 750,610 L 580,610 L 400,610 L 260,610" fill="none" stroke="none" />
+            <path id="path7" d="M 1400,690 L 1250,690 L 1080,690 L 920,690 L 750,690 L 580,690 L 400,690 L 260,690" fill="none" stroke="none" />
+
+            <g id="signal-meteor-group">
+                <path d="M 0,0 L 40,0" class="meteor-signal" id="meteor-tail" />
+                <polygon points="0,0 12,-5 8,0 12,5" class="arrow-head" id="meteor-arrow" />
+                <animateMotion id="meteor-anim" dur="2.2s" repeatCount="indefinite" rotate="auto" fill="freeze" begin="indefinite">
+                    <mpath xlink:href="#path0" id="mpath-target" />
+                </animateMotion>
+            </g>
+        </svg>
+    </div>
+</main>
+
+<script>
+    // 操作回路数据
+    const loops = [
+        { name: "合闸 (HQ)", cmd: "HQ+", nodes: "1-1CD1,1-1CD2", contact: "KFT防跳常开", term: "1-4QD31", act: "HQ合闸线圈", wireIds: ["w0_1","w0_2","w0_3","w0_4","w0_5","w0_6","busbar"], nodeIds: ["node0_1","node0_2","node0_3"], poleId: "pole0", path: "path0", y:130 },
+        { name: "跳闸 (TQ)", cmd: "TQ+", nodes: "1-1CD3,1-1CD4", contact: "TWJ跳位常开", term: "1-4QD32", act: "TQ跳闸线圈", wireIds: ["w1_1","w1_2","w1_3","w1_4","w1_5","w1_6","busbar"], nodeIds: ["node1_1","node1_2","node1_3"], poleId: "pole1", path: "path1", y:210 },
+        { name: "合位监视 (HWJ)", cmd: "HWJ+", nodes: "1-1CD5,1-1CD6", contact: "断路器常开", term: "1-4QD33", act: "HWJ继电器", wireIds: ["w2_1","w2_2","w2_3","w2_4","w2_5","w2_6","busbar"], nodeIds: ["node2_1","node2_2","node2_3"], poleId: "pole2", path: "path2", y:290 },
+        { name: "跳位监视 (TWJ)", cmd: "TWJ+", nodes: "1-1CD7,1-1CD8", contact: "断路器常闭", term: "1-4QD34", act: "TWJ继电器", wireIds: ["w3_1","w3_2","w3_3","w3_4","w3_5","w3_6","busbar"], nodeIds: ["node3_1","node3_2","node3_3"], poleId: "pole3", path: "path3", y:370 },
+        { name: "防跳闭锁 (KFT)", cmd: "KFT+", nodes: "1-1CD9,1-1CD10", contact: "KFT自保持", term: "1-4QD35", act: "KFT防跳继电器", wireIds: ["w4_1","w4_2","w4_3","w4_4","w4_5","w4_6","busbar"], nodeIds: ["node4_1","node4_2","node4_3"], poleId: "pole4", path: "path4", y:450 },
+        { name: "压力低闭锁 (YL)", cmd: "YL+", nodes: "1-1CD11,1-1CD12", contact: "压力低触点", term: "1-4QD36", act: "YL压力继电器", wireIds: ["w5_1","w5_2","w5_3","w5_4","w5_5","w5_6","busbar"], nodeIds: ["node5_1","node5_2","node5_3"], poleId: "pole5", path: "path5", y:530 },
+        { name: "弹簧未储能 (SES)", cmd: "SES+", nodes: "1-1CD13,1-1CD14", contact: "弹簧未储能触点", term: "1-4QD37", act: "SES继电器", wireIds: ["w6_1","w6_2","w6_3","w6_4","w6_5","w6_6","busbar"], nodeIds: ["node6_1","node6_2","node6_3"], poleId: "pole6", path: "path6", y:610 },
+        { name: "手车位置闭锁 (SC)", cmd: "SC+", nodes: "1-1CD15,1-1CD16", contact: "手车位置触点", term: "1-4QD38", act: "SC手车继电器", wireIds: ["w7_1","w7_2","w7_3","w7_4","w7_5","w7_6","busbar"], nodeIds: ["node7_1","node7_2","node7_3"], poleId: "pole7", path: "path7", y:690 }
+    ];
+
+    let currentIndex = 0;
+    const signalListDiv = document.getElementById('signalList');
+    const nextBtn = document.getElementById('nextBtn');
+    const meteorAnim = document.getElementById('meteor-anim');
+    const mpathTarget = document.getElementById('mpath-target');
+
+    function initSignalList() {
+        signalListDiv.innerHTML = '';
+        loops.forEach((loop, idx) => {
+            const item = document.createElement('div');
+            item.className = `signal-item ${idx === currentIndex ? 'active' : ''}`;
+            item.innerHTML = `<span class="signal-name">${loop.name}</span><span class="signal-code">${loop.cmd}</span>`;
+            item.addEventListener('click', () => switchLoop(idx));
+            signalListDiv.appendChild(item);
+        });
+    }
+
+    function deactivateAll() {
+        document.querySelectorAll('.wire').forEach(w => w.classList.remove('active'));
+        document.querySelectorAll('.node-indicator').forEach(n => n.parentElement?.classList.remove('active'));
+        document.querySelectorAll('.text-label.title').forEach(t => {
+            t.style.fill = '';
+            t.style.filter = '';
+        });
+        // 所有触点复位（断开）
+        for(let i=0;i<=7;i++) {
+            const pole = document.getElementById(`pole${i}`);
+            if(pole) pole.style.transform = "rotate(0deg)";
+        }
+    }
+
+    function switchLoop(index) {
+        deactivateAll();
+        currentIndex = index;
+        const loop = loops[currentIndex];
+        // 更新信息面板
+        document.getElementById('cardName').innerText = loop.name;
+        document.getElementById('cardCmd').innerText = loop.cmd;
+        document.getElementById('cardNode').innerText = loop.nodes;
+        document.getElementById('cardContact').innerText = loop.contact;
+        document.getElementById('cardTerm').innerText = loop.term;
+        document.getElementById('cardAct').innerText = loop.act;
+        document.getElementById('cardState').innerHTML = "回路导通 (操作允许)";
+        // 高亮导线
+        loop.wireIds.forEach(wid => {
+            const w = document.getElementById(wid);
+            if(w) w.classList.add('active');
+        });
+        // 高亮节点
+        loop.nodeIds.forEach(nid => {
+            const n = document.getElementById(nid);
+            if(n) n.parentElement?.classList.add('active');
+        });
+        // 闭合对应的触点
+        const pole = document.getElementById(loop.poleId);
+        if(pole) pole.style.transform = "rotate(15deg)";
+        // 高亮右侧表格文字
+        const label = document.getElementById(`label-btn-${currentIndex}`);
+        if(label) {
+            label.style.fill = 'var(--neon-green)';
+            label.style.filter = 'drop-shadow(0 0 4px var(--neon-green))';
+        }
+        // 更新流星路径
+        mpathTarget.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${loop.path}`);
+        meteorAnim.beginElement();
+        // 左侧列表样式更新
+        document.querySelectorAll('.signal-item').forEach((it, i) => {
+            it.classList.toggle('active', i === currentIndex);
+        });
+    }
+
+    nextBtn.addEventListener('click', () => {
+        switchLoop((currentIndex + 1) % loops.length);
+    });
+
+    function bindTableClicks() {
+        for(let i=0; i<loops.length; i++) {
+            const btn = document.getElementById(`label-btn-${i}`);
+            if(btn) btn.addEventListener('click', () => switchLoop(i));
+        }
+    }
+
+    window.onload = () => {
+        initSignalList();
+        bindTableClicks();
+        setTimeout(() => switchLoop(0), 500);
+    };
+</script>
+</body>
+</html>

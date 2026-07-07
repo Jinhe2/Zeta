@@ -3,10 +3,11 @@
   inset: 0;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(46, 92, 140, 0.35), transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(30, 80, 60, 0.2), transparent 45%),
-    linear-gradient(160deg, #0c1522 0%, #121f30 45%, #0e1a28 100%);
+  background-image: url('/zetabg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: #e8f0f8;
   overflow: hidden;
   user-select: none;
@@ -247,7 +248,10 @@
   /* 平板触控反馈 */
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  transition: transform 0.1s;
+  transition: transform 0.1s, box-shadow 0.2s;
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .coach-mode__card::before {
@@ -289,14 +293,14 @@
 
 /* 标签 */
 .coach-mode__card-label {
-  font-size: 18px;
+  font-size: 21px;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
 
 /* 描述 */
 .coach-mode__card-desc {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.55);
   max-width: 160px;
@@ -307,7 +311,7 @@
   position: absolute;
   top: 12px;
   right: -22px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
   padding: 2px 26px;
   background: rgba(0, 0, 0, 0.4);
@@ -319,37 +323,37 @@
 /* ── 各卡片配色 ── */
 
 .coach-mode__card--cabinet {
-  --card-bg: linear-gradient(165deg, rgba(30, 90, 160, 0.55) 0%, rgba(15, 50, 100, 0.7) 100%);
-  --card-border: rgba(100, 181, 246, 0.4);
-  --card-glow: rgba(66, 165, 245, 0.22);
+  --card-bg: linear-gradient(165deg, rgba(30, 90, 160, 0.75) 0%, rgba(15, 50, 100, 0.85) 100%);
+  --card-border: rgba(100, 181, 246, 0.5);
+  --card-glow: rgba(66, 165, 245, 0.3);
   --card-icon-color: #90caf9;
 }
 
 .coach-mode__card--logic {
-  --card-bg: linear-gradient(165deg, rgba(100, 60, 170, 0.55) 0%, rgba(60, 30, 120, 0.7) 100%);
-  --card-border: rgba(179, 157, 219, 0.4);
-  --card-glow: rgba(149, 117, 205, 0.22);
+  --card-bg: linear-gradient(165deg, rgba(100, 60, 170, 0.75) 0%, rgba(60, 30, 120, 0.85) 100%);
+  --card-border: rgba(179, 157, 219, 0.5);
+  --card-glow: rgba(149, 117, 205, 0.3);
   --card-icon-color: #ce93d8;
 }
 
 .coach-mode__card--operation {
-  --card-bg: linear-gradient(165deg, rgba(40, 120, 50, 0.55) 0%, rgba(20, 70, 30, 0.7) 100%);
-  --card-border: rgba(129, 199, 132, 0.4);
-  --card-glow: rgba(102, 187, 106, 0.24);
+  --card-bg: linear-gradient(165deg, rgba(40, 120, 50, 0.75) 0%, rgba(20, 70, 30, 0.85) 100%);
+  --card-border: rgba(129, 199, 132, 0.5);
+  --card-glow: rgba(102, 187, 106, 0.32);
   --card-icon-color: #a5d6a7;
 }
 
 .coach-mode__card--drawing {
-  --card-bg: linear-gradient(165deg, rgba(180, 110, 20, 0.55) 0%, rgba(130, 70, 10, 0.7) 100%);
-  --card-border: rgba(255, 183, 77, 0.4);
-  --card-glow: rgba(255, 183, 77, 0.22);
+  --card-bg: linear-gradient(165deg, rgba(180, 110, 20, 0.75) 0%, rgba(130, 70, 10, 0.85) 100%);
+  --card-border: rgba(255, 183, 77, 0.5);
+  --card-glow: rgba(255, 183, 77, 0.3);
   --card-icon-color: #ffcc80;
 }
 
 .coach-mode__card--circuit {
-  --card-bg: linear-gradient(165deg, rgba(0, 120, 140, 0.55) 0%, rgba(0, 80, 95, 0.7) 100%);
-  --card-border: rgba(77, 208, 225, 0.4);
-  --card-glow: rgba(77, 208, 225, 0.22);
+  --card-bg: linear-gradient(165deg, rgba(0, 120, 140, 0.75) 0%, rgba(0, 80, 95, 0.85) 100%);
+  --card-border: rgba(77, 208, 225, 0.5);
+  --card-glow: rgba(77, 208, 225, 0.3);
   --card-icon-color: #80deea;
 }
 

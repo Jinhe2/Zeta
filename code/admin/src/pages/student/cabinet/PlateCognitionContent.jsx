@@ -15,14 +15,18 @@ const PRESSBOARD_TYPE_SUFFIX = {
 const PRESSBOARD_STATE_NAME = {
   ON: 'close',
   CONNECTED: 'close',
+  CLOSE: 'close',
+  CLOSED: 'close',
   OFF: 'open',
   DISCONNECTED: 'open',
+  OPEN: 'open',
+  OPENED: 'open',
 }
 
 /** 根据压板类型和状态选择 SVG */
 function pressboardSvg(type, state) {
   const typeSuffix = PRESSBOARD_TYPE_SUFFIX[type] ?? PRESSBOARD_TYPE_SUFFIX.FUNCTION
-  const stateName = PRESSBOARD_STATE_NAME[state] ?? 'idel'
+  const stateName = PRESSBOARD_STATE_NAME[normalizePressboardState(state)] ?? 'idel'
   return `/images/pressboard/${stateName}_${typeSuffix}.svg`
 }
 
@@ -47,6 +51,47 @@ function splitPressboardName(name) {
     prefix: text.slice(0, chineseIndex),
     suffix: text.slice(chineseIndex),
   }
+}
+
+/** 兼容 monitord 返回的不同压板状态表达 */
+function normalizePressboardState(state) {
+  if (state === true || state === 1) return 'ON'
+  if (state === false || state === 0) return 'OFF'
+  const text = String(state ?? '').trim().toUpperCase()
+  if (!text) return ''
+  if (PRESSBOARD_STATE_NAME[text]) return text
+  if (['合闸', '闭合', '合位', '投入', '投'].includes(text)) return 'ON'
+  if (['分闸', '断开', '分位', '退出', '退'].includes(text)) return 'OFF'
+  if (['1', 'TRUE', 'YES', 'Y'].includes(text)) return 'ON'
+  if (['0', 'FALSE', 'NO', 'N'].includes(text)) return 'OFF'
+  return text
+}
+
+function readPressboardStatusId(pressboardStatus) {
+  return pressboardStatus.pressboard_id
+    ?? pressboardStatus.pressboardId
+    ?? pressboardStatus.id
+}
+
+function readPressboardStatusValue(pressboardStatus) {
+  return pressboardStatus.state
+    ?? pressboardStatus.status
+    ?? pressboardStatus.value
+    ?? pressboardStatus.position
+    ?? pressboardStatus.switch_state
+    ?? pressboardStatus.switchState
+}
+
+function pressboardStateKey(prefix, value) {
+  if (value == null) return null
+  const text = String(value).trim()
+  return text ? `${prefix}:${text}` : null
+}
+
+function readPressboardState(pressboard, states) {
+  const idKey = pressboardStateKey('id', pressboard.id)
+  const nameKey = pressboardStateKey('name', pressboard.name)
+  return states[idKey] ?? states[nameKey] ?? ''
 }
 
 export default function PlateCognitionContent({ navigationTarget, onPageChange }) {
@@ -159,7 +204,15 @@ export default function PlateCognitionContent({ navigationTarget, onPageChange }
       if (data?.pressboards) {
         const states = {}
         for (const pb of data.pressboards) {
-          states[pb.pressboard_id] = pb.state
+          const id = readPressboardStatusId(pb)
+          const state = normalizePressboardState(readPressboardStatusValue(pb))
+          if (id != null) {
+            states[pressboardStateKey('id', id)] = state
+          }
+          const nameKey = pressboardStateKey('name', pb.name)
+          if (nameKey) {
+            states[nameKey] = state
+          }
         }
         setPressboardStates(states)
       }
@@ -311,7 +364,7 @@ export default function PlateCognitionContent({ navigationTarget, onPageChange }
             <div className="pressboard-grid__header">
               <span>屏柜压板状态</span>
               <span className="pressboard-grid__status">
-                {statusLoading ? '读取中…' : `已更新 ${Object.keys(pressboardStates).length}/${pressboards.length}`}
+                {statusLoading ? '读取中…' : `已更新 ${Object.keys(pressboardStates).filter((key) => key.startsWith('id:')).length}/${pressboards.length}`}
               </span>
             </div>
             {statusError && (
@@ -325,16 +378,21 @@ export default function PlateCognitionContent({ navigationTarget, onPageChange }
                   <div key={ri} className="pressboard-grid__row">
                     {row.map((pb, ci) => {
                       const nameParts = pb ? splitPressboardName(pb.name) : null
+                      const state = pb ? readPressboardState(pb, pressboardStates) : ''
                       return (
                         <div
                           key={ci}
                           className={`pressboard-grid__cell${pb ? '' : ' pressboard-grid__cell--empty'}`}
-                          title={pb ? `${pb.name} (${pb.pressboardType})` : ''}
+                          title={pb ? `${pb.name} (${pb.pressboardType})\n前端压板ID: ${pb.id}\n匹配状态: ${state || '未匹配'}` : ''}
+                          data-pressboard-id={pb?.id ?? undefined}
+                          data-pressboard-name={pb?.name ?? undefined}
+                          data-pressboard-type={pb?.pressboardType ?? undefined}
+                          data-pressboard-state={state || undefined}
                         >
                           {pb && (
                             <>
                               <img
-                                src={pressboardSvg(pb.pressboardType, pressboardStates[pb.id])}
+                                src={pressboardSvg(pb.pressboardType, state)}
                                 alt={pb.name}
                                 className="pressboard-grid__svg"
                               />

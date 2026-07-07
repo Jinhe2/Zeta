@@ -232,11 +232,14 @@ public class MonitorCommandService {
             }
         }
 
-        // 完成等待中的 Future
+        // 完成等待中的 Future。压板/端子会先返回 accepted，再返回 completed；
+        // HTTP 调用需要等待 completed，否则前端拿不到实际状态数据。
         if (reqId != null) {
-            CompletableFuture<ScreenQueueMessage> future = pendingRequests.remove(reqId);
-            if (future != null) {
-                future.complete(message);
+            if (shouldCompletePending(command, message)) {
+                CompletableFuture<ScreenQueueMessage> future = pendingRequests.remove(reqId);
+                if (future != null) {
+                    future.complete(message);
+                }
             }
         }
     }
@@ -362,5 +365,16 @@ public class MonitorCommandService {
             return ((Number) val).longValue();
         }
         return null;
+    }
+
+    private boolean shouldCompletePending(String command, ScreenQueueMessage message) {
+        if (Boolean.FALSE.equals(message.getSuccess())) {
+            return true;
+        }
+        if ("summon_pressboard_status".equals(command) || "summon_terminal_status".equals(command)) {
+            Map<String, Object> data = message.getData();
+            return data != null && "completed".equals(String.valueOf(data.getOrDefault("phase", "")));
+        }
+        return true;
     }
 }

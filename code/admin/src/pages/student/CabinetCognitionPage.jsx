@@ -128,6 +128,11 @@ export default function CabinetCognitionPage() {
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id)
   const [navigationPages, setNavigationPages] = useState(SECTIONS.map((section) => fallbackPage(section.id)))
   const [currentPageKey, setCurrentPageKey] = useState(pageKey(fallbackPage(SECTIONS[0].id)))
+  const [pageNavigationEvent, setPageNavigationEvent] = useState({
+    pageKey: pageKey(fallbackPage(SECTIONS[0].id)),
+    source: 'initial',
+    sequence: 0,
+  })
   const [navigationLoading, setNavigationLoading] = useState(true)
   const [navigationError, setNavigationError] = useState(null)
   const currentSection = SECTIONS.find((s) => s.id === activeSection)
@@ -195,10 +200,15 @@ export default function CabinetCognitionPage() {
     [currentPage?.key, navigationPages],
   )
 
-  const applyPage = useCallback((page) => {
+  const applyPage = useCallback((page, source = 'direct') => {
     if (!page) return
     setActiveSection(page.sectionId)
     setCurrentPageKey(page.key)
+    setPageNavigationEvent((prev) => ({
+      pageKey: page.key,
+      source,
+      sequence: prev.sequence + 1,
+    }))
   }, [])
 
   const requestPage = useCallback((partialPage) => {
@@ -216,17 +226,17 @@ export default function CabinetCognitionPage() {
 
   const handleSectionSelect = (sectionId) => {
     const nextPage = navigationPages.find((page) => page.sectionId === sectionId) ?? fallbackPage(sectionId)
-    applyPage(nextPage)
+    applyPage(nextPage, 'section')
   }
 
   const goPrevious = () => {
     if (currentPageIndex <= 0) return
-    applyPage(navigationPages[currentPageIndex - 1])
+    applyPage(navigationPages[currentPageIndex - 1], 'previous')
   }
 
   const goNext = () => {
     if (currentPageIndex < 0 || currentPageIndex >= navigationPages.length - 1) return
-    applyPage(navigationPages[currentPageIndex + 1])
+    applyPage(navigationPages[currentPageIndex + 1], 'next')
   }
 
   const renderSectionContent = () => {
@@ -237,7 +247,13 @@ export default function CabinetCognitionPage() {
       return <DeviceCognitionContent navigationTarget={currentPage} onPageChange={requestPage} />
     }
     if (activeSection === 'plate') {
-      return <PlateCognitionContent navigationTarget={currentPage} onPageChange={requestPage} />
+      return (
+        <PlateCognitionContent
+          navigationTarget={currentPage}
+          navigationEvent={pageNavigationEvent}
+          onPageChange={requestPage}
+        />
+      )
     }
     if (activeSection === 'terminal') {
       return <TerminalCognitionContent navigationTarget={currentPage} onPageChange={requestPage} />

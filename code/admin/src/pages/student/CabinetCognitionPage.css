@@ -912,6 +912,62 @@
   white-space: nowrap;
 }
 
+/* ── 压板操作练习提示 ── */
+
+.pressboard-practice-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.pressboard-practice-dialog__mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 10, 18, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.pressboard-practice-dialog__panel {
+  position: relative;
+  z-index: 1;
+  width: min(460px, 100%);
+  padding: 28px 32px 24px;
+  border: 1px solid rgba(142, 197, 248, 0.22);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1a2f48 0%, #122438 100%);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.pressboard-practice-dialog__message {
+  margin: 0 0 24px;
+  color: #f0f6fc;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.pressboard-practice-dialog__btn {
+  min-width: 116px;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #43a047 0%, #2e7d32 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(67, 160, 71, 0.32);
+}
+
+.pressboard-practice-dialog__btn:active {
+  transform: scale(0.98);
+}
+
 /* ── 端子状态 ── */
 
 .terminal-status {

@@ -496,9 +496,6 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
           <div className="pressboard-grid pressboard-grid--full pressboard-grid--slide">
             <div className="pressboard-grid__header">
               <span>屏柜压板状态</span>
-              <span className="pressboard-grid__status">
-                {statusLoading ? '读取中…' : `已更新 ${Object.keys(pressboardStates).filter((key) => key.startsWith('id:')).length}/${pressboards.length}`}
-              </span>
             </div>
             {statusError && (
               <p className="pressboard-grid__error">{statusError}</p>

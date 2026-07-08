@@ -134,6 +134,8 @@
 
 .diagram-canvas__header {
   display: flex;
+  align-items: center;
+  gap: 12px;
   justify-content: space-between;
   padding: 8px 12px;
   font-size: 12px;
@@ -202,6 +204,7 @@
   font-weight: 600;
   border-radius: 6px;
   margin-left: auto;
+  white-space: nowrap;
 }
 
 .diagram-canvas__trigger-btn--stop {
@@ -210,6 +213,10 @@
 
 .diagram-canvas__trigger-btn--stop:hover:not(:disabled) {
   opacity: 0.9;
+}
+
+.diagram-canvas__trigger-btn--restart {
+  min-width: 118px;
 }
 
 .diagram-page__history-source--monitor {

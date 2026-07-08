@@ -103,15 +103,25 @@ export default function StudentDiagramPage() {
   }, [id])
 
   // 清理：组件卸载时停止心跳和轮询
+  const clearMonitorTimers = useCallback(() => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current)
+      heartbeatRef.current = null
+    }
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }, [])
+
   useEffect(() => {
     return () => {
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current)
-      if (pollRef.current) clearInterval(pollRef.current)
+      clearMonitorTimers()
       if (taskUuidRef.current) {
         api.endLogicMonitor(taskUuidRef.current).catch(() => {})
       }
     }
-  }, [])
+  }, [clearMonitorTimers])
 
   // Load sections when switching snapshots
   const loadSnapshotSections = useCallback((snapshotId) => {
@@ -202,20 +212,22 @@ export default function StudentDiagramPage() {
           heartbeatRef.current = null
         }
 
-        const resultType = result.result_type
         const snapshotPath = result.snapshot_path
 
         if (result.result === 'success' && snapshotPath) {
           setMonitorStatus('completed')
           setMonitoring(false)
+          if (taskUuidRef.current === taskUuid) taskUuidRef.current = null
           await loadMonitorTaskResult(snapshotPath)
         } else if (result.result === 'failed') {
           setMonitorStatus('failed')
           setMonitoring(false)
+          if (taskUuidRef.current === taskUuid) taskUuidRef.current = null
           setError('实验失败: ' + (result.error_message || '未知错误'))
         } else {
           setMonitorStatus('completed')
           setMonitoring(false)
+          if (taskUuidRef.current === taskUuid) taskUuidRef.current = null
         }
       } catch {
         // 404 = 结果尚未返回，继续轮询
@@ -230,11 +242,22 @@ export default function StudentDiagramPage() {
       return
     }
 
+    const previousTaskUuid = taskUuidRef.current
+    clearMonitorTimers()
+    taskUuidRef.current = null
+
     setMonitoring(true)
     setMonitorStatus('starting')
     setError(null)
+    setSections([])
+    setSelectedSectionId(null)
+    setSelectedSnapshotId(null)
 
     try {
+      if (previousTaskUuid) {
+        await api.endLogicMonitor(previousTaskUuid).catch(() => {})
+      }
+
       const response = await api.startLogicMonitor(detail.iedName, detail.code)
       // req_id 就是 taskUuid
       const taskUuid = response.req_id || response.reqId
@@ -257,21 +280,14 @@ export default function StudentDiagramPage() {
       setMonitorStatus('')
       setError('启动实验失败: ' + err.message)
     }
-  }, [detail, startResultPolling])
+  }, [clearMonitorTimers, detail, startResultPolling])
 
   // 停止实验
   const handleStopExperiment = useCallback(async () => {
     const taskUuid = taskUuidRef.current
     if (!taskUuid) return
 
-    if (heartbeatRef.current) {
-      clearInterval(heartbeatRef.current)
-      heartbeatRef.current = null
-    }
-    if (pollRef.current) {
-      clearInterval(pollRef.current)
-      pollRef.current = null
-    }
+    clearMonitorTimers()
 
     try {
       await api.endLogicMonitor(taskUuid)
@@ -285,7 +301,7 @@ export default function StudentDiagramPage() {
     }
 
     taskUuidRef.current = null
-  }, [startResultPolling])
+  }, [clearMonitorTimers, startResultPolling])
 
   // Reload data
   const handleReload = useCallback(() => {
@@ -311,9 +327,6 @@ export default function StudentDiagramPage() {
     const section = sections.find((s) => s.id === selectedSectionId)
     return section?.states ?? null
   }, [sections, selectedSectionId])
-
-  const satisfiedCount = nodeStates ? Object.values(nodeStates).filter(Boolean).length : 0
-  const totalCount = nodeStates ? Object.keys(nodeStates).length : 0
 
   const formatSnapTime = (ts) => {
     if (!ts) return ''
@@ -379,7 +392,13 @@ export default function StudentDiagramPage() {
                       </button>
                     </div>
                   ) : nodeStates ? (
-                    <span>当前断面：满足 {satisfiedCount} / {totalCount}</span>
+                    <button
+                      type="button"
+                      className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline diagram-canvas__trigger-btn--restart"
+                      onClick={handleStartExperiment}
+                    >
+                      ↻ 重新开始实验
+                    </button>
                   ) : (
                     <button
                       type="button"

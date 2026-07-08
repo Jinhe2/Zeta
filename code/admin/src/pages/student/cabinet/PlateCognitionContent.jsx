@@ -118,6 +118,16 @@ function findTargetFunctionPressboard(pressboards) {
     }, null)
 }
 
+function initialPracticeState() {
+  return {
+    sequence: null,
+    phase: 'idle',
+    targetId: null,
+    initialState: null,
+    startRefreshVersion: 0,
+  }
+}
+
 export default function PlateCognitionContent({ navigationTarget, navigationEvent, onPageChange }) {
   const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedDeviceId, setSelectedDeviceId] = useState(null)
@@ -136,17 +146,10 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
   const [pressboards, setPressboards] = useState([])
   const [pressboardStates, setPressboardStates] = useState({})
   const [statusRefreshVersion, setStatusRefreshVersion] = useState(0)
-  const [statusLoading, setStatusLoading] = useState(false)
   const [statusError, setStatusError] = useState(null)
   const [practiceDialog, setPracticeDialog] = useState(null)
   const pollRef = useRef(null)
-  const practiceRef = useRef({
-    sequence: null,
-    phase: 'idle',
-    targetId: null,
-    initialState: null,
-    startRefreshVersion: 0,
-  })
+  const practiceRef = useRef(initialPracticeState())
 
   const selectedDevice =
     cognitionDevices.find((d) => d.id === selectedDeviceId) ?? cognitionDevices[0] ?? null
@@ -230,7 +233,6 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
 
   const fetchStatus = useCallback(async () => {
     if (!cabinetId) return null
-    setStatusLoading(true)
     setStatusError(null)
     try {
       const data = await api.triggerPressboardStatus(cabinetId)
@@ -257,8 +259,6 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
       setStatusError('压板状态读取失败: ' + err.message)
       console.warn('压板状态读取失败:', err.message)
       return null
-    } finally {
-      setStatusLoading(false)
     }
   }, [cabinetId])
 
@@ -278,18 +278,28 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
   const activeSlide = totalSlides > 0 ? Math.min(currentSlide, totalSlides - 1) : 0
   const statusSlideIndex = displayItems.length
   const isStatusSlide = hasStatusSlide && activeSlide === statusSlideIndex
+  const isPracticeStatusTarget = navigationTarget?.kind === 'status' && isStatusSlide
   const currentDisplayItem = isStatusSlide ? null : displayItems[activeSlide] ?? displayItems[0] ?? null
   const itemHighlightRegion = hasRegion(currentDisplayItem) ? normalizeRegion(currentDisplayItem) : null
   const targetFunctionPressboard = useMemo(
     () => findTargetFunctionPressboard(pressboards),
     [pressboards],
   )
+  const visiblePracticeDialog =
+    isPracticeStatusTarget
+    && practiceDialog?.pageKey === navigationTarget?.key
+    && practiceDialog?.sequence === navigationEvent?.sequence
+
+  useEffect(() => {
+    if (isPracticeStatusTarget) return
+    practiceRef.current = initialPracticeState()
+  }, [isPracticeStatusTarget, navigationTarget?.key])
 
   useEffect(() => {
     if (
       navigationEvent?.source !== 'next'
       || navigationEvent.pageKey !== navigationTarget?.key
-      || !isStatusSlide
+      || !isPracticeStatusTarget
       || !targetFunctionPressboard
     ) {
       return
@@ -310,7 +320,7 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
     fetchStatus()
   }, [
     fetchStatus,
-    isStatusSlide,
+    isPracticeStatusTarget,
     navigationEvent?.pageKey,
     navigationEvent?.sequence,
     navigationEvent?.source,
@@ -346,15 +356,17 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
       initialState: normalizePressboardState(state),
     }
     setPracticeDialog({
+      pageKey: navigationTarget?.key,
+      sequence: practice.sequence,
       message: `现在请你动手操作一下，在屏柜上${action} ${targetFunctionPressboard.name}`,
     })
-  }, [pressboardStates, statusRefreshVersion, targetFunctionPressboard])
+  }, [navigationTarget?.key, pressboardStates, statusRefreshVersion, targetFunctionPressboard])
 
   useEffect(() => {
     const practice = practiceRef.current
     if (
       practice.phase !== 'watching'
-      || !isStatusSlide
+      || !isPracticeStatusTarget
       || !targetFunctionPressboard
       || practice.targetId !== targetFunctionPressboard.id
       || !practice.initialState
@@ -372,9 +384,11 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
       phase: 'completed',
     }
     setPracticeDialog({
+      pageKey: navigationTarget?.key,
+      sequence: practice.sequence,
       message: PRACTICE_SUCCESS_MESSAGE,
     })
-  }, [isStatusSlide, pressboardStates, statusRefreshVersion, targetFunctionPressboard])
+  }, [isPracticeStatusTarget, navigationTarget?.key, pressboardStates, statusRefreshVersion, targetFunctionPressboard])
 
   const maxRow = Math.max(0, ...pressboards.map((pb) => pb.rowNo ?? 0))
   const maxCol = Math.max(0, ...pressboards.map((pb) => pb.colNo ?? 0))
@@ -584,7 +598,7 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
         )}
       </div>
 
-      {practiceDialog && (
+      {visiblePracticeDialog && (
         <div className="pressboard-practice-dialog" role="dialog" aria-modal="true" aria-labelledby="pressboard-practice-dialog-message">
           <div className="pressboard-practice-dialog__mask" />
           <div className="pressboard-practice-dialog__panel">

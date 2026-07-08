@@ -239,84 +239,15 @@
 }
 
 .coach-mode__floating {
-  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 300px));
+  grid-template-rows: repeat(3, minmax(150px, 1fr));
+  justify-content: center;
+  align-content: center;
+  gap: 28px 96px;
   width: 100%;
   height: 100%;
-  min-height: 600px;
-}
-
-/* 动态浮动布局 - 各卡片聚集在中间区域，确保无重叠 */
-.coach-mode__floating .coach-mode__card:nth-child(1) {
-  position: absolute;
-  top: 8%;
-  left: 15%;
-  animation: float-1 6s ease-in-out infinite;
-}
-
-.coach-mode__floating .coach-mode__card:nth-child(2) {
-  position: absolute;
-  top: 8%;
-  right: 15%;
-  animation: float-2 7s ease-in-out infinite;
-}
-
-.coach-mode__floating .coach-mode__card:nth-child(3) {
-  position: absolute;
-  top: 32%;
-  left: 20%;
-  animation: float-3 8s ease-in-out infinite;
-}
-
-.coach-mode__floating .coach-mode__card:nth-child(4) {
-  position: absolute;
-  top: 32%;
-  right: 20%;
-  animation: float-4 7.5s ease-in-out infinite;
-}
-
-.coach-mode__floating .coach-mode__card:nth-child(5) {
-  position: absolute;
-  bottom: 8%;
-  left: 15%;
-  animation: float-5 6.5s ease-in-out infinite;
-}
-
-.coach-mode__floating .coach-mode__card:nth-child(6) {
-  position: absolute;
-  bottom: 8%;
-  right: 15%;
-  animation: float-6 7s ease-in-out infinite;
-}
-
-/* 浮动动画 */
-@keyframes float-1 {
-  0%, 100% { transform: translateY(0px) translateX(0px); }
-  50% { transform: translateY(-15px) translateX(8px); }
-}
-
-@keyframes float-2 {
-  0%, 100% { transform: translateY(0px) translateX(0px); }
-  50% { transform: translateY(12px) translateX(-10px); }
-}
-
-@keyframes float-3 {
-  0%, 100% { transform: translateY(0px) translateX(0px); }
-  50% { transform: translateY(-10px) translateX(-12px); }
-}
-
-@keyframes float-4 {
-  0%, 100% { transform: translateY(0px) translateX(0px); }
-  50% { transform: translateY(15px) translateX(10px); }
-}
-
-@keyframes float-5 {
-  0%, 100% { transform: translateY(0px) translateX(0px); }
-  50% { transform: translateY(-12px) translateX(15px); }
-}
-
-@keyframes float-6 {
-  0%, 100% { transform: translateY(0px) translateX(0px); }
-  50% { transform: translateY(10px) translateX(-8px); }
+  min-height: 540px;
 }
 
 /* ── 卡片 ── */
@@ -496,38 +427,10 @@
   }
 
   .coach-mode__floating {
-    min-height: 500px;
-  }
-
-  /* 小屏幕时调整为更紧凑的浮动位置 */
-  .coach-mode__floating .coach-mode__card:nth-child(1) {
-    top: 3%;
-    left: 5%;
-  }
-
-  .coach-mode__floating .coach-mode__card:nth-child(2) {
-    top: 10%;
-    right: 8%;
-  }
-
-  .coach-mode__floating .coach-mode__card:nth-child(3) {
-    top: 35%;
-    left: 12%;
-  }
-
-  .coach-mode__floating .coach-mode__card:nth-child(4) {
-    top: 45%;
-    right: 5%;
-  }
-
-  .coach-mode__floating .coach-mode__card:nth-child(5) {
-    bottom: 15%;
-    left: 8%;
-  }
-
-  .coach-mode__floating .coach-mode__card:nth-child(6) {
-    bottom: 5%;
-    right: 12%;
+    grid-template-columns: repeat(2, minmax(180px, 240px));
+    grid-template-rows: repeat(3, minmax(124px, 1fr));
+    gap: 18px 48px;
+    min-height: 460px;
   }
 
   .coach-mode__card {
@@ -556,38 +459,10 @@
 
 @media (max-width: 600px) {
   .coach-mode__floating {
-    min-height: 450px;
-  }
-
-  /* 更小屏幕时进一步调整位置 */
-  .coach-mode__floating .coach-mode__card:nth-child(1) {
-    top: 2%;
-    left: 3%;
-  }
-
-  .coach-mode__floating .coach-mode__card:nth-child(2) {
-    top: 8%;
-    right: 5%;
-  }
-
-  .coach-mode__floating .coach-mode__card:nth-child(3) {
-    top: 30%;
-    left: 8%;
-  }
-
-  .coach-mode__floating .coach-mode__card:nth-child(4) {
-    top: 40%;
-    right: 3%;
-  }
-
-  .coach-mode__floating .coach-mode__card:nth-child(5) {
-    bottom: 10%;
-    left: 5%;
-  }
-
-  .coach-mode__floating .coach-mode__card:nth-child(6) {
-    bottom: 3%;
-    right: 8%;
+    grid-template-columns: repeat(2, minmax(136px, 1fr));
+    grid-template-rows: repeat(3, minmax(112px, 1fr));
+    gap: 14px 24px;
+    min-height: 420px;
   }
 
   .coach-mode__card {

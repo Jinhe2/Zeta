@@ -12,6 +12,9 @@ import './StudentPages.css'
 
 const HEARTBEAT_INTERVAL = 5000
 const POLL_INTERVAL = 3000
+const EXPERIMENT_SUCCESS_MESSAGE = '恭喜成功完成实验'
+const EXPERIMENT_FAILED_MESSAGE = '实验失败了，请结合中间文件分析结果进一步确认原因'
+const EXPERIMENT_DIAGNOSIS_MESSAGE = '实验失败了，请重新学习逻辑框图和相关操作'
 
 /** 将 v2.3 snapshot JSON 解析为 sections 数组 */
 function parseSnapshotSections(snapshotJson) {
@@ -59,6 +62,52 @@ function parseTimestampMs(ts) {
   return ((h * 60 + m) * 60 + s) * 1000 + ms
 }
 
+function parseSnapshotMeta(snapshotJson) {
+  if (!snapshotJson) return {}
+  if (typeof snapshotJson === 'object') return snapshotJson
+  try {
+    return JSON.parse(snapshotJson)
+  } catch {
+    return {}
+  }
+}
+
+function normalizeBoolean(value) {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === 'true') return true
+    if (normalized === 'false') return false
+  }
+  return undefined
+}
+
+function getExperimentDialogMessage(result, task) {
+  const snapshotMeta = parseSnapshotMeta(task?.snapshotJson)
+  const resultType = result?.result_type
+    ?? result?.resultType
+    ?? task?.resultType
+    ?? snapshotMeta.resultType
+
+  if (resultType === 'diagnosis' || resultType === 'diagnosis_v2') {
+    return EXPERIMENT_DIAGNOSIS_MESSAGE
+  }
+
+  if (resultType === 'snapshot') {
+    const experimentPassed = normalizeBoolean(
+      result?.experiment_passed
+        ?? result?.experimentPassed
+        ?? task?.experimentPassed
+        ?? snapshotMeta.experimentPassed
+    )
+
+    if (experimentPassed === true) return EXPERIMENT_SUCCESS_MESSAGE
+    if (experimentPassed === false) return EXPERIMENT_FAILED_MESSAGE
+  }
+
+  return ''
+}
+
 export default function StudentDiagramPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -72,6 +121,7 @@ export default function StudentDiagramPage() {
   const [error, setError] = useState(null)
   const [jsonViewer, setJsonViewer] = useState({ open: false, title: '', json: '' })
   const [importOpen, setImportOpen] = useState(false)
+  const [experimentDialog, setExperimentDialog] = useState({ open: false, message: '' })
 
   // 实验监视状态
   const [monitoring, setMonitoring] = useState(false)
@@ -192,8 +242,10 @@ export default function StudentDiagramPage() {
         })
         setSelectedSnapshotId(task.id)
       }
+      return task
     } catch (err) {
       setError('加载实验结果失败: ' + err.message)
+      return null
     }
   }, [id, detail])
 
@@ -212,13 +264,17 @@ export default function StudentDiagramPage() {
           heartbeatRef.current = null
         }
 
-        const snapshotPath = result.snapshot_path
+        const snapshotPath = result.snapshot_path ?? result.snapshotPath
 
-        if (result.result === 'success' && snapshotPath) {
+        if (result.result === 'success') {
           setMonitorStatus('completed')
           setMonitoring(false)
           if (taskUuidRef.current === taskUuid) taskUuidRef.current = null
-          await loadMonitorTaskResult(snapshotPath)
+          const task = snapshotPath ? await loadMonitorTaskResult(snapshotPath) : null
+          const dialogMessage = getExperimentDialogMessage(result, task)
+          if (dialogMessage) {
+            setExperimentDialog({ open: true, message: dialogMessage })
+          }
         } else if (result.result === 'failed') {
           setMonitorStatus('failed')
           setMonitoring(false)
@@ -249,6 +305,7 @@ export default function StudentDiagramPage() {
     setMonitoring(true)
     setMonitorStatus('starting')
     setError(null)
+    setExperimentDialog({ open: false, message: '' })
     setSections([])
     setSelectedSectionId(null)
     setSelectedSnapshotId(null)
@@ -307,6 +364,7 @@ export default function StudentDiagramPage() {
   const handleReload = useCallback(() => {
     setLoading(true)
     setError(null)
+    setExperimentDialog({ open: false, message: '' })
     setSections([])
     setSelectedSectionId(null)
     setSelectedSnapshotId(null)
@@ -512,6 +570,29 @@ export default function StudentDiagramPage() {
         onClose={() => setImportOpen(false)}
         onImport={handleImport}
       />
+
+      {experimentDialog.open && (
+        <div className="experiment-result-dialog" role="dialog" aria-modal="true" aria-labelledby="experiment-result-dialog-message">
+          <button
+            type="button"
+            className="experiment-result-dialog__mask"
+            aria-label="关闭实验结果提示"
+            onClick={() => setExperimentDialog({ open: false, message: '' })}
+          />
+          <div className="experiment-result-dialog__panel">
+            <p id="experiment-result-dialog-message" className="experiment-result-dialog__message">
+              {experimentDialog.message}
+            </p>
+            <button
+              type="button"
+              className="experiment-result-dialog__btn"
+              onClick={() => setExperimentDialog({ open: false, message: '' })}
+            >
+              确定
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

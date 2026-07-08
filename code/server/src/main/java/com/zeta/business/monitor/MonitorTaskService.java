@@ -1,5 +1,7 @@
 package com.zeta.business.monitor;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import java.util.*;
 public class MonitorTaskService {
 
     private final MonitorTaskRepository repository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public MonitorTaskService(MonitorTaskRepository repository) {
         this.repository = repository;
@@ -45,6 +48,7 @@ public class MonitorTaskService {
         map.put("errorMessage", task.getErrorMessage());
         map.put("totalTransitions", task.getTotalTransitions());
         map.put("snapshotJson", task.getSnapshotJson());
+        appendSnapshotResultFields(map, task.getSnapshotJson());
         map.put("startedAt", task.getStartedAt());
         map.put("completedAt", task.getCompletedAt());
         map.put("createdAt", task.getCreatedAt());
@@ -61,5 +65,23 @@ public class MonitorTaskService {
         map.put("createdAt", task.getCreatedAt());
         map.put("completedAt", task.getCompletedAt());
         return map;
+    }
+
+    private void appendSnapshotResultFields(Map<String, Object> map, String snapshotJson) {
+        if (snapshotJson == null || snapshotJson.isEmpty()) {
+            return;
+        }
+        try {
+            Map<String, Object> snapshot = objectMapper.readValue(
+                    snapshotJson, new TypeReference<Map<String, Object>>() {});
+            if (snapshot.containsKey("resultType")) {
+                map.put("resultType", snapshot.get("resultType"));
+            }
+            if (snapshot.containsKey("experimentPassed")) {
+                map.put("experimentPassed", snapshot.get("experimentPassed"));
+            }
+        } catch (Exception ignored) {
+            // snapshot_json is still returned even if result metadata cannot be parsed.
+        }
     }
 }

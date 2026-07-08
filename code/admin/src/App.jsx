@@ -100,7 +100,7 @@ export default function App() {
             <Route path="modes/coach/drawing" element={<StudentPlaceholderPage title="图纸学习" description="识读二次回路图纸与接线图，功能开发中。" />} />
             <Route path="modes/coach/accident" element={<StudentPlaceholderPage title="事故处理" description="学习事故处理流程与案例分析，功能开发中。" />} />
             <Route path="modes/exam" element={<StudentPlaceholderPage title="测评模式" description="模拟测评考核，功能开发中。" />} />
-            <Route path="modes/panorama" element={<StudentPlaceholderPage title="全景模式" description="功能已移入教练模式「采样测试」。" />} />
+            <Route path="modes/panorama" element={<PanoramaListPage />} />
             <Route path="modes/panorama/:id" element={<StudentDiagramPage />} />
             <Route path="settings/password" element={<ChangePasswordPage />} />
             <Route path="profile" element={<ProfilePage />} />

@@ -86,7 +86,6 @@ const COACH_ENTRIES = [
     Icon: IconLogic,
     desc: '了解继电保护逻辑框图与动作原理，进行采样值测试与信号校验',
     route: '/student/modes/panorama',
-    navigateState: { from: 'coach' },
   },
   {
     id: 'sampling',

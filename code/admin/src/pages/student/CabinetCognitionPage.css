@@ -171,8 +171,16 @@
   display: flex;
   gap: 16px;
   flex: 1;
+  height: 100%;
   min-height: 0;
   width: 100%;
+}
+
+.tablet-shell__main:has(.cabinet-page__layout) {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
 }
 
 .cabinet-page__nav,
@@ -185,7 +193,7 @@
 }
 
 .cabinet-page__nav {
-  flex: 0 0 25%;
+  flex: 0 0 15%;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -228,8 +236,9 @@
   flex: 1;
   position: relative;
   min-width: 0;
-  padding: 20px 20px 84px;
-  overflow: auto;
+  display: flex;
+  padding: 20px;
+  overflow: hidden;
 }
 
 .cabinet-page__nav-error {
@@ -298,6 +307,8 @@
 }
 
 .cabinet-page__content-placeholder {
+  flex: 1;
+  width: 100%;
   height: 100%;
   min-height: 0;
   display: flex;
@@ -321,6 +332,8 @@
 
 /* 结构认知：左图右文 */
 .cabinet-section {
+  flex: 1;
+  width: 100%;
   height: 100%;
   min-height: 0;
   display: grid;
@@ -418,7 +431,7 @@
 /* 设备认知：左屏柜图，右上设备图，右下文字 */
 .cabinet-section--device {
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
   grid-template-areas:
     "cabinet device"
     "cabinet text";
@@ -438,12 +451,12 @@
 
 .cabinet-section--device .cabinet-section__media--cabinet {
   grid-area: cabinet;
-  min-height: 240px;
+  min-height: 0;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .cabinet-section--device .cabinet-section__media--device {
@@ -455,11 +468,16 @@
   overflow: hidden;
 }
 
+.cabinet-section--device .image-region-viewer {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 .cabinet-section--device .cabinet-section__media--device .cabinet-section__image--device {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   width: 100%;
   height: 100%;
-  min-height: 160px;
+  min-height: 0;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
@@ -468,6 +486,7 @@
 
 .cabinet-section--device .cabinet-section__text--device {
   grid-area: text;
+  min-height: 0;
   padding: 12px 14px;
   border-radius: 10px;
   border: 1px solid rgba(100, 181, 246, 0.18);
@@ -507,7 +526,7 @@
 /* 压板认知：左屏柜图，右上拼合压板结构，右下随动文字 */
 .cabinet-section--plate {
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
   grid-template-areas:
     "cabinet plate"
     "cabinet text";
@@ -703,7 +722,8 @@
   }
 
   .cabinet-page__content {
-    padding: 16px 16px 84px;
+    padding: 16px;
+    overflow: auto;
   }
 
   .cabinet-page__step-actions {
@@ -815,7 +835,7 @@
   flex: 1 1 auto;
   min-height: 0;
   align-items: center;
-  overflow: hidden;
+  overflow: auto;
   padding: 12px;
 }
 
@@ -883,7 +903,11 @@
 /* ── 端子状态 ── */
 
 .terminal-status {
-  margin-bottom: 12px;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  margin-bottom: 0;
+  overflow: auto;
 }
 
 .terminal-status__header {

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, imageUrl as resolveImageUrl } from '../api/client'
 import CabinetImageEditor from './CabinetImageEditor'
 import {
@@ -7,20 +7,58 @@ import {
   loadImageSourceFromUrl,
 } from '../utils/cropImage'
 
-export default function CabinetImageUploadField({ imageUrl, onChange, disabled, uploadImage }) {
+export default function CabinetImageUploadField({
+  imageUrl,
+  previewUrl,
+  onChange,
+  disabled,
+  uploadImage,
+  renderPreviewExtra,
+}) {
   const fileInputRef = useRef(null)
+  const localPreviewRef = useRef('')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [editorSrc, setEditorSrc] = useState(null)
+  const [localPreviewUrl, setLocalPreviewUrl] = useState('')
 
   const doUpload = uploadImage ?? ((file) => api.uploadCabinetDisplayImage(file))
+
+  useEffect(() => () => {
+    if (localPreviewRef.current) {
+      URL.revokeObjectURL(localPreviewRef.current)
+    }
+  }, [])
+
+  const setLocalPreview = (file) => {
+    if (localPreviewRef.current) {
+      URL.revokeObjectURL(localPreviewRef.current)
+    }
+    const nextPreviewUrl = URL.createObjectURL(file)
+    localPreviewRef.current = nextPreviewUrl
+    setLocalPreviewUrl(nextPreviewUrl)
+  }
+
+  const clearLocalPreview = () => {
+    if (localPreviewRef.current) {
+      URL.revokeObjectURL(localPreviewRef.current)
+      localPreviewRef.current = ''
+    }
+    setLocalPreviewUrl('')
+  }
 
   const uploadFile = async (file) => {
     setUploading(true)
     setUploadError('')
     try {
       const result = await doUpload(file)
-      onChange(result.imageUrl)
+      const nextImageUrl = result?.imageUrl ?? ''
+      onChange(nextImageUrl, result)
+      if (nextImageUrl) {
+        clearLocalPreview()
+      } else {
+        setLocalPreview(file)
+      }
     } catch (err) {
       setUploadError(err.message || '图片上传失败')
       throw err
@@ -60,15 +98,18 @@ export default function CabinetImageUploadField({ imageUrl, onChange, disabled, 
   }
 
   const handleRecrop = async () => {
-    if (!imageUrl) return
+    const recropSource = imageUrl ? resolveImageUrl(imageUrl) : previewUrl || localPreviewUrl
+    if (!recropSource) return
     setUploadError('')
     try {
-      const src = await loadImageSourceFromUrl(resolveImageUrl(imageUrl))
+      const src = await loadImageSourceFromUrl(recropSource)
       setEditorSrc(src)
     } catch (err) {
       setUploadError(err.message || '无法加载当前图片')
     }
   }
+
+  const previewSrc = imageUrl ? resolveImageUrl(imageUrl) : previewUrl || localPreviewUrl
 
   return (
     <>
@@ -83,7 +124,7 @@ export default function CabinetImageUploadField({ imageUrl, onChange, disabled, 
           >
             {uploading ? '上传中…' : '选择并编辑图片'}
           </button>
-          {imageUrl && (
+          {previewSrc && (
             <button
               type="button"
               className="users-page__link"
@@ -103,8 +144,11 @@ export default function CabinetImageUploadField({ imageUrl, onChange, disabled, 
           disabled={disabled || uploading}
         />
         {uploadError && <span className="cabinet-display-items__upload-error">{uploadError}</span>}
-        {imageUrl ? (
-          <img className="cabinet-display-items__preview" src={resolveImageUrl(imageUrl)} alt="认知图片预览" />
+        {previewSrc ? (
+          <>
+            <img className="cabinet-display-items__preview" src={previewSrc} alt="认知图片预览" />
+            {renderPreviewExtra?.(previewSrc)}
+          </>
         ) : (
           <span className="cabinet-display-items__upload-hint">
             支持 JPG、PNG、GIF、WebP（可裁切、旋转、翻转）；SVG 将直接上传

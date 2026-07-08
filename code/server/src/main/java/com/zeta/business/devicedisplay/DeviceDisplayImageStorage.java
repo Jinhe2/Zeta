@@ -8,9 +8,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,7 +52,9 @@ public class DeviceDisplayImageStorage {
 
         try {
             Files.createDirectories(targetDir);
-            file.transferTo(targetFile);
+            try (InputStream input = file.getInputStream()) {
+                Files.copy(input, targetFile, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "图片保存失败");
         }
@@ -76,6 +80,41 @@ public class DeviceDisplayImageStorage {
         }
         String prefix = uploadProperties.getPublicPathPrefix() + "/device-display/";
         return imageUrl.startsWith(prefix);
+    }
+
+    public byte[] readImageBytes(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择图片文件");
+        }
+        String extension = resolveExtension(file.getOriginalFilename());
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "仅支持 JPG、PNG、GIF、WebP、SVG 图片");
+        }
+
+        try {
+            return file.getBytes();
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "图片读取失败");
+        }
+    }
+
+    public String resolveContentType(String filename) {
+        String extension = resolveExtension(filename);
+        switch (extension) {
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg";
+            case "png":
+                return "image/png";
+            case "gif":
+                return "image/gif";
+            case "webp":
+                return "image/webp";
+            case "svg":
+                return "image/svg+xml";
+            default:
+                return "image/jpeg";
+        }
     }
 
     private Path resolveManagedPath(String imageUrl) {

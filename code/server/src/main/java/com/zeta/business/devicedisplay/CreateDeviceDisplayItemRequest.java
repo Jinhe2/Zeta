@@ -15,9 +15,18 @@ public class CreateDeviceDisplayItemRequest {
     @Size(max = 128, message = "标题不能超过 128 个字符")
     private String title;
 
-    @NotBlank(message = "请上传认知图片")
+    private Long imageId;
+
     @Size(max = 512, message = "图片地址过长")
     private String imageUrl;
+
+    private Double leftPercent;
+
+    private Double topPercent;
+
+    private Double widthPercent;
+
+    private Double heightPercent;
 
     @NotBlank(message = "请输入展示内容")
     private String content;

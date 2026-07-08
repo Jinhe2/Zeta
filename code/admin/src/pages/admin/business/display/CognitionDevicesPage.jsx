@@ -53,6 +53,7 @@ export default function CognitionDevicesPage() {
   const [regionSaving, setRegionSaving] = useState(false)
 
   const selectedDevice = devices.find((d) => d.id === selectedId) ?? null
+  const cabinetImageUrl = cabinetItem ? imageUrl('cabinet-display', cabinetItem.id, cabinetItem.id) : ''
 
   useEffect(() => {
     const device = devices.find((d) => d.id === selectedId)
@@ -243,11 +244,11 @@ export default function CognitionDevicesPage() {
         <>
           <section className="cognition-devices__editor-section">
             <p className="cognition-devices__hint">选中下方子设备，拖动黄框调整其在图上的区域</p>
-            {cabinetItem.imageUrl && regionDraft && (
+            {selectedDevice && regionDraft && cabinetImageUrl && (
               <>
                 <ImageRegionEditor
                   key={selectedId}
-                  imageUrl={imageUrl('cabinet-display', cabinetItem.id)}
+                  imageUrl={cabinetImageUrl}
                   region={regionDraft}
                   onChange={setRegionDraft}
                 />

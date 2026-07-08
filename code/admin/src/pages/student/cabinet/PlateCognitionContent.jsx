@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
-import { normalizeRegion } from '../../../utils/imageRegionUtils'
+import { hasRegion, normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
 const POLL_INTERVAL = 5000
@@ -279,6 +279,7 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
   const statusSlideIndex = displayItems.length
   const isStatusSlide = hasStatusSlide && activeSlide === statusSlideIndex
   const currentDisplayItem = isStatusSlide ? null : displayItems[activeSlide] ?? displayItems[0] ?? null
+  const itemHighlightRegion = hasRegion(currentDisplayItem) ? normalizeRegion(currentDisplayItem) : null
   const targetFunctionPressboard = useMemo(
     () => findTargetFunctionPressboard(pressboards),
     [pressboards],
@@ -484,10 +485,10 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
         )}
         {!loading && !error && currentDisplayItem && (
           <>
-            <img
+            <ImageRegionViewer
               key={activeSlide}
-              className="cabinet-section__image cabinet-section__image--device"
-              src={imageUrl('device-display', currentDisplayItem.id)}
+              imageUrl={imageUrl('device-display', currentDisplayItem.id)}
+              region={itemHighlightRegion}
               alt={currentDisplayItem.title}
             />
           </>

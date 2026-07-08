@@ -65,6 +65,15 @@ export function clampRegion(region) {
   return { leftPercent: x, topPercent: y, widthPercent: width, heightPercent: height }
 }
 
+export function hasRegion(region) {
+  return (
+    region?.leftPercent != null
+    && region?.topPercent != null
+    && region?.widthPercent != null
+    && region?.heightPercent != null
+  )
+}
+
 export function buildRegionPayload(region, cabinetDisplayItemId) {
   const normalized = clampRegion(region ?? DEFAULT_REGION)
   const left = roundPercent(normalized.leftPercent)

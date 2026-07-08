@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
-import { normalizeRegion } from '../../../utils/imageRegionUtils'
+import { hasRegion, normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
 export default function DeviceCognitionContent({ navigationTarget, onPageChange }) {
@@ -86,6 +86,7 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
 
   const displayItems = displayItemsState.deviceId === activeCognitionDeviceId ? displayItemsState.items : []
   const currentDisplayItem = displayItems[currentSlide] ?? displayItems[0] ?? null
+  const itemHighlightRegion = hasRegion(currentDisplayItem) ? normalizeRegion(currentDisplayItem) : null
 
   const highlightRegion =
     selectedCabinetItem && selectedCognitionDevice && cognitionDevices.length > 0
@@ -182,10 +183,10 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
         )}
         {!loading && !error && currentDisplayItem && (
           <>
-            <img
+            <ImageRegionViewer
               key={currentSlide}
-              className="cabinet-section__image cabinet-section__image--device"
-              src={imageUrl('device-display', currentDisplayItem.id)}
+              imageUrl={imageUrl('device-display', currentDisplayItem.id)}
+              region={itemHighlightRegion}
               alt={currentDisplayItem.title}
             />
             {displayItems.length > 1 && (

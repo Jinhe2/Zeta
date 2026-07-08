@@ -30,6 +30,7 @@ export function clearApiBaseUrl() {
 
 // 动态获取 BASE，每次请求时读取最新值
 const getBase = () => getApiBaseUrl()
+const IMAGE_CACHE_KEY = Date.now()
 
 /** 拼接完整 API URL：开发走代理，生产直连 */
 export function apiUrl(path) {
@@ -37,12 +38,16 @@ export function apiUrl(path) {
 }
 
 /** 将后端返回的图片 ID 转为完整 URL（新方式）或兼容旧路径 */
-export function imageUrl(typeOrPath, id) {
+export function imageUrl(typeOrPath, id, cacheKey) {
   const base = getBase()
   // 新方式：传入 type 和 id
   if (id !== undefined) {
     if (!id) return ''
-    return base + `/api/images/${typeOrPath}/${id}`
+    const resolvedCacheKey = cacheKey !== undefined && cacheKey !== null && cacheKey !== ''
+      ? cacheKey
+      : IMAGE_CACHE_KEY
+    const version = `?v=${encodeURIComponent(resolvedCacheKey)}`
+    return base + `/api/images/${typeOrPath}/${id}${version}`
   }
   // 旧方式：兼容传入完整路径
   if (!typeOrPath) return ''

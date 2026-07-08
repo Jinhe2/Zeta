@@ -8,9 +8,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,7 +52,9 @@ public class CabinetDisplayImageStorage {
 
         try {
             Files.createDirectories(targetDir);
-            file.transferTo(targetFile);
+            try (InputStream input = file.getInputStream()) {
+                Files.copy(input, targetFile, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "图片保存失败");
         }

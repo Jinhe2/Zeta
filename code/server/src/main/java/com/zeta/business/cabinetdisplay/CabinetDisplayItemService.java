@@ -9,6 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -74,7 +75,7 @@ public class CabinetDisplayItemService {
 
         CabinetDisplayItem saved = displayItemRepository.save(item);
         String nextImageUrl = item.getImageUrl();
-        if (nextImageUrl != null && !nextImageUrl.equals(previousImageUrl)) {
+        if (!Objects.equals(nextImageUrl, previousImageUrl)) {
             imageStorage.deleteIfManaged(previousImageUrl);
         }
         return toAdminResponse(saved);
@@ -116,9 +117,17 @@ public class CabinetDisplayItemService {
             item.setImageUrl(normalizeImageUrl(imageUrl));
             item.setImageData(null);
             item.setImageContentType(null);
+        } else if (hasExistingImage(item)) {
+            // 编辑条目但未重新上传图片时，保留原有图片数据。
+            return;
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请上传认知图片");
         }
+    }
+
+    private boolean hasExistingImage(CabinetDisplayItem item) {
+        return StringUtils.hasText(item.getImageUrl())
+                || (item.getImageData() != null && item.getImageData().length > 0);
     }
 
     private String normalizeImageUrl(String imageUrl) {

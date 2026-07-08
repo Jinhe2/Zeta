@@ -7,7 +7,9 @@ import './CabinetDisplayItemsPage.css'
 
 const EMPTY_CREATE = {
   title: '',
+  imageId: null,
   imageUrl: '',
+  hasImage: false,
   content: '',
   sortOrder: 0,
   enabled: true,
@@ -39,6 +41,7 @@ export default function CabinetDisplayItemsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [imageVersion, setImageVersion] = useState(Date.now())
 
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState(EMPTY_CREATE)
@@ -47,7 +50,9 @@ export default function CabinetDisplayItemsPage() {
   const [editingItem, setEditingItem] = useState(null)
   const [editForm, setEditForm] = useState({
     title: '',
+    imageId: null,
     imageUrl: '',
+    hasImage: false,
     content: '',
     sortOrder: 0,
     enabled: true,
@@ -90,19 +95,22 @@ export default function CabinetDisplayItemsPage() {
 
   const handleCreate = async (e) => {
     e.preventDefault()
-    if (!createForm.imageUrl) {
+    if (!createForm.imageId && !createForm.imageUrl) {
       setError('请上传认知图片')
       return
     }
     setCreating(true)
     setError('')
     try {
+      const payload = { ...createForm }
+      delete payload.hasImage
       await api.createCabinetDisplayItem(cabinetIdNum, {
-        ...createForm,
+        ...payload,
         sortOrder: Number(createForm.sortOrder),
       })
       setShowCreate(false)
       setCreateForm(EMPTY_CREATE)
+      setImageVersion(Date.now())
       flash('认知条目创建成功')
       await loadData()
     } catch (err) {
@@ -116,7 +124,9 @@ export default function CabinetDisplayItemsPage() {
     setEditingItem(item)
     setEditForm({
       title: item.title,
+      imageId: null,
       imageUrl: item.imageUrl,
+      hasImage: Boolean(item.id || item.imageUrl),
       content: item.content,
       sortOrder: item.sortOrder,
       enabled: item.enabled,
@@ -126,18 +136,21 @@ export default function CabinetDisplayItemsPage() {
   const handleUpdate = async (e) => {
     e.preventDefault()
     if (!editingItem) return
-    if (!editForm.imageUrl) {
+    if (!editForm.hasImage && !editForm.imageId && !editForm.imageUrl) {
       setError('请上传认知图片')
       return
     }
     setSaving(true)
     setError('')
     try {
+      const payload = { ...editForm }
+      delete payload.hasImage
       await api.updateCabinetDisplayItem(editingItem.id, {
-        ...editForm,
+        ...payload,
         sortOrder: Number(editForm.sortOrder),
       })
       setEditingItem(null)
+      setImageVersion(Date.now())
       flash('认知条目已更新')
       await loadData()
     } catch (err) {
@@ -224,7 +237,7 @@ export default function CabinetDisplayItemsPage() {
                       <td>
                         <img
                           className="cabinet-display-items__thumb"
-                          src={imageUrl('cabinet-display', item.id)}
+                          src={imageUrl('cabinet-display', item.id, imageVersion)}
                           alt={item.title}
                         />
                       </td>
@@ -275,7 +288,12 @@ export default function CabinetDisplayItemsPage() {
             </label>
             <CabinetImageUploadField
               imageUrl={createForm.imageUrl}
-              onChange={(url) => setCreateForm({ ...createForm, imageUrl: url })}
+              onChange={(url, result) => setCreateForm((current) => ({
+                ...current,
+                imageUrl: url,
+                imageId: result?.imageId ?? null,
+                hasImage: Boolean(url || result?.imageId),
+              }))}
               disabled={creating}
             />
             <label>
@@ -329,7 +347,13 @@ export default function CabinetDisplayItemsPage() {
             </label>
             <CabinetImageUploadField
               imageUrl={editForm.imageUrl}
-              onChange={(url) => setEditForm({ ...editForm, imageUrl: url })}
+              previewUrl={editingItem ? imageUrl('cabinet-display', editingItem.id, imageVersion) : ''}
+              onChange={(url, result) => setEditForm((current) => ({
+                ...current,
+                imageUrl: url,
+                imageId: result?.imageId ?? null,
+                hasImage: Boolean(url || result?.imageId || editingItem?.id),
+              }))}
               disabled={saving}
             />
             <label>

@@ -40,6 +40,19 @@ public class DeviceDisplayItem {
     @Column(name = "image_content_type", length = 100)
     private String imageContentType;
 
+    /** 条目图片上的高亮区域，可为空表示不显示高亮 */
+    @Column(name = "left_percent")
+    private Double leftPercent;
+
+    @Column(name = "top_percent")
+    private Double topPercent;
+
+    @Column(name = "width_percent")
+    private Double widthPercent;
+
+    @Column(name = "height_percent")
+    private Double heightPercent;
+
     @Lob
     @Column(nullable = false)
     private String content;

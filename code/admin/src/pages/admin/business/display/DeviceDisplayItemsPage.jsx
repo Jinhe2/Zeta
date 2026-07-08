@@ -2,12 +2,20 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api, imageUrl } from '../../../../api/client'
 import CabinetImageUploadField from '../../../../components/CabinetImageUploadField'
+import ImageRegionEditor from '../../../../components/ImageRegionEditor'
+import { DEFAULT_REGION, normalizeRegion } from '../../../../utils/imageRegionUtils'
 import '../UsersPage.css'
 import './DeviceDisplayItemsPage.css'
 
 const EMPTY_CREATE = {
   title: '',
+  imageId: null,
   imageUrl: '',
+  hasImage: false,
+  leftPercent: null,
+  topPercent: null,
+  widthPercent: null,
+  heightPercent: null,
   content: '',
   sortOrder: 0,
   enabled: true,
@@ -36,6 +44,87 @@ function previewContent(text, max = 48) {
   return oneLine.length > max ? `${oneLine.slice(0, max)}…` : oneLine
 }
 
+function hasHighlightRegion(form) {
+  return (
+    form.leftPercent != null
+    && form.topPercent != null
+    && form.widthPercent != null
+    && form.heightPercent != null
+  )
+}
+
+function roundPercent(value) {
+  return Math.round(Number(value) * 1000) / 1000
+}
+
+function regionFields(region) {
+  if (!region) {
+    return {
+      leftPercent: null,
+      topPercent: null,
+      widthPercent: null,
+      heightPercent: null,
+    }
+  }
+  const normalized = normalizeRegion(region)
+  return {
+    leftPercent: roundPercent(normalized.leftPercent),
+    topPercent: roundPercent(normalized.topPercent),
+    widthPercent: roundPercent(normalized.widthPercent),
+    heightPercent: roundPercent(normalized.heightPercent),
+  }
+}
+
+function formToRegion(form) {
+  if (!hasHighlightRegion(form)) return null
+  return normalizeRegion({
+    leftPercent: form.leftPercent,
+    topPercent: form.topPercent,
+    widthPercent: form.widthPercent,
+    heightPercent: form.heightPercent,
+  })
+}
+
+function HighlightRegionField({ form, setForm, previewSrc, disabled }) {
+  const enabled = hasHighlightRegion(form)
+  const region = formToRegion(form)
+
+  return (
+    <div className="device-display-items__highlight-field">
+      <label className="users-page__checkbox">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) =>
+            setForm((current) => ({
+              ...current,
+              ...regionFields(e.target.checked ? DEFAULT_REGION : null),
+            }))
+          }
+          disabled={disabled}
+        />
+        设置图片高亮区域
+      </label>
+      {enabled && (
+        <>
+          <p className="device-display-items__highlight-hint">拖动黄框调整高亮显示的位置和大小</p>
+          <ImageRegionEditor
+            imageUrl={previewSrc}
+            region={region}
+            onChange={(nextRegion) =>
+              setForm((current) => ({
+                ...current,
+                ...regionFields(nextRegion),
+              }))
+            }
+            readOnly={disabled}
+          />
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function DeviceDisplayItemsPage() {
   const { cognitionDeviceId } = useParams()
   const cognitionDeviceIdNum = Number(cognitionDeviceId)
@@ -45,13 +134,26 @@ export default function DeviceDisplayItemsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [imageVersion, setImageVersion] = useState(Date.now())
 
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState(EMPTY_CREATE)
   const [creating, setCreating] = useState(false)
 
   const [editingItem, setEditingItem] = useState(null)
-  const [editForm, setEditForm] = useState({ title: '', imageUrl: '', content: '', sortOrder: 0, enabled: true })
+  const [editForm, setEditForm] = useState({
+    title: '',
+    imageId: null,
+    imageUrl: '',
+    hasImage: false,
+    content: '',
+    sortOrder: 0,
+    enabled: true,
+    leftPercent: null,
+    topPercent: null,
+    widthPercent: null,
+    heightPercent: null,
+  })
   const [saving, setSaving] = useState(false)
 
   const loadData = useCallback(async () => {
@@ -90,19 +192,22 @@ export default function DeviceDisplayItemsPage() {
 
   const handleCreate = async (e) => {
     e.preventDefault()
-    if (!createForm.imageUrl) {
+    if (!createForm.imageId && !createForm.imageUrl) {
       setError('请上传认知图片')
       return
     }
     setCreating(true)
     setError('')
     try {
+      const payload = { ...createForm }
+      delete payload.hasImage
       await api.createCognitionDeviceDisplayItem(cognitionDeviceIdNum, {
-        ...createForm,
+        ...payload,
         sortOrder: Number(createForm.sortOrder),
       })
       setShowCreate(false)
       setCreateForm(EMPTY_CREATE)
+      setImageVersion(Date.now())
       flash('认知条目创建成功')
       await loadData()
     } catch (err) {
@@ -116,28 +221,37 @@ export default function DeviceDisplayItemsPage() {
     setEditingItem(item)
     setEditForm({
       title: item.title,
+      imageId: null,
       imageUrl: item.imageUrl,
+      hasImage: Boolean(item.id || item.imageUrl),
       content: item.content,
       sortOrder: item.sortOrder,
       enabled: item.enabled,
+      leftPercent: item.leftPercent ?? null,
+      topPercent: item.topPercent ?? null,
+      widthPercent: item.widthPercent ?? null,
+      heightPercent: item.heightPercent ?? null,
     })
   }
 
   const handleUpdate = async (e) => {
     e.preventDefault()
     if (!editingItem) return
-    if (!editForm.imageUrl) {
+    if (!editForm.hasImage && !editForm.imageId && !editForm.imageUrl) {
       setError('请上传认知图片')
       return
     }
     setSaving(true)
     setError('')
     try {
+      const payload = { ...editForm }
+      delete payload.hasImage
       await api.updateDeviceDisplayItem(editingItem.id, {
-        ...editForm,
+        ...payload,
         sortOrder: Number(editForm.sortOrder),
       })
       setEditingItem(null)
+      setImageVersion(Date.now())
       flash('认知条目已更新')
       await loadData()
     } catch (err) {
@@ -227,7 +341,11 @@ export default function DeviceDisplayItemsPage() {
                 items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <img className="device-display-items__thumb" src={imageUrl('device-display', item.id)} alt={item.title} />
+                      <img
+                        className="device-display-items__thumb"
+                        src={imageUrl('device-display', item.id, imageVersion)}
+                        alt={item.title}
+                      />
                     </td>
                     <td>{item.title}</td>
                     <td>{previewContent(item.content)}</td>
@@ -268,9 +386,22 @@ export default function DeviceDisplayItemsPage() {
             </label>
             <CabinetImageUploadField
               imageUrl={createForm.imageUrl}
-              onChange={(url) => setCreateForm({ ...createForm, imageUrl: url })}
+              onChange={(url, result) => setCreateForm((current) => ({
+                ...current,
+                imageUrl: url,
+                imageId: result?.imageId ?? null,
+                hasImage: Boolean(url || result?.imageId),
+              }))}
               uploadImage={api.uploadDeviceDisplayImage}
               disabled={creating}
+              renderPreviewExtra={(previewSrc) => (
+                <HighlightRegionField
+                  form={createForm}
+                  setForm={setCreateForm}
+                  previewSrc={previewSrc}
+                  disabled={creating}
+                />
+              )}
             />
             <label>
               文字描述
@@ -323,9 +454,23 @@ export default function DeviceDisplayItemsPage() {
             </label>
             <CabinetImageUploadField
               imageUrl={editForm.imageUrl}
-              onChange={(url) => setEditForm({ ...editForm, imageUrl: url })}
+              previewUrl={editingItem ? imageUrl('device-display', editingItem.id, imageVersion) : ''}
+              onChange={(url, result) => setEditForm((current) => ({
+                ...current,
+                imageUrl: url,
+                imageId: result?.imageId ?? null,
+                hasImage: Boolean(url || result?.imageId || editingItem?.id),
+              }))}
               uploadImage={api.uploadDeviceDisplayImage}
               disabled={saving}
+              renderPreviewExtra={(previewSrc) => (
+                <HighlightRegionField
+                  form={editForm}
+                  setForm={setEditForm}
+                  previewSrc={previewSrc}
+                  disabled={saving}
+                />
+              )}
             />
             <label>
               文字描述

@@ -48,9 +48,12 @@
 /* 统一的边框块样式 */
 .info-block {
   padding: 12px 20px;
-  border: 1px solid rgba(160, 180, 200, 0.3);
+  border: 1px solid rgba(142, 197, 248, 0.36);
   border-radius: 8px;
-  background: rgba(20, 30, 45, 0.6);
+  background: rgba(10, 22, 38, 0.86);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   height: 48px;
   display: flex;
   align-items: center;
@@ -270,9 +273,12 @@
 .tablet-home__icon-btn {
   width: 48px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.06);
-  color: #cfe8ff;
+  border: 1px solid rgba(142, 197, 248, 0.36);
+  background: rgba(10, 22, 38, 0.86);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #d8ecff;
   font-size: 20px;
   cursor: pointer;
   display: flex;
@@ -285,17 +291,30 @@
   padding: 0;
 }
 
+.tablet-home__icon-btn:hover,
+.tablet-home__text-btn:hover,
+.tablet-home__icon-btn.info-block:hover,
+.tablet-home__text-btn.info-block:hover {
+  border-color: rgba(142, 197, 248, 0.64);
+  background: rgba(14, 32, 54, 0.94);
+  color: #ffffff;
+}
+
 .tablet-home__icon-btn--close {
   font-size: 18px;
 }
 
 .tablet-home__text-btn {
   padding: 7px 12px;
-  border-radius: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.06);
-  color: #cfe8ff;
+  border-radius: 8px;
+  border: 1px solid rgba(142, 197, 248, 0.36);
+  background: rgba(10, 22, 38, 0.86);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #d8ecff;
   font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -625,12 +644,21 @@
   width: 220px;
   padding: 12px 20px;
   border-radius: 8px;
-  border: 1px solid rgba(200, 215, 230, 0.3);
-  background: #ffffff;
+  border: 1px solid rgba(142, 197, 248, 0.36);
+  background: rgba(10, 22, 38, 0.94);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   font-size: 16px;
   font-weight: 600;
-  color: #2c3e50;
+  color: #d8ecff;
   cursor: pointer;
+}
+
+.tablet-home__resource-item:hover {
+  border-color: rgba(142, 197, 248, 0.64);
+  background: rgba(14, 32, 54, 0.98);
+  color: #ffffff;
 }
 
 .tablet-home__bottom-nav {

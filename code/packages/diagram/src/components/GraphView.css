@@ -48,13 +48,25 @@
 }
 
 .v4-flow-pane .react-flow__node.v4-rf-node--section-ok .v4-node {
-  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.65);
+  opacity: 1;
+  filter: none;
+  border-color: #00e676 !important;
+  box-shadow:
+    0 0 0 2px rgba(0, 230, 118, 0.32),
+    0 0 18px rgba(0, 230, 118, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28) !important;
 }
 
 .v4-flow-pane .react-flow__node.v4-rf-node--section-fail .v4-node {
-  opacity: 0.72;
-  filter: saturate(0.45);
-  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.55);
+  opacity: 1;
+  filter: none;
+  border-color: #ff2d2d !important;
+  background-image: linear-gradient(rgba(255, 45, 45, 0.1), rgba(255, 45, 45, 0.1));
+  box-shadow:
+    0 0 0 2px rgba(255, 45, 45, 0.42),
+    0 0 16px rgba(255, 45, 45, 0.62),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.26),
+    inset 0 0 12px rgba(255, 45, 45, 0.12) !important;
 }
 
 .v4-flow-pane .react-flow__node.v4-rf-node--section-ok.v4-rf-node--selected .v4-node,

@@ -17,8 +17,14 @@ function formatTimestamp(ts) {
   return spaceIdx >= 0 ? ts.slice(spaceIdx + 1) : ts
 }
 
-function satisfiedCount(states) {
+function satisfiedCount(states, nodeIds) {
   if (!states) return { ok: 0, total: 0 }
+  if (nodeIds?.length) {
+    return {
+      ok: nodeIds.filter((nodeId) => states[nodeId] === true).length,
+      total: nodeIds.length,
+    }
+  }
   const vals = Object.values(states)
   return { ok: vals.filter(Boolean).length, total: vals.length }
 }
@@ -90,7 +96,7 @@ function buildTimelineLayout(sections, containerWidth) {
   }
 }
 
-export default function SectionSelector({ sections, selectedId, onSelect }) {
+export default function SectionSelector({ sections, selectedId, onSelect, inputNodeIds = [] }) {
   if (!sections?.length) return null
   const timelineRef = useRef(null)
   const [timelineWidth, setTimelineWidth] = useState(520)
@@ -99,7 +105,7 @@ export default function SectionSelector({ sections, selectedId, onSelect }) {
   const hasPrev = currentIndex > 0
   const hasNext = currentIndex >= 0 && currentIndex < sections.length - 1
   const cur = currentIndex >= 0 ? sections[currentIndex] : null
-  const { ok, total } = satisfiedCount(cur?.states)
+  const { ok, total } = satisfiedCount(cur?.states, inputNodeIds)
   const timeline = buildTimelineLayout(sections, timelineWidth)
 
   useEffect(() => {
@@ -151,7 +157,7 @@ export default function SectionSelector({ sections, selectedId, onSelect }) {
               style={{ left: `${timeline.lineLeft}px`, width: `${timeline.lineWidth}px` }}
             />
             {sections.map((section, i) => {
-              const { ok: sOk, total: sTotal } = satisfiedCount(section.states)
+              const { ok: sOk, total: sTotal } = satisfiedCount(section.states, inputNodeIds)
               const isActive = section.id === selectedId
               const isOk = sTotal > 0 && sOk === sTotal
               const ts = formatTimestamp(section.timestamp)
@@ -229,7 +235,7 @@ export default function SectionSelector({ sections, selectedId, onSelect }) {
           <span className="section-selector__satisfy-label">满足节点数</span>
           <span className="section-selector__satisfy-ok">{ok}</span>
           <span className="section-selector__satisfy-sep">/</span>
-          <span className="section-selector__satisfy-label">总节点数</span>
+          <span className="section-selector__satisfy-label">输入节点数</span>
           <span className="section-selector__satisfy-total">{total}</span>
         </div>
         <div className="section-selector__legend">

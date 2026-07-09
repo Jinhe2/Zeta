@@ -30,7 +30,7 @@ export default function CircuitLearningPage() {
   }
 
   return (
-    <div className="tablet-shell">
+    <div className="tablet-shell circuit-learning-shell">
       <header className="tablet-shell__header">
         <div className="tablet-shell__header-left">
           <button

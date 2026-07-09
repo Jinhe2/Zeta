@@ -14,6 +14,7 @@ import './StudentPages.css'
 
 const HEARTBEAT_INTERVAL = 5000
 const POLL_INTERVAL = 3000
+const APP_TITLE = '继电保护智慧实操教学系统'
 const EXPERIMENT_SUCCESS_MESSAGE = '恭喜成功完成实验'
 const EXPERIMENT_FAILED_MESSAGE = '实验失败了，请结合中间文件分析结果进一步确认原因'
 const EXPERIMENT_DIAGNOSIS_MESSAGE = '实验失败了，请重新学习逻辑框图和相关操作'
@@ -420,6 +421,9 @@ export default function StudentDiagramPage() {
 
   useEffect(() => {
     if (detail?.title) document.title = detail.title
+    return () => {
+      document.title = APP_TITLE
+    }
   }, [detail])
 
   const nodeStates = useMemo(() => {

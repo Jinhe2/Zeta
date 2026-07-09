@@ -176,6 +176,7 @@
   width: 100%;
 }
 
+.tablet-shell__main--cabinet,
 .tablet-shell__main:has(.cabinet-page__layout) {
   display: flex;
   min-height: 0;
@@ -478,6 +479,11 @@
   justify-content: space-between;
   gap: 12px;
   overflow: hidden;
+}
+
+.cabinet-section--device .cabinet-section__media--pressboard-status {
+  align-items: stretch;
+  justify-content: center;
 }
 
 .cabinet-section--device .image-region-viewer {
@@ -795,6 +801,8 @@
 
 .pressboard-grid {
   --pressboard-cell-width: 84px;
+  --pressboard-row-count: 1;
+  --pressboard-col-count: 1;
   margin-bottom: 12px;
 }
 
@@ -804,11 +812,14 @@
 }
 
 .pressboard-grid--slide {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  height: 100%;
   min-height: 0;
+  min-width: 0;
   align-self: stretch;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .pressboard-grid__header {
@@ -844,16 +855,29 @@
 }
 
 .pressboard-grid--full .pressboard-grid__board {
+  display: grid;
+  grid-template-rows: repeat(var(--pressboard-row-count), minmax(0, 1fr));
   flex: 1 1 auto;
   min-height: 0;
-  align-items: center;
-  overflow: auto;
+  min-width: 0;
+  align-items: stretch;
+  justify-content: center;
+  overflow: hidden;
   padding: 12px;
+  gap: clamp(1px, 0.5vh, 4px);
 }
 
 .pressboard-grid__row {
   display: flex;
   gap: 0;
+}
+
+.pressboard-grid--full .pressboard-grid__row {
+  display: grid;
+  grid-template-columns: repeat(var(--pressboard-col-count), minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 
 .pressboard-grid__cell {
@@ -871,7 +895,12 @@
 }
 
 .pressboard-grid--full .pressboard-grid__cell {
-  padding: 6px 2px;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  min-height: 0;
+  justify-content: center;
+  padding: clamp(2px, 0.7vh, 6px) 2px;
 }
 
 .pressboard-grid__cell--empty {
@@ -885,8 +914,9 @@
 }
 
 .pressboard-grid--full .pressboard-grid__svg {
-  width: 34px;
-  height: 68px;
+  width: min(52%, 34px);
+  height: min(64%, 68px);
+  min-height: 0;
 }
 
 .pressboard-grid__label {
@@ -903,6 +933,18 @@
 
 .pressboard-grid--full .pressboard-grid__label {
   font-size: 9px;
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .tablet-shell__main--cabinet {
+    overflow: hidden;
+  }
+
+  .tablet-shell__main--cabinet .cabinet-page__content {
+    overflow: hidden;
+  }
 }
 
 .pressboard-grid__label-line {

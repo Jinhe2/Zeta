@@ -478,7 +478,7 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
         )}
       </div>
 
-      <div className="cabinet-section__media cabinet-section__media--device">
+      <div className={`cabinet-section__media cabinet-section__media--device${isStatusSlide ? ' cabinet-section__media--pressboard-status' : ''}`}>
         {!loading && !error && cognitionDevices.length > 1 && (
           <div className="cabinet-section__item-tabs cabinet-section__item-tabs--compact" role="tablist">
             {cognitionDevices.map((device) => (
@@ -518,7 +518,13 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
             {pressboards.length === 0 ? (
               <p className="cabinet-section__paragraph">暂无可渲染的压板状态数据</p>
             ) : (
-              <div className="pressboard-grid__board">
+              <div
+                className="pressboard-grid__board"
+                style={{
+                  '--pressboard-row-count': pressboardGrid.length,
+                  '--pressboard-col-count': maxCol + 1,
+                }}
+              >
                 {pressboardGrid.map((row, ri) => (
                   <div key={ri} className="pressboard-grid__row">
                     {row.map((pb, ci) => {

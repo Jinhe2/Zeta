@@ -121,10 +121,7 @@ async function buildDeviceSectionPages(sectionId, cabinetItems) {
 
 export default function CabinetCognitionPage() {
   const navigate = useNavigate()
-  const { session } = useAuth()
-
-  const displayName = session?.displayName || '学员'
-  const levelLabel = '初级学员 Lv.3'
+  const { logout } = useAuth()
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id)
   const [navigationPages, setNavigationPages] = useState(SECTIONS.map((section) => fallbackPage(section.id)))
   const [currentPageKey, setCurrentPageKey] = useState(pageKey(fallbackPage(SECTIONS[0].id)))
@@ -285,7 +282,7 @@ export default function CabinetCognitionPage() {
         </button>
       </header>
 
-      <main className="tablet-shell__main">
+      <main className="tablet-shell__main tablet-shell__main--cabinet">
         <div className="cabinet-page__layout">
           <nav className="cabinet-page__nav" aria-label="屏柜学习分类">
             {SECTIONS.map((section) => (

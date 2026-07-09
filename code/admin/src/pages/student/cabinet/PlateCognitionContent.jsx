@@ -109,13 +109,25 @@ function practiceActionForState(state) {
   return null
 }
 
-function findTargetFunctionPressboard(pressboards) {
+function hasValidPressboardPosition(pressboard) {
+  return Number(pressboard.rowNo) > 0 && Number(pressboard.colNo) > 0
+}
+
+function findSmallestIdPressboard(pressboards, type, shouldInclude = () => true) {
   return pressboards
-    .filter((pb) => pb.pressboardType === 'FUNCTION')
+    .filter((pb) => pb.pressboardType === type && shouldInclude(pb))
     .reduce((target, pb) => {
       if (!target) return pb
       return Number(pb.id) < Number(target.id) ? pb : target
     }, null)
+}
+
+function findTargetFunctionPressboard(pressboards) {
+  return findSmallestIdPressboard(pressboards, 'FUNCTION')
+}
+
+function findTargetExportPressboard(pressboards) {
+  return findSmallestIdPressboard(pressboards, 'EXPORT', hasValidPressboardPosition)
 }
 
 function initialPracticeState() {
@@ -285,6 +297,10 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
     () => findTargetFunctionPressboard(pressboards),
     [pressboards],
   )
+  const targetExportPressboard = useMemo(
+    () => findTargetExportPressboard(pressboards),
+    [pressboards],
+  )
   const visiblePracticeDialog =
     isPracticeStatusTarget
     && practiceDialog?.pageKey === navigationTarget?.key
@@ -379,6 +395,25 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
       return
     }
 
+    if (targetExportPressboard) {
+      const exportState = readPressboardState(targetExportPressboard, pressboardStates)
+      const exportAction = practiceActionForState(exportState)
+      if (exportAction) {
+        practiceRef.current = {
+          ...practice,
+          phase: 'watching-export',
+          targetId: targetExportPressboard.id,
+          initialState: normalizePressboardState(exportState),
+        }
+        setPracticeDialog({
+          pageKey: navigationTarget?.key,
+          sequence: practice.sequence,
+          message: `操作成功，请再${exportAction} ${targetExportPressboard.name}`,
+        })
+        return
+      }
+    }
+
     practiceRef.current = {
       ...practice,
       phase: 'completed',
@@ -388,7 +423,42 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
       sequence: practice.sequence,
       message: PRACTICE_SUCCESS_MESSAGE,
     })
-  }, [isPracticeStatusTarget, navigationTarget?.key, pressboardStates, statusRefreshVersion, targetFunctionPressboard])
+  }, [
+    isPracticeStatusTarget,
+    navigationTarget?.key,
+    pressboardStates,
+    statusRefreshVersion,
+    targetExportPressboard,
+    targetFunctionPressboard,
+  ])
+
+  useEffect(() => {
+    const practice = practiceRef.current
+    if (
+      practice.phase !== 'watching-export'
+      || !isPracticeStatusTarget
+      || !targetExportPressboard
+      || practice.targetId !== targetExportPressboard.id
+      || !practice.initialState
+    ) {
+      return
+    }
+
+    const state = normalizePressboardState(readPressboardState(targetExportPressboard, pressboardStates))
+    if (!practiceActionForState(state) || state === practice.initialState) {
+      return
+    }
+
+    practiceRef.current = {
+      ...practice,
+      phase: 'completed',
+    }
+    setPracticeDialog({
+      pageKey: navigationTarget?.key,
+      sequence: practice.sequence,
+      message: PRACTICE_SUCCESS_MESSAGE,
+    })
+  }, [isPracticeStatusTarget, navigationTarget?.key, pressboardStates, statusRefreshVersion, targetExportPressboard])
 
   const maxRow = Math.max(0, ...pressboards.map((pb) => pb.rowNo ?? 0))
   const maxCol = Math.max(0, ...pressboards.map((pb) => pb.colNo ?? 0))

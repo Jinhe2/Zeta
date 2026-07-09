@@ -20,6 +20,8 @@ public class UpdateLogicNodeCognitionItemRequest {
     @Size(max = 512, message = "图片地址过长")
     private String imageUrl;
 
+    private Boolean removeImage = false;
+
     private Double leftPercent;
 
     private Double topPercent;
@@ -28,7 +30,6 @@ public class UpdateLogicNodeCognitionItemRequest {
 
     private Double heightPercent;
 
-    @NotBlank(message = "请输入展示内容")
     private String content;
 
     @NotNull(message = "请指定排序值")

@@ -46,6 +46,26 @@ function previewContent(text, max = 48) {
   return oneLine.length > max ? `${oneLine.slice(0, max)}…` : oneLine
 }
 
+function hasText(text) {
+  return Boolean(text?.trim())
+}
+
+function hasFormImage(form) {
+  return Boolean(form.hasImage || form.imageId || form.imageUrl)
+}
+
+function hasItemImage(item) {
+  return Boolean(item.hasImage || item.imageUrl)
+}
+
+function validateFormContent(form, setError) {
+  if (!hasFormImage(form) && !hasText(form.content)) {
+    setError('请上传认知图片或填写文字描述')
+    return false
+  }
+  return true
+}
+
 function hasHighlightRegion(form) {
   return (
     form.leftPercent != null
@@ -196,10 +216,7 @@ export default function LogicNodeItemsPage() {
 
   const handleCreate = async (e) => {
     e.preventDefault()
-    if (!createForm.imageId && !createForm.imageUrl) {
-      setError('请上传认知图片')
-      return
-    }
+    if (!validateFormContent(createForm, setError)) return
     setCreating(true)
     setError('')
     try {
@@ -227,7 +244,8 @@ export default function LogicNodeItemsPage() {
       title: item.title,
       imageId: null,
       imageUrl: item.imageUrl,
-      hasImage: Boolean(item.id || item.imageUrl),
+      hasImage: hasItemImage(item),
+      removeImage: false,
       leftPercent: item.leftPercent ?? null,
       topPercent: item.topPercent ?? null,
       widthPercent: item.widthPercent ?? null,
@@ -241,10 +259,7 @@ export default function LogicNodeItemsPage() {
   const handleUpdate = async (e) => {
     e.preventDefault()
     if (!editingItem) return
-    if (!editForm.hasImage && !editForm.imageId && !editForm.imageUrl) {
-      setError('请上传认知图片')
-      return
-    }
+    if (!validateFormContent(editForm, setError)) return
     setSaving(true)
     setError('')
     try {
@@ -301,15 +316,20 @@ export default function LogicNodeItemsPage() {
           </label>
           <CabinetImageUploadField
             imageUrl={form.imageUrl}
-            previewUrl={!isCreate && editingItem ? imageUrl('logic-node-cognition', editingItem.id, imageVersion) : ''}
+            previewUrl={!isCreate && editingItem && form.hasImage
+              ? imageUrl('logic-node-cognition', editingItem.id, imageVersion)
+              : ''}
             onChange={(url, result) => setForm((current) => ({
               ...current,
               imageUrl: url,
               imageId: result?.imageId ?? null,
-              hasImage: Boolean(url || result?.imageId || (!isCreate && editingItem?.id)),
+              hasImage: Boolean(url || result?.imageId) || (current.hasImage && !result?.removeImage),
+              removeImage: Boolean(result?.removeImage),
+              ...(!url && result?.removeImage ? regionFields(null) : {}),
             }))}
             uploadImage={api.uploadDeviceDisplayImage}
             disabled={busy}
+            allowClear
             renderPreviewExtra={(previewSrc) => (
               <HighlightRegionField form={form} setForm={setForm} previewSrc={previewSrc} disabled={busy} />
             )}
@@ -320,7 +340,6 @@ export default function LogicNodeItemsPage() {
               rows={6}
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
-              required
             />
           </label>
           <label>
@@ -423,11 +442,15 @@ export default function LogicNodeItemsPage() {
                 items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <img
-                        className="logic-learning__thumb"
-                        src={imageUrl('logic-node-cognition', item.id, imageVersion)}
-                        alt={item.title}
-                      />
+                      {hasItemImage(item) ? (
+                        <img
+                          className="logic-learning__thumb"
+                          src={imageUrl('logic-node-cognition', item.id, imageVersion)}
+                          alt={item.title}
+                        />
+                      ) : (
+                        <span className="logic-learning__thumb-placeholder">无图片</span>
+                      )}
                     </td>
                     <td>{item.title}</td>
                     <td>{previewContent(item.content)}</td>

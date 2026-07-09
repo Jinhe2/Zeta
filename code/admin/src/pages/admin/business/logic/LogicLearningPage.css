@@ -73,6 +73,19 @@
   background: #e2e8f0;
 }
 
+.logic-learning__thumb-placeholder {
+  width: 72px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+}
+
 .logic-learning__highlight-field {
   display: flex;
   flex-direction: column;

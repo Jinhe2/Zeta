@@ -86,10 +86,11 @@ public class LogicNodeCognitionService {
         item.setNodeType(node.getNodeType().name());
         item.setNodeName(node.getNodeName());
         item.setTitle(request.getTitle().trim());
-        applyImageData(item, request.getImageId(), request.getImageUrl());
+        applyImageData(item, request.getImageId(), request.getImageUrl(), false);
+        item.setContent(normalizeContent(request.getContent()));
+        validateCognitionContent(item);
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
                 request.getWidthPercent(), request.getHeightPercent());
-        item.setContent(request.getContent().trim());
         item.setSortOrder(request.getSortOrder());
         item.setEnabled(request.getEnabled() == null || request.getEnabled());
         item.setCreatedAt(Instant.now());
@@ -105,10 +106,11 @@ public class LogicNodeCognitionService {
         item.setNodeType(node.getNodeType().name());
         item.setNodeName(node.getNodeName());
         item.setTitle(request.getTitle().trim());
-        applyImageData(item, request.getImageId(), request.getImageUrl());
+        applyImageData(item, request.getImageId(), request.getImageUrl(), Boolean.TRUE.equals(request.getRemoveImage()));
+        item.setContent(normalizeContent(request.getContent()));
+        validateCognitionContent(item);
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
                 request.getWidthPercent(), request.getHeightPercent());
-        item.setContent(request.getContent().trim());
         item.setSortOrder(request.getSortOrder());
         item.setEnabled(request.getEnabled());
 
@@ -190,8 +192,12 @@ public class LogicNodeCognitionService {
         nodes.add(new LogicNodeInfo(normalizedId, resolvedName, nodeType));
     }
 
-    private void applyImageData(LogicNodeCognitionItem item, Long imageId, String imageUrl) {
-        if (imageId != null) {
+    private void applyImageData(LogicNodeCognitionItem item, Long imageId, String imageUrl, boolean removeImage) {
+        if (removeImage) {
+            item.setImageUrl(null);
+            item.setImageData(null);
+            item.setImageContentType(null);
+        } else if (imageId != null) {
             TemporaryImage tempImage = temporaryImageRepository.findById(imageId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "临时图片不存在或已过期"));
             item.setImageData(tempImage.getImageData());
@@ -204,14 +210,22 @@ public class LogicNodeCognitionService {
             item.setImageContentType(null);
         } else if (hasExistingImage(item)) {
             return;
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请上传认知图片");
         }
     }
 
     private boolean hasExistingImage(LogicNodeCognitionItem item) {
         return StringUtils.hasText(item.getImageUrl())
                 || (item.getImageData() != null && item.getImageData().length > 0);
+    }
+
+    private String normalizeContent(String content) {
+        return StringUtils.hasText(content) ? content.trim() : "";
+    }
+
+    private void validateCognitionContent(LogicNodeCognitionItem item) {
+        if (!hasExistingImage(item) && !StringUtils.hasText(item.getContent())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请上传认知图片或填写文字描述");
+        }
     }
 
     private void applyHighlightRegion(
@@ -229,6 +243,9 @@ public class LogicNodeCognitionService {
         }
         if (left == null || top == null || width == null || height == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "高亮区域坐标不完整");
+        }
+        if (!hasExistingImage(item)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请先上传认知图片后再设置高亮区域");
         }
         validateRegion(left, top, width, height);
         item.setLeftPercent(left);
@@ -269,6 +286,7 @@ public class LogicNodeCognitionService {
                 item.getNodeName(),
                 item.getTitle(),
                 item.getImageUrl(),
+                hasExistingImage(item),
                 item.getLeftPercent(),
                 item.getTopPercent(),
                 item.getWidthPercent(),
@@ -284,6 +302,7 @@ public class LogicNodeCognitionService {
                 item.getId(),
                 item.getTitle(),
                 item.getImageUrl(),
+                hasExistingImage(item),
                 item.getLeftPercent(),
                 item.getTopPercent(),
                 item.getWidthPercent(),

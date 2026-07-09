@@ -14,6 +14,7 @@ export default function CabinetImageUploadField({
   disabled,
   uploadImage,
   renderPreviewExtra,
+  allowClear = false,
 }) {
   const fileInputRef = useRef(null)
   const localPreviewRef = useRef('')
@@ -109,6 +110,11 @@ export default function CabinetImageUploadField({
     }
   }
 
+  const handleClear = () => {
+    clearLocalPreview()
+    onChange('', { imageId: null, removeImage: true })
+  }
+
   const previewSrc = imageUrl ? resolveImageUrl(imageUrl) : previewUrl || localPreviewUrl
 
   return (
@@ -132,6 +138,16 @@ export default function CabinetImageUploadField({
               disabled={disabled || uploading || Boolean(editorSrc)}
             >
               重新裁剪
+            </button>
+          )}
+          {allowClear && previewSrc && (
+            <button
+              type="button"
+              className="users-page__link users-page__link--danger"
+              onClick={handleClear}
+              disabled={disabled || uploading || Boolean(editorSrc)}
+            >
+              移除图片
             </button>
           )}
         </div>

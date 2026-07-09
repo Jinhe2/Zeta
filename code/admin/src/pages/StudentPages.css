@@ -338,6 +338,10 @@
   pointer-events: auto;
 }
 
+.logic-node-cognition-dialog__panel--text-only {
+  grid-template-rows: auto minmax(220px, auto) auto;
+}
+
 .logic-node-cognition-dialog__header {
   display: flex;
   align-items: flex-start;
@@ -400,10 +404,19 @@
   padding: 8px 20px 18px;
 }
 
+.logic-node-cognition-dialog__panel--text-only .logic-node-cognition-dialog__text {
+  padding: 22px 24px 26px;
+}
+
 .logic-node-cognition-dialog__text h3 {
   margin: 0 0 8px;
   color: #e8f5e9;
   font-size: 17px;
+}
+
+.logic-node-cognition-dialog__panel--text-only .logic-node-cognition-dialog__text h3 {
+  margin-bottom: 14px;
+  font-size: 22px;
 }
 
 .logic-node-cognition-dialog__text p {
@@ -412,6 +425,11 @@
   font-size: 14px;
   line-height: 1.75;
   white-space: pre-wrap;
+}
+
+.logic-node-cognition-dialog__panel--text-only .logic-node-cognition-dialog__text p {
+  font-size: 16px;
+  line-height: 1.9;
 }
 
 .logic-node-cognition-dialog__actions {

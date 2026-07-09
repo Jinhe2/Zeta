@@ -10,6 +10,7 @@ public class LogicNodeCognitionItemResponse {
     private Long id;
     private String title;
     private String imageUrl;
+    private boolean hasImage;
     private Double leftPercent;
     private Double topPercent;
     private Double widthPercent;

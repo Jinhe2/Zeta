@@ -481,6 +481,7 @@ export default function StudentDiagramPage() {
   }, [detail?.id, selectedLogicNodeId])
 
   const currentNodeCognitionItem = nodeCognitionItems[nodeCognitionIndex] ?? null
+  const currentNodeCognitionHasImage = Boolean(currentNodeCognitionItem?.hasImage || currentNodeCognitionItem?.imageUrl)
 
   const closeNodeCognition = useCallback(() => {
     setSelectedLogicNodeId(null)
@@ -714,7 +715,11 @@ export default function StudentDiagramPage() {
 
       {selectedLogicNode && (
         <div className="logic-node-cognition-dialog" role="dialog" aria-modal="false" aria-labelledby="logic-node-cognition-title">
-          <div className="logic-node-cognition-dialog__panel">
+          <div
+            className={`logic-node-cognition-dialog__panel${
+              currentNodeCognitionItem && !currentNodeCognitionHasImage ? ' logic-node-cognition-dialog__panel--text-only' : ''
+            }`}
+          >
             <div className="logic-node-cognition-dialog__header">
               <div>
                 <span className="logic-node-cognition-dialog__eyebrow">节点认知</span>
@@ -727,27 +732,29 @@ export default function StudentDiagramPage() {
               )}
             </div>
 
-            <div className="logic-node-cognition-dialog__image">
-              {nodeCognitionLoading ? (
-                <p>正在加载…</p>
-              ) : nodeCognitionError ? (
-                <p className="logic-node-cognition-dialog__error">{nodeCognitionError}</p>
-              ) : currentNodeCognitionItem ? (
-                <ImageRegionViewer
-                  imageUrl={imageUrl('logic-node-cognition', currentNodeCognitionItem.id)}
-                  region={normalizeRegion(currentNodeCognitionItem)}
-                  alt={currentNodeCognitionItem.title}
-                />
-              ) : (
-                <p>该节点暂无认知条目</p>
-              )}
-            </div>
+            {(!currentNodeCognitionItem || currentNodeCognitionHasImage || nodeCognitionLoading || nodeCognitionError) && (
+              <div className="logic-node-cognition-dialog__image">
+                {nodeCognitionLoading ? (
+                  <p>正在加载…</p>
+                ) : nodeCognitionError ? (
+                  <p className="logic-node-cognition-dialog__error">{nodeCognitionError}</p>
+                ) : currentNodeCognitionItem && currentNodeCognitionHasImage ? (
+                  <ImageRegionViewer
+                    imageUrl={imageUrl('logic-node-cognition', currentNodeCognitionItem.id)}
+                    region={normalizeRegion(currentNodeCognitionItem)}
+                    alt={currentNodeCognitionItem.title}
+                  />
+                ) : (
+                  <p>该节点暂无认知条目</p>
+                )}
+              </div>
+            )}
 
             <div className="logic-node-cognition-dialog__text">
               {currentNodeCognitionItem ? (
                 <>
                   <h3>{currentNodeCognitionItem.title}</h3>
-                  <p>{currentNodeCognitionItem.content}</p>
+                  {currentNodeCognitionItem.content && <p>{currentNodeCognitionItem.content}</p>}
                 </>
               ) : (
                 <p>当前节点还没有配置认知内容。</p>

@@ -16,6 +16,7 @@ public class LogicNodeCognitionItemAdminResponse {
     private String nodeName;
     private String title;
     private String imageUrl;
+    private boolean hasImage;
     private Double leftPercent;
     private Double topPercent;
     private Double widthPercent;

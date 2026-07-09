@@ -28,7 +28,6 @@ public class CreateLogicNodeCognitionItemRequest {
 
     private Double heightPercent;
 
-    @NotBlank(message = "请输入展示内容")
     private String content;
 
     @NotNull(message = "请指定排序值")

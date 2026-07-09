@@ -25,6 +25,11 @@ import DisplayCabinetListPage from './pages/admin/business/display/DisplayCabine
 import CabinetDisplayItemsPage from './pages/admin/business/display/CabinetDisplayItemsPage'
 import CognitionDevicesPage from './pages/admin/business/display/CognitionDevicesPage'
 import DeviceDisplayItemsPage from './pages/admin/business/display/DeviceDisplayItemsPage'
+import LogicLearningPage from './pages/admin/business/logic/LogicLearningPage'
+import LogicLearningDevicesPage from './pages/admin/business/logic/LogicLearningDevicesPage'
+import LogicLearningLogicsPage from './pages/admin/business/logic/LogicLearningLogicsPage'
+import LogicLearningNodesPage from './pages/admin/business/logic/LogicLearningNodesPage'
+import LogicNodeItemsPage from './pages/admin/business/logic/LogicNodeItemsPage'
 import CabinetBindingPage from './pages/admin/binding/CabinetBindingPage'
 import CabinetCatalogListPage from './pages/admin/screen/catalog/CabinetCatalogListPage'
 import CabinetCatalogDetailPage from './pages/admin/screen/catalog/CabinetCatalogDetailPage'
@@ -135,6 +140,14 @@ export default function App() {
             <Route path="users/:roleKey" element={<UsersPage />} />
 
             <Route path="display" element={<DisplayCabinetListPage />} />
+            <Route path="logic-learning" element={<LogicLearningPage />} />
+            <Route path="logic-learning/cabinets/:cabinetId/devices" element={<LogicLearningDevicesPage />} />
+            <Route path="logic-learning/devices/:deviceId/logics" element={<LogicLearningLogicsPage />} />
+            <Route path="logic-learning/logics/:logicDiagramId/nodes" element={<LogicLearningNodesPage />} />
+            <Route
+              path="logic-learning/logics/:logicDiagramId/nodes/:nodeId/items"
+              element={<LogicNodeItemsPage />}
+            />
             <Route path="binding" element={<CabinetBindingPage />} />
             <Route path="display/cabinets/:cabinetId" element={<CabinetDisplayItemsPage />} />
             <Route path="display/cabinet-items/:itemId/cognition-devices" element={<CognitionDevicesPage />} />

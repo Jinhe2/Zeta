@@ -1,11 +1,13 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ZetaGraphView } from '@zeta/diagram'
-import { api } from '../api/client'
+import { api, imageUrl } from '../api/client'
 import SectionSelector from '../components/SectionSelector'
 import ConfigPanel from '../components/ConfigPanel'
 import JsonViewerModal from '../components/JsonViewerModal'
 import SnapshotImportModal from '../components/SnapshotImportModal'
+import { ImageRegionViewer } from '../components/ImageRegionEditor'
 import { useAuth } from '../auth/AuthContext'
 import './student/TabletShell.css'
 import './StudentPages.css'
@@ -108,6 +110,39 @@ function getExperimentDialogMessage(result, task) {
   return ''
 }
 
+function buildConfigurableNodeMap(config) {
+  const map = new Map()
+  const addNode = (node, type) => {
+    if (!node?.id || map.has(node.id)) return
+    map.set(node.id, {
+      id: node.id,
+      name: node.name || node.id,
+      type,
+    })
+  }
+  for (const input of config?.inputs ?? []) addNode(input, 'INPUT')
+  for (const timer of config?.timers ?? []) addNode(timer, 'TIMER')
+  for (const output of config?.outputs ?? []) addNode(output, 'OUTPUT')
+  return map
+}
+
+function normalizeRegion(item) {
+  if (
+    item.leftPercent == null
+    || item.topPercent == null
+    || item.widthPercent == null
+    || item.heightPercent == null
+  ) {
+    return null
+  }
+  return {
+    leftPercent: item.leftPercent,
+    topPercent: item.topPercent,
+    widthPercent: item.widthPercent,
+    heightPercent: item.heightPercent,
+  }
+}
+
 export default function StudentDiagramPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -122,6 +157,11 @@ export default function StudentDiagramPage() {
   const [jsonViewer, setJsonViewer] = useState({ open: false, title: '', json: '' })
   const [importOpen, setImportOpen] = useState(false)
   const [experimentDialog, setExperimentDialog] = useState({ open: false, message: '' })
+  const [selectedLogicNodeId, setSelectedLogicNodeId] = useState(null)
+  const [nodeCognitionItems, setNodeCognitionItems] = useState([])
+  const [nodeCognitionIndex, setNodeCognitionIndex] = useState(0)
+  const [nodeCognitionLoading, setNodeCognitionLoading] = useState(false)
+  const [nodeCognitionError, setNodeCognitionError] = useState('')
 
   // 实验监视状态
   const [monitoring, setMonitoring] = useState(false)
@@ -386,6 +426,64 @@ export default function StudentDiagramPage() {
     return section?.states ?? null
   }, [sections, selectedSectionId])
 
+  const configurableNodeMap = useMemo(
+    () => buildConfigurableNodeMap(detail?.config),
+    [detail?.config],
+  )
+
+  const selectedLogicNode = selectedLogicNodeId ? configurableNodeMap.get(selectedLogicNodeId) : null
+
+  const handleLogicNodeSelect = useCallback(
+    (nodeId) => {
+      if (!nodeId || !configurableNodeMap.has(nodeId)) {
+        setSelectedLogicNodeId(null)
+        return
+      }
+      setSelectedLogicNodeId((current) => (current === nodeId ? null : nodeId))
+    },
+    [configurableNodeMap],
+  )
+
+  useEffect(() => {
+    if (!selectedLogicNodeId || !detail?.id) {
+      setNodeCognitionItems([])
+      setNodeCognitionError('')
+      setNodeCognitionLoading(false)
+      return undefined
+    }
+    let cancelled = false
+    setNodeCognitionLoading(true)
+    setNodeCognitionError('')
+    api.listKnowledgeLogicNodeCognitionItems(detail.id, selectedLogicNodeId)
+      .then((items) => {
+        if (!cancelled) {
+          setNodeCognitionItems(items)
+          setNodeCognitionIndex(0)
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setNodeCognitionError(err.message || '加载节点认知失败')
+          setNodeCognitionItems([])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setNodeCognitionLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [detail?.id, selectedLogicNodeId])
+
+  const currentNodeCognitionItem = nodeCognitionItems[nodeCognitionIndex] ?? null
+
+  const closeNodeCognition = useCallback(() => {
+    setSelectedLogicNodeId(null)
+    setNodeCognitionItems([])
+    setNodeCognitionIndex(0)
+    setNodeCognitionError('')
+  }, [])
+
   const formatSnapTime = (ts) => {
     if (!ts) return ''
     const d = new Date(ts)
@@ -472,6 +570,8 @@ export default function StudentDiagramPage() {
                     config={detail.config}
                     showDevInfo={false}
                     nodeStates={nodeStates}
+                    selectedNodeId={selectedLogicNodeId}
+                    onNodeSelect={handleLogicNodeSelect}
                     className="diagram-canvas__preview"
                   />
                 </div>
@@ -590,6 +690,71 @@ export default function StudentDiagramPage() {
             >
               确定
             </button>
+          </div>
+        </div>
+      )}
+
+      {selectedLogicNode && (
+        <div className="logic-node-cognition-dialog" role="dialog" aria-modal="false" aria-labelledby="logic-node-cognition-title">
+          <div className="logic-node-cognition-dialog__panel">
+            <div className="logic-node-cognition-dialog__header">
+              <div>
+                <span className="logic-node-cognition-dialog__eyebrow">节点认知</span>
+                <h2 id="logic-node-cognition-title">{selectedLogicNode.name}</h2>
+              </div>
+              {nodeCognitionItems.length > 0 && (
+                <span className="logic-node-cognition-dialog__count">
+                  {nodeCognitionIndex + 1} / {nodeCognitionItems.length}
+                </span>
+              )}
+            </div>
+
+            <div className="logic-node-cognition-dialog__image">
+              {nodeCognitionLoading ? (
+                <p>正在加载…</p>
+              ) : nodeCognitionError ? (
+                <p className="logic-node-cognition-dialog__error">{nodeCognitionError}</p>
+              ) : currentNodeCognitionItem ? (
+                <ImageRegionViewer
+                  imageUrl={imageUrl('logic-node-cognition', currentNodeCognitionItem.id)}
+                  region={normalizeRegion(currentNodeCognitionItem)}
+                  alt={currentNodeCognitionItem.title}
+                />
+              ) : (
+                <p>该节点暂无认知条目</p>
+              )}
+            </div>
+
+            <div className="logic-node-cognition-dialog__text">
+              {currentNodeCognitionItem ? (
+                <>
+                  <h3>{currentNodeCognitionItem.title}</h3>
+                  <p>{currentNodeCognitionItem.content}</p>
+                </>
+              ) : (
+                <p>当前节点还没有配置认知内容。</p>
+              )}
+            </div>
+
+            <div className="logic-node-cognition-dialog__actions">
+              <button
+                type="button"
+                onClick={() => setNodeCognitionIndex((current) => Math.max(0, current - 1))}
+                disabled={nodeCognitionIndex <= 0}
+              >
+                上一条
+              </button>
+              <button
+                type="button"
+                onClick={() => setNodeCognitionIndex((current) => Math.min(nodeCognitionItems.length - 1, current + 1))}
+                disabled={nodeCognitionIndex >= nodeCognitionItems.length - 1}
+              >
+                下一条
+              </button>
+              <button type="button" onClick={closeNodeCognition}>
+                关闭
+              </button>
+            </div>
           </div>
         </div>
       )}

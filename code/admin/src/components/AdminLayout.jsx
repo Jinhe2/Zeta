@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
@@ -15,6 +16,7 @@ const BUSINESS_NAV = [
     ],
   },
   { to: '/admin/display', label: '屏柜学习' },
+  { to: '/admin/logic-learning', label: '逻辑学习' },
   { to: '/admin/binding', label: '屏柜绑定' },
   { to: '/admin/settings', label: '系统设置' },
 ]

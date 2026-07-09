@@ -223,6 +223,10 @@ export const api = {
     return request(`/api/knowledge/cabinets/${id}`)
   },
 
+  listKnowledgeCabinetDevices(cabinetId) {
+    return request(`/api/knowledge/cabinets/${cabinetId}/devices`)
+  },
+
   getKnowledgeDevice(id) {
     return request(`/api/knowledge/devices/${id}`)
   },
@@ -476,6 +480,36 @@ export const api = {
     const formData = new FormData()
     formData.append('file', file)
     return uploadRequest('/api/admin/device-display-images', formData)
+  },
+
+  listLogicLearningNodes(logicDiagramId) {
+    return request(`/api/admin/logic-learning/logics/${logicDiagramId}/nodes`)
+  },
+
+  listLogicNodeCognitionItems(logicDiagramId, nodeId) {
+    return request(`/api/admin/logic-learning/logics/${logicDiagramId}/node-items?nodeId=${encodeURIComponent(nodeId)}`)
+  },
+
+  createLogicNodeCognitionItem(logicDiagramId, nodeId, payload) {
+    return request(`/api/admin/logic-learning/logics/${logicDiagramId}/node-items?nodeId=${encodeURIComponent(nodeId)}`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  updateLogicNodeCognitionItem(id, payload) {
+    return request(`/api/admin/logic-learning/node-items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteLogicNodeCognitionItem(id) {
+    return request(`/api/admin/logic-learning/node-items/${id}`, { method: 'DELETE' })
+  },
+
+  listKnowledgeLogicNodeCognitionItems(logicDiagramId, nodeId) {
+    return request(`/api/knowledge/protection-logics/${logicDiagramId}/node-items?nodeId=${encodeURIComponent(nodeId)}`)
   },
 
   listKnowledgeCognitionDevices(itemId) {

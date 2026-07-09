@@ -237,6 +237,220 @@
 
 /* ── History panel ── */
 
+.diagram-page__node-cognition {
+  max-height: 38%;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.diagram-page__node-cognition-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #b0bec5;
+}
+
+.diagram-page__node-cognition-header span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  color: #81c784;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diagram-page__node-cognition-empty,
+.diagram-page__node-cognition-error {
+  margin: 0;
+  padding: 10px 14px 14px;
+  color: #78909c;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.diagram-page__node-cognition-error {
+  color: #ff8a80;
+}
+
+.diagram-page__node-cognition-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 12px 12px;
+}
+
+.diagram-page__node-cognition-item {
+  padding: 10px 0 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.diagram-page__node-cognition-item:first-child {
+  border-top: none;
+}
+
+.diagram-page__node-cognition-item .image-region-viewer {
+  height: 140px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.diagram-page__node-cognition-item h3 {
+  margin: 10px 0 6px;
+  color: #e8f5e9;
+  font-size: 14px;
+}
+
+.diagram-page__node-cognition-item p {
+  margin: 0;
+  color: #b0bec5;
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.logic-node-cognition-dialog {
+  position: fixed;
+  inset: 72px 340px 42px 42px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.logic-node-cognition-dialog__panel {
+  width: min(720px, 78vw);
+  max-height: min(760px, 82vh);
+  display: grid;
+  grid-template-rows: auto minmax(220px, 0.9fr) minmax(96px, auto) auto;
+  overflow: hidden;
+  border: 1px solid rgba(129, 199, 132, 0.35);
+  border-radius: 10px;
+  background: rgba(13, 20, 34, 0.76);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.logic-node-cognition-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.logic-node-cognition-dialog__eyebrow {
+  color: #81c784;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.logic-node-cognition-dialog__header h2 {
+  margin: 4px 0 0;
+  color: #f1f8e9;
+  font-size: 20px;
+  letter-spacing: 0;
+}
+
+.logic-node-cognition-dialog__count {
+  flex-shrink: 0;
+  color: #c8e6c9;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.logic-node-cognition-dialog__image {
+  min-height: 220px;
+  padding: 16px 18px 10px;
+}
+
+.logic-node-cognition-dialog__image .image-region-viewer {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  border-radius: 8px;
+  background: rgba(8, 13, 24, 0.58);
+}
+
+.logic-node-cognition-dialog__image p {
+  height: 100%;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: #b0bec5;
+  font-size: 14px;
+}
+
+.logic-node-cognition-dialog__error {
+  color: #ff8a80;
+}
+
+.logic-node-cognition-dialog__text {
+  overflow: auto;
+  padding: 8px 20px 18px;
+}
+
+.logic-node-cognition-dialog__text h3 {
+  margin: 0 0 8px;
+  color: #e8f5e9;
+  font-size: 17px;
+}
+
+.logic-node-cognition-dialog__text p {
+  margin: 0;
+  color: #d7e2ea;
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.logic-node-cognition-dialog__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(96px, 1fr));
+  gap: 10px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.logic-node-cognition-dialog__actions button {
+  min-height: 38px;
+  border: 1px solid rgba(129, 199, 132, 0.42);
+  border-radius: 7px;
+  background: rgba(129, 199, 132, 0.18);
+  color: #f1f8e9;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.logic-node-cognition-dialog__actions button:hover:not(:disabled) {
+  background: rgba(129, 199, 132, 0.28);
+}
+
+.logic-node-cognition-dialog__actions button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+@media (max-width: 980px) {
+  .logic-node-cognition-dialog {
+    inset: 68px 18px 28px;
+  }
+
+  .logic-node-cognition-dialog__panel {
+    width: 100%;
+  }
+}
+
 .diagram-page__history {
   flex: 1;
   min-height: 0;

@@ -1,0 +1,96 @@
+.logic-learning__selectors {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.logic-learning__selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.logic-learning__selector select {
+  min-height: 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0 10px;
+  background: #fff;
+  color: #0f172a;
+}
+
+.logic-learning__layout {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.logic-learning__panel {
+  min-width: 0;
+}
+
+.logic-learning__panel-title {
+  margin: 0 0 10px;
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.logic-learning__node-btn {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.logic-learning__node-btn--active {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.logic-learning__tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  border-radius: 999px;
+  padding: 0 8px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.logic-learning__thumb {
+  width: 72px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #e2e8f0;
+}
+
+.logic-learning__highlight-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.logic-learning__highlight-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .logic-learning__selectors {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+
+  .logic-learning__layout {
+    grid-template-columns: 1fr;
+  }
+}

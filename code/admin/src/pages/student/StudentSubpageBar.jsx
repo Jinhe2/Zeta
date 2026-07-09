@@ -11,18 +11,17 @@ export default function StudentSubpageBar({ title }) {
 
   return (
     <header className="student-subpage__bar">
+      <button
+        type="button"
+        className="student-subpage__back"
+        onClick={() => navigate('/student')}
+      >
+        ← 返回上级
+      </button>
       <h1 className="student-subpage__bar-title">{title}</h1>
       <div className="student-subpage__bar-right">
         <span className="student-subpage__user-name">{displayName}</span>
         <span className="student-subpage__user-level">{levelLabel}</span>
-        <button
-          type="button"
-          className="student-subpage__close"
-          aria-label="关闭"
-          onClick={() => navigate('/student')}
-        >
-          ✕
-        </button>
       </div>
     </header>
   )

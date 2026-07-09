@@ -44,14 +44,20 @@ export default function CircuitViewerPage() {
     return (
       <div className="tablet-shell">
         <header className="tablet-shell__header">
-          <button
-            type="button"
-            className="tablet-shell__back"
-            onClick={() => navigate('/student/modes/coach/circuit')}
-          >
-            ← 返回回路列表
-          </button>
+          <div className="tablet-shell__header-left">
+            <button
+              type="button"
+              className="tablet-shell__back"
+              onClick={() => navigate('/student/modes/coach/circuit')}
+            >
+              ← 返回上级
+            </button>
+            <button type="button" className="tablet-shell__home" onClick={() => navigate('/student')}>
+              返回首页
+            </button>
+          </div>
           <h1>回路不存在</h1>
+          <div className="tablet-shell__header-actions" />
         </header>
         <main className="tablet-shell__main circuit-viewer">
           <div className="circuit-viewer__error">
@@ -65,14 +71,20 @@ export default function CircuitViewerPage() {
   return (
     <div className="tablet-shell">
       <header className="tablet-shell__header">
-        <button
-          type="button"
-          className="tablet-shell__back"
-          onClick={() => navigate('/student/modes/coach/circuit')}
-        >
-          ← 返回回路列表
-        </button>
+        <div className="tablet-shell__header-left">
+          <button
+            type="button"
+            className="tablet-shell__back"
+            onClick={() => navigate('/student/modes/coach/circuit')}
+          >
+            ← 返回上级
+          </button>
+          <button type="button" className="tablet-shell__home" onClick={() => navigate('/student')}>
+            返回首页
+          </button>
+        </div>
         <h1>{circuit.name}</h1>
+        <div className="tablet-shell__header-actions" />
       </header>
 
       <main className="tablet-shell__main circuit-viewer">

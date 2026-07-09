@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ZetaGraphView } from '@zeta/diagram'
 import { api, imageUrl } from '../api/client'
 import SectionSelector from '../components/SectionSelector'
@@ -146,6 +146,7 @@ function normalizeRegion(item) {
 export default function StudentDiagramPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { logout } = useAuth()
   const [detail, setDetail] = useState(null)
   const [snapshots, setSnapshots] = useState([])
@@ -497,21 +498,34 @@ export default function StudentDiagramPage() {
     completed: '实验完成',
     failed: '实验失败',
   }
+  const fromCoach = location.state?.from === 'coach'
+  const listState = fromCoach ? { from: 'coach', section: 'logic' } : undefined
 
   return (
     <div className="tablet-shell diagram-page">
       <header className="tablet-shell__header diagram-page__toolbar">
-        <button type="button" className="tablet-shell__back" onClick={() => navigate('/student/modes/panorama')}>
-          ← 返回列表
-        </button>
+        <div className="tablet-shell__header-left">
+          <button
+            type="button"
+            className="tablet-shell__back"
+            onClick={() => navigate('/student/modes/panorama', { state: listState })}
+          >
+            ← 返回上级
+          </button>
+          <button type="button" className="tablet-shell__home" onClick={() => navigate('/student')}>
+            返回首页
+          </button>
+        </div>
         <h1>{detail?.title || '逻辑框图'}</h1>
-        <button
-          type="button"
-          className="tablet-shell__logout"
-          onClick={() => logout().then(() => navigate('/login', { replace: true }))}
-        >
-          退出登录
-        </button>
+        <div className="tablet-shell__header-actions">
+          <button
+            type="button"
+            className="tablet-shell__logout"
+            onClick={() => logout().then(() => navigate('/login', { replace: true }))}
+          >
+            退出登录
+          </button>
+        </div>
       </header>
 
       {error && <div className="diagram-page__error">{error}</div>}

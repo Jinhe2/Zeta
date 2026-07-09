@@ -331,25 +331,25 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(260px, 36%) 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 12px;
   padding: 0 16px 110px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .tablet-home__chart-area {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  width: 292px;
   min-height: 0;
-  padding: 8px;
+  padding: 12px;
   border-radius: 12px;
-  border: 1px solid rgba(94, 179, 255, 0.25);
-  background: rgba(8, 16, 28, 0.85);
+  border: 1px solid rgba(142, 197, 248, 0.34);
+  background: rgba(8, 16, 28, 0.92);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 10px 26px rgba(0, 0, 0, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .tablet-home__modes {
@@ -379,19 +379,24 @@
   width: 380px;  /* 从 300px 加大到 380px */
   padding: 18px 32px;  /* 加大内边距 */
   clip-path: var(--trap-clip);
-  background-color: #1a2838;
+  border: 0;
+  background-color: #263445;
   background-image:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+    linear-gradient(115deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.08) 18%, transparent 34%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 16%, transparent 84%, rgba(0, 0, 0, 0.22)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 6px),
     linear-gradient(180deg,
-      #2a3a4a 0%,
-      #1e2e3e 25%,
-      #162636 50%,
-      #1a2838 75%,
-      #0f1e2e 100%
+      #73859a 0%,
+      #34465a 12%,
+      #1d2b3a 50%,
+      #43566b 82%,
+      #182331 100%
     );
   box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.15),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+    inset 0 2px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.42),
+    inset 10px 0 16px rgba(255, 255, 255, 0.06),
+    inset -10px 0 16px rgba(0, 0, 0, 0.26);
   cursor: pointer;
   transition: transform 0.1s;
   -webkit-tap-highlight-color: transparent;
@@ -457,31 +462,78 @@
   transform: scale(0.97);
 }
 
+.mode-card:disabled {
+  cursor: not-allowed;
+}
+
+.mode-card--disabled {
+  opacity: 1;
+  filter:
+    grayscale(0.48)
+    drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+}
+
+.mode-card--disabled:active {
+  transform: none;
+}
+
 .mode-card--coach {
-  background: linear-gradient(135deg, rgba(56, 142, 60, 0.65), rgba(30, 90, 50, 0.55));
+  background-color: #2f6240;
+  background-image:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.1) 18%, transparent 34%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.22)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 6px),
+    linear-gradient(180deg, #9fb7a7 0%, #3e7c51 14%, #215a34 52%, #4f8a60 84%, #183d25 100%);
   box-shadow:
-    0 8px 28px rgba(56, 142, 60, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 10px 28px rgba(0, 0, 0, 0.46),
+    inset 0 2px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.42);
 }
 
 .mode-card--exam {
-  background: linear-gradient(135deg, rgba(230, 140, 30, 0.6), rgba(180, 90, 20, 0.5));
+  background-color: #8d5a24;
+  background-image:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.1) 18%, transparent 34%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.24)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 6px),
+    linear-gradient(180deg, #d8b174 0%, #b9752b 14%, #7b431b 52%, #c08338 84%, #563014 100%);
   box-shadow:
-    0 8px 28px rgba(230, 140, 30, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 10px 28px rgba(0, 0, 0, 0.46),
+    inset 0 2px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.42);
 }
 
 .mode-card--panorama {
-  background: linear-gradient(135deg, rgba(61, 120, 200, 0.7), rgba(40, 80, 150, 0.55));
+  background-color: #345d8d;
+  background-image:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.1) 18%, transparent 34%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.24)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 6px),
+    linear-gradient(180deg, #93afd0 0%, #4775ad 14%, #254d83 52%, #5f87bb 84%, #19345d 100%);
   box-shadow:
-    0 8px 28px rgba(61, 120, 200, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 10px 28px rgba(0, 0, 0, 0.46),
+    inset 0 2px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.42);
 }
 
 .mode-card__title {
   font-size: 1.8rem;  /* 从 1.5rem 加大到 1.8rem */
   font-weight: 700;
   color: #fff;
+  line-height: 1.2;
+}
+
+.mode-card__status {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 6px;
+  background: #101820;
+  color: #f4f7fb;
+  font-size: 13px;
+  font-weight: 700;
   line-height: 1.2;
 }
 
@@ -503,7 +555,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 280px;
+  max-width: 248px;
   min-height: 0;
 }
 
@@ -519,7 +571,7 @@
 
 .ability-chart__svg {
   width: 100%;
-  max-height: 280px;
+  max-height: 248px;
   display: block;
 }
 
@@ -596,12 +648,22 @@
   width: 220px;
   padding: 12px 20px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: #b0c8de;
+  border: 1px solid rgba(142, 197, 248, 0.36);
+  background: rgba(10, 22, 38, 0.86);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #d8ecff;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.tablet-home__nav-item:hover,
+.tablet-home__nav-item--active {
+  border-color: rgba(142, 197, 248, 0.64);
+  background: rgba(14, 32, 54, 0.94);
+  color: #ffffff;
 }
 
 .tablet-home__nav-caret {
@@ -632,15 +694,16 @@
   }
 
   .tablet-home__main {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(240px, 300px) 1fr;
     grid-template-rows: auto 1fr;
     gap: 10px;
     padding-bottom: 100px;
   }
 
   .tablet-home__chart-area {
+    width: 260px;
     height: auto;
-    max-height: 36vh;
+    max-height: none;
   }
 
   .tablet-home__modes {
@@ -654,9 +717,9 @@
   }
 
   .ability-chart {
-    max-width: 280px;
+    max-width: 228px;
     height: auto;
-    margin: 0 auto;
+    margin: 0;
   }
 
   .ability-chart__svg {

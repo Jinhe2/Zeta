@@ -14,12 +14,12 @@ export default function PanoramaListPage() {
   const [error, setError] = useState(null)
 
   const fromCoach = location.state?.from === 'coach'
-  const backLabel = fromCoach ? '← 返回教练模式' : '← 返回首页'
   const backTo = fromCoach ? '/student/modes/coach' : '/student'
-  const pageTitle = fromCoach ? '采样测试 · 保护逻辑' : '全景模式 · 保护逻辑'
+  const pageTitle = fromCoach ? '逻辑原理 · 保护逻辑' : '全景模式 · 保护逻辑'
   const introText = fromCoach
-    ? '选择保护逻辑，进行采样值测试与信号校验。'
+    ? '选择保护逻辑，学习逻辑框图与动作原理。'
     : '选择保护逻辑，进入逻辑框图全景浏览。'
+  const diagramState = fromCoach ? { from: 'coach', section: 'logic' } : undefined
 
   useEffect(() => {
     let cancelled = false
@@ -40,22 +40,31 @@ export default function PanoramaListPage() {
   }, [])
 
   return (
-    <div className="tablet-shell">
+    <div className="tablet-shell panorama-list-shell">
       <header className="tablet-shell__header">
-        <button type="button" className="tablet-shell__back" onClick={() => navigate(backTo)}>
-          {backLabel}
-        </button>
+        <div className="tablet-shell__header-left">
+          <button type="button" className="tablet-shell__back" onClick={() => navigate(backTo)}>
+            ← 返回上级
+          </button>
+          {fromCoach && (
+            <button type="button" className="tablet-shell__home" onClick={() => navigate('/student')}>
+              返回首页
+            </button>
+          )}
+        </div>
         <h1>{pageTitle}</h1>
-        <button
-          type="button"
-          className="tablet-shell__logout"
-          onClick={async () => {
-            await logout()
-            navigate('/login', { replace: true })
-          }}
-        >
-          退出登录
-        </button>
+        <div className="tablet-shell__header-actions">
+          <button
+            type="button"
+            className="tablet-shell__logout"
+            onClick={async () => {
+              await logout()
+              navigate('/login', { replace: true })
+            }}
+          >
+            退出登录
+          </button>
+        </div>
       </header>
 
       <main className="tablet-shell__main panorama-list">
@@ -71,6 +80,7 @@ export default function PanoramaListPage() {
                 <Link
                   key={item.id}
                   to={`/student/modes/panorama/${item.id}`}
+                  state={diagramState}
                   className="panorama-list__card"
                 >
                   <div className="panorama-list__card-header">

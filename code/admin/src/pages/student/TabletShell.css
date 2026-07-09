@@ -25,13 +25,32 @@
 }
 
 .tablet-shell__header h1 {
+  flex: 0 1 auto;
+  min-width: 0;
   margin: 0;
   font-size: 1.3rem;
   font-weight: 600;
   color: #f0f6fc;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tablet-shell__header-left,
+.tablet-shell__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.tablet-shell__header-actions {
+  justify-content: flex-end;
 }
 
 .tablet-shell__back,
+.tablet-shell__home,
 .tablet-shell__logout {
   padding: 8px 14px;
   border-radius: 8px;
@@ -41,6 +60,11 @@
   font-size: 15px;
   cursor: pointer;
   text-decoration: none;
+}
+
+.tablet-shell__home {
+  border-color: rgba(94, 179, 255, 0.28);
+  background: rgba(94, 179, 255, 0.12);
 }
 
 .tablet-shell__main {

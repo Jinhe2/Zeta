@@ -32,14 +32,20 @@ export default function CircuitLearningPage() {
   return (
     <div className="tablet-shell">
       <header className="tablet-shell__header">
-        <button
-          type="button"
-          className="tablet-shell__back"
-          onClick={() => navigate('/student/modes/coach')}
-        >
-          ← 返回教练模式
-        </button>
+        <div className="tablet-shell__header-left">
+          <button
+            type="button"
+            className="tablet-shell__back"
+            onClick={() => navigate('/student/modes/coach')}
+          >
+            ← 返回上级
+          </button>
+          <button type="button" className="tablet-shell__home" onClick={() => navigate('/student')}>
+            返回首页
+          </button>
+        </div>
         <h1>回路学习</h1>
+        <div className="tablet-shell__header-actions" />
       </header>
 
       <main className="tablet-shell__main circuit-learning">

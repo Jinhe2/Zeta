@@ -266,20 +266,27 @@ export default function CabinetCognitionPage() {
   return (
     <div className="tablet-shell">
       <header className="tablet-shell__header">
-        <button type="button" className="tablet-shell__back" onClick={() => navigate('/student/modes/coach')}>
-          ← 返回
-        </button>
+        <div className="tablet-shell__header-left">
+          <button type="button" className="tablet-shell__back" onClick={() => navigate('/student/modes/coach')}>
+            ← 返回上级
+          </button>
+          <button type="button" className="tablet-shell__home" onClick={() => navigate('/student')}>
+            返回首页
+          </button>
+        </div>
         <h1>屏柜学习</h1>
-        <button
-          type="button"
-          className="tablet-shell__logout"
-          onClick={async () => {
-            await logout()
-            navigate('/login', { replace: true })
-          }}
-        >
-          退出登录
-        </button>
+        <div className="tablet-shell__header-actions">
+          <button
+            type="button"
+            className="tablet-shell__logout"
+            onClick={async () => {
+              await logout()
+              navigate('/login', { replace: true })
+            }}
+          >
+            退出登录
+          </button>
+        </div>
       </header>
 
       <main className="tablet-shell__main tablet-shell__main--cabinet">

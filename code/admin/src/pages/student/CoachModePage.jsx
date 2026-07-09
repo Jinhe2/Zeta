@@ -86,6 +86,7 @@ const COACH_ENTRIES = [
     Icon: IconLogic,
     desc: '了解继电保护逻辑框图与动作原理，进行采样值测试与信号校验',
     route: '/student/modes/panorama',
+    navigateState: { from: 'coach', section: 'logic' },
   },
   {
     id: 'sampling',
@@ -93,6 +94,7 @@ const COACH_ENTRIES = [
     Icon: IconOperation,
     desc: '对保护装置进行采样值测试与信号校验',
     route: '/student/modes/coach/sampling',
+    disabled: true,
   },
   {
     id: 'drawing',
@@ -100,6 +102,7 @@ const COACH_ENTRIES = [
     Icon: IconDrawing,
     desc: '识读二次回路图纸与接线图',
     route: '/student/modes/coach/drawing',
+    disabled: true,
   },
   {
     id: 'circuit',
@@ -114,6 +117,7 @@ const COACH_ENTRIES = [
     Icon: IconCabinet,
     desc: '学习事故处理流程与案例分析',
     route: '/student/modes/coach/accident',
+    disabled: true,
   },
 ]
 
@@ -124,38 +128,46 @@ export default function CoachModePage() {
   return (
     <div className="tablet-shell">
       <header className="tablet-shell__header">
-        <button type="button" className="tablet-shell__back" onClick={() => navigate('/student')}>
-          ← 返回首页
-        </button>
+        <div className="tablet-shell__header-left">
+          <button type="button" className="tablet-shell__back" onClick={() => navigate('/student')}>
+            ← 返回上级
+          </button>
+        </div>
         <h1>教练模式</h1>
-        <button
-          type="button"
-          className="tablet-shell__logout"
-          onClick={async () => {
-            await logout()
-            navigate('/login', { replace: true })
-          }}
-        >
-          退出登录
-        </button>
+        <div className="tablet-shell__header-actions">
+          <button
+            type="button"
+            className="tablet-shell__logout"
+            onClick={async () => {
+              await logout()
+              navigate('/login', { replace: true })
+            }}
+          >
+            退出登录
+          </button>
+        </div>
       </header>
 
-      <main className="tablet-shell__main">
+      <main className="tablet-shell__main coach-mode__main">
         <div className="coach-mode__floating">
-          {COACH_ENTRIES.map((entry, index) => {
+          {COACH_ENTRIES.map((entry) => {
             const { Icon } = entry
             return (
               <button
                 key={entry.id}
                 type="button"
-                className={`coach-mode__card coach-mode__card--${entry.id}`}
-                onClick={() => navigate(entry.route, { state: entry.navigateState })}
+                className={`coach-mode__card coach-mode__card--${entry.id}${entry.disabled ? ' coach-mode__card--disabled' : ''}`}
+                disabled={entry.disabled}
+                onClick={() => {
+                  if (!entry.disabled) navigate(entry.route, { state: entry.navigateState })
+                }}
               >
                 <span className="coach-mode__card-icon">
                   <Icon />
                 </span>
                 <span className="coach-mode__card-label">{entry.label}</span>
                 <span className="coach-mode__card-desc">{entry.desc}</span>
+                {entry.disabled && <span className="coach-mode__card-dev-label">开发中</span>}
               </button>
             )
           })}

@@ -37,6 +37,8 @@ const MODE_ENTRIES = [
     desc: "模拟考核，检验学习成果",
     path: "/student/modes/exam",
     accent: "exam",
+    disabled: true,
+    statusLabel: "功能开发中",
   },
   {
     id: "panorama",
@@ -44,6 +46,8 @@ const MODE_ENTRIES = [
     desc: "逻辑全景与保护框图综合浏览",
     path: "/student/modes/panorama",
     accent: "panorama",
+    disabled: true,
+    statusLabel: "功能开发中",
   },
 ];
 
@@ -146,8 +150,12 @@ export default function TabletHome() {
             <button
               key={mode.id}
               type="button"
-              className={`mode-card mode-card--${mode.accent}`}
-              onClick={() => navigate(mode.path)}
+              className={`mode-card mode-card--${mode.accent}${mode.disabled ? " mode-card--disabled" : ""}`}
+              disabled={mode.disabled}
+              aria-disabled={mode.disabled ? "true" : undefined}
+              onClick={() => {
+                if (!mode.disabled) navigate(mode.path);
+              }}
             >
               <div className="mode-card__rivets">
                 <span className="mode-card__rivet mode-card__rivet--tl" />
@@ -156,6 +164,9 @@ export default function TabletHome() {
                 <span className="mode-card__rivet mode-card__rivet--br" />
               </div>
               <span className="mode-card__title">{mode.title}</span>
+              {mode.statusLabel && (
+                <span className="mode-card__status">{mode.statusLabel}</span>
+              )}
             </button>
           ))}
         </section>

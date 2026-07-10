@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api, learningResourceContentUrl } from '../../api/client'
 import { getDeviceBindId } from '../../api/deviceBinding'
 import { useAuth } from '../../auth/AuthContext'
+import PdfDocumentReader from '../../components/PdfDocumentReader'
 import './StudentResourcesPage.css'
 
 const TYPES = {
@@ -57,7 +58,7 @@ export default function StudentResourcesPage() {
       {loading ? <p>加载中…</p> : error ? <div className="student-resources__error"><p>{error}</p><button type="button" onClick={load}>重试</button></div> : id && resource ? <article className="student-resources__detail">
         <p className="student-resources__scope">{resource.cabinetName ? `适用屏柜：${resource.cabinetName}` : '适用范围：所有屏柜'}</p>
         <p className="student-resources__description">{resource.description}</p>
-        {resource.resourceType === 'VIDEO_COURSE' ? <video className="student-resources__video" controls preload="metadata" src={learningResourceContentUrl(resource.id, bindId, fallbackToFirstCabinet)}>当前浏览器不支持视频播放。</video> : <iframe className="student-resources__pdf" title={resource.name} src={learningResourceContentUrl(resource.id, bindId, fallbackToFirstCabinet)} />}
+        {resource.resourceType === 'VIDEO_COURSE' ? <video className="student-resources__video" controls preload="metadata" src={learningResourceContentUrl(resource.id, bindId, fallbackToFirstCabinet)}>当前浏览器不支持视频播放。</video> : <PdfDocumentReader key={resource.id} title={resource.name} fileUrl={learningResourceContentUrl(resource.id, bindId, fallbackToFirstCabinet)} />}
       </article> : items.length === 0 ? <p className="student-resources__empty">当前屏柜暂无{config.title}。</p> : <section className="student-resources__list">{items.map((item) => <button key={item.id} type="button" className="student-resources__card" onClick={() => navigate(`/student/resources/${type}/${item.id}`)}><span className="student-resources__card-title">{item.name}</span><span className="student-resources__card-description">{item.description}</span><span className="student-resources__card-meta">{item.cabinetName ? item.cabinetName : '所有屏柜'} · {formatSize(item.fileSize)}</span></button>)}</section>}
     </main>
   </div>

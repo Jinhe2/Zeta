@@ -4,6 +4,7 @@ import com.zeta.business.auth.AuthService;
 import com.zeta.business.devicedisplay.DeviceDisplayItem;
 import com.zeta.business.devicedisplay.DeviceDisplayItemRepository;
 import com.zeta.business.logicnodecognition.LogicNodeCognitionItemRepository;
+import com.zeta.business.learningresource.LearningResourceRepository;
 import com.zeta.config.UploadProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,7 @@ class CognitionVideoControllerTest {
                 storage,
                 deviceRepository,
                 mock(LogicNodeCognitionItemRepository.class),
+                mock(LearningResourceRepository.class),
                 mock(AuthService.class));
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }

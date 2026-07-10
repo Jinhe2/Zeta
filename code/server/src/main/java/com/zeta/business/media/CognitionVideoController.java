@@ -5,6 +5,7 @@ import com.zeta.business.devicedisplay.DeviceDisplayItem;
 import com.zeta.business.devicedisplay.DeviceDisplayItemRepository;
 import com.zeta.business.logicnodecognition.LogicNodeCognitionItem;
 import com.zeta.business.logicnodecognition.LogicNodeCognitionItemRepository;
+import com.zeta.business.learningresource.LearningResourceRepository;
 import com.zeta.business.user.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,16 +33,19 @@ public class CognitionVideoController {
     private final CognitionVideoStorage videoStorage;
     private final DeviceDisplayItemRepository deviceRepository;
     private final LogicNodeCognitionItemRepository logicRepository;
+    private final LearningResourceRepository learningResourceRepository;
     private final AuthService authService;
 
     public CognitionVideoController(
             CognitionVideoStorage videoStorage,
             DeviceDisplayItemRepository deviceRepository,
             LogicNodeCognitionItemRepository logicRepository,
+            LearningResourceRepository learningResourceRepository,
             AuthService authService) {
         this.videoStorage = videoStorage;
         this.deviceRepository = deviceRepository;
         this.logicRepository = logicRepository;
+        this.learningResourceRepository = learningResourceRepository;
         this.authService = authService;
     }
 
@@ -59,7 +63,9 @@ public class CognitionVideoController {
             @RequestParam("path") String path) {
         authService.requireRole(authorization, UserRole.ADMIN);
         String normalized = videoStorage.normalizeManagedPath(path);
-        if (deviceRepository.existsByVideoPath(normalized) || logicRepository.existsByVideoPath(normalized)) {
+        if (deviceRepository.existsByVideoPath(normalized)
+                || logicRepository.existsByVideoPath(normalized)
+                || learningResourceRepository.existsByFilePath(normalized)) {
             throw new ResponseStatusException(CONFLICT, "视频正在被认知条目使用");
         }
         videoStorage.delete(normalized);

@@ -19,4 +19,7 @@ public class UploadProperties {
 
     /** 视频存储基准目录；留空时自动使用 JAR 所在目录 */
     private String videoStorageDir;
+
+    /** 学习资料存储基准目录；留空时自动使用 JAR 所在目录 */
+    private String resourceStorageDir;
 }

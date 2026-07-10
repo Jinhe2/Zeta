@@ -37,6 +37,7 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         migrateDeviceDisplayImageUrl();
         migrateCognitionDevices();
         migrateCognitionMediaFields();
+        createLearningResourcesTable();
     }
 
     private void migrateUsers() {
@@ -85,6 +86,31 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
     private void migrateCognitionMediaFields() {
         migrateDeviceDisplayMediaFields();
         migrateLogicNodeMediaFields();
+    }
+
+    /** 生产环境关闭 Hibernate DDL 时也创建学习资料表。 */
+    private void createLearningResourcesTable() {
+        if (tableExists("learning_resources")) {
+            return;
+        }
+        String sql = "CREATE TABLE IF NOT EXISTS learning_resources ("
+                + "id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+                + "name VARCHAR(128) NOT NULL, "
+                + "description LONGTEXT NOT NULL, "
+                + "resource_type VARCHAR(32) NOT NULL, "
+                + "screen_cabinet_id BIGINT UNSIGNED NULL COMMENT 'ct-screen.cabinet.id；NULL 表示所有屏柜', "
+                + "file_path VARCHAR(512) NOT NULL, "
+                + "original_filename VARCHAR(255) NOT NULL, "
+                + "content_type VARCHAR(100) NOT NULL, "
+                + "file_size BIGINT NOT NULL, "
+                + "created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), "
+                + "updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), "
+                + "PRIMARY KEY (id), "
+                + "INDEX idx_learning_resources_scope (resource_type, screen_cabinet_id, updated_at, id)"
+                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学员学习资料'";
+        if (executeIgnoreError(sql)) {
+            log.info("业务库：创建表 learning_resources");
+        }
     }
 
     private void migrateDeviceDisplayMediaFields() {

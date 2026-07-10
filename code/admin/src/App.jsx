@@ -19,6 +19,7 @@ import CabinetCognitionPage from './pages/student/CabinetCognitionPage'
 import TeacherPage from './pages/TeacherPage'
 import AdminLayout from './components/AdminLayout'
 import UsersPage from './pages/admin/business/UsersPage'
+import LearningResourcesPage from './pages/admin/business/LearningResourcesPage'
 import AdminPlaceholderPage from './pages/admin/business/AdminPlaceholderPage'
 import QueueDebugPanel from './components/QueueDebugPanel'
 import DisplayCabinetListPage from './pages/admin/business/display/DisplayCabinetListPage'
@@ -34,6 +35,7 @@ import CabinetBindingPage from './pages/admin/binding/CabinetBindingPage'
 import CabinetCatalogListPage from './pages/admin/screen/catalog/CabinetCatalogListPage'
 import CabinetCatalogDetailPage from './pages/admin/screen/catalog/CabinetCatalogDetailPage'
 import CatalogDeviceDetailPage from './pages/admin/screen/catalog/CatalogDeviceDetailPage'
+import StudentResourcesPage from './pages/student/StudentResourcesPage'
 
 function LegacyDiagramRedirect() {
   const { id } = useParams()
@@ -111,7 +113,8 @@ export default function App() {
             <Route path="profile" element={<ProfilePage />} />
             <Route path="mistakes" element={<MistakesPage />} />
             <Route path="tasks" element={<TasksPage />} />
-            <Route path="resources/:type" element={<StudentPlaceholderPage title="资源库" description="资源内容加载功能开发中。" />} />
+            <Route path="resources/:type" element={<StudentResourcesPage />} />
+            <Route path="resources/:type/:id" element={<StudentResourcesPage />} />
           </Route>
           <Route path="/student/diagram/:id" element={<LegacyDiagramRedirect />} />
 
@@ -141,6 +144,7 @@ export default function App() {
 
             <Route path="display" element={<DisplayCabinetListPage />} />
             <Route path="logic-learning" element={<LogicLearningPage />} />
+            <Route path="learning-resources" element={<LearningResourcesPage />} />
             <Route path="logic-learning/cabinets/:cabinetId/devices" element={<LogicLearningDevicesPage />} />
             <Route path="logic-learning/devices/:deviceId/logics" element={<LogicLearningLogicsPage />} />
             <Route path="logic-learning/logics/:logicDiagramId/nodes" element={<LogicLearningNodesPage />} />

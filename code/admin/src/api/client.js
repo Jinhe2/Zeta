@@ -167,18 +167,22 @@ async function request(path, options = {}, retried = false) {
 }
 
 async function uploadRequest(path, formData, retried = false) {
+  return multipartRequest(path, 'POST', formData, retried)
+}
+
+async function multipartRequest(path, method, formData, retried = false) {
   const headers = {}
   const accessToken = getAccessToken()
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`
   }
 
-  const res = await fetch(apiUrl(path), { method: 'POST', headers, body: formData })
+  const res = await fetch(apiUrl(path), { method, headers, body: formData })
   const data = await parseResponse(res)
 
   if (res.status === 401 && !retried && getRefreshToken() && !path.includes('/api/auth/')) {
     await ensureRefreshed()
-    return uploadRequest(path, formData, true)
+    return multipartRequest(path, method, formData, true)
   }
 
   if (!res.ok) {
@@ -505,6 +509,34 @@ export const api = {
     return request(`/api/admin/cognition-videos?path=${encodeURIComponent(path)}`, { method: 'DELETE' })
   },
 
+  listLearningResources(type, cabinetId) {
+    const params = new URLSearchParams()
+    if (type) params.set('type', type)
+    if (cabinetId) params.set('cabinetId', cabinetId)
+    const query = params.toString()
+    return request(`/api/admin/learning-resources${query ? `?${query}` : ''}`)
+  },
+
+  createLearningResource(formData) {
+    return multipartRequest('/api/admin/learning-resources', 'POST', formData)
+  },
+
+  updateLearningResource(id, formData) {
+    return multipartRequest(`/api/admin/learning-resources/${id}`, 'PUT', formData)
+  },
+
+  deleteLearningResource(id) {
+    return request(`/api/admin/learning-resources/${id}`, { method: 'DELETE' })
+  },
+
+  listStudentLearningResources(type, bindId, fallbackToFirstCabinet = false) {
+    return request(`/api/learning-resources?type=${encodeURIComponent(type)}&bindId=${encodeURIComponent(bindId)}${fallbackToFirstCabinet ? '&fallbackToFirstCabinet=true' : ''}`)
+  },
+
+  getStudentLearningResource(id, bindId, fallbackToFirstCabinet = false) {
+    return request(`/api/learning-resources/${id}?bindId=${encodeURIComponent(bindId)}${fallbackToFirstCabinet ? '&fallbackToFirstCabinet=true' : ''}`)
+  },
+
   listLogicLearningNodes(logicDiagramId) {
     return request(`/api/admin/logic-learning/logics/${logicDiagramId}/nodes`)
   },
@@ -567,4 +599,8 @@ export const api = {
   forceUnbindCabinet(cabinetId) {
     return request(`/api/bindings/cabinets/${cabinetId}/force`, { method: 'DELETE' })
   },
+}
+
+export function learningResourceContentUrl(id, bindId, fallbackToFirstCabinet = false) {
+  return apiUrl(`/api/learning-resources/${id}/content?bindId=${encodeURIComponent(bindId)}${fallbackToFirstCabinet ? '&fallbackToFirstCabinet=true' : ''}`)
 }

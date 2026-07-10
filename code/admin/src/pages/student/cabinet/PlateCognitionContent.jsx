@@ -28,7 +28,7 @@ const PRESSBOARD_STATE_NAME = {
 function pressboardSvg(type, state) {
   const typeSuffix = PRESSBOARD_TYPE_SUFFIX[type] ?? PRESSBOARD_TYPE_SUFFIX.FUNCTION
   const stateName = PRESSBOARD_STATE_NAME[normalizePressboardState(state)] ?? 'idel'
-  return `/images/pressboard/${stateName}_${typeSuffix}.svg`
+  return `${import.meta.env.BASE_URL}images/pressboard/${stateName}_${typeSuffix}.svg`
 }
 
 /** 压板类型颜色标识 */

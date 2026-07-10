@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { api, imageUrl } from '../../../api/client'
+import { api, imageUrl, publicUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
 import { hasRegion, normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
@@ -28,7 +28,7 @@ const PRESSBOARD_STATE_NAME = {
 function pressboardSvg(type, state) {
   const typeSuffix = PRESSBOARD_TYPE_SUFFIX[type] ?? PRESSBOARD_TYPE_SUFFIX.FUNCTION
   const stateName = PRESSBOARD_STATE_NAME[normalizePressboardState(state)] ?? 'idel'
-  return `${import.meta.env.BASE_URL}images/pressboard/${stateName}_${typeSuffix}.svg`
+  return publicUrl(`images/pressboard/${stateName}_${typeSuffix}.svg`)
 }
 
 /** 压板类型颜色标识 */

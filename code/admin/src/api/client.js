@@ -55,6 +55,13 @@ export function imageUrl(typeOrPath, id, cacheKey) {
   return base + typeOrPath
 }
 
+/** 拼接 public 目录下的静态资源 URL（兼容 Electron file:// 与 Web） */
+export function publicUrl(path) {
+  const normalized = String(path ?? '').replace(/^\//, '')
+  const base = import.meta.env.BASE_URL
+  return base.endsWith('/') ? base + normalized : `${base}/${normalized}`
+}
+
 let refreshPromise = null
 
 export function getAccessToken() {

@@ -1,25 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
+import { CIRCUIT_DATA } from '../../config/circuitData'
 import './TabletShell.css'
 import './CircuitViewerPage.css'
-
-// 回路数据配置（与 CircuitLearningPage 保持一致）
-const CIRCUIT_DATA = [
-  {
-    category: '操作回路',
-    circuits: [
-      {
-        name: '操作回路',
-        file: '/kegong/操作回路/操作回路.html',
-        description: '操作回路全节点流向可视化',
-      },
-      {
-        name: '遥控回路',
-        file: '/kegong/操作回路/遥控回路.html',
-        description: '遥控回路全节点流向可视化',
-      },
-    ],
-  },
-]
 
 export default function CircuitViewerPage() {
   const navigate = useNavigate()

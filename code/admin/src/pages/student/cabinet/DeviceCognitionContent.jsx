@@ -5,6 +5,8 @@ import CognitionMediaViewer from '../../../components/CognitionMediaViewer'
 import { hasRegion, normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
+const DEVICE_COGNITION_TYPES = ['IED', 'OTHER_DEVICE']
+
 export default function DeviceCognitionContent({ navigationTarget, onPageChange }) {
   const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedCognitionDeviceId, setSelectedCognitionDeviceId] = useState(null)
@@ -18,7 +20,7 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
     loading,
     error,
     setError,
-  } = useFilteredCabinetCognition('IED')
+  } = useFilteredCabinetCognition(DEVICE_COGNITION_TYPES)
 
   const selectedCognitionDevice =
     cognitionDevices.find((d) => d.id === selectedCognitionDeviceId) ?? cognitionDevices[0] ?? null

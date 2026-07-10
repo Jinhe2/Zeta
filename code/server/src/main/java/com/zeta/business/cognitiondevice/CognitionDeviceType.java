@@ -5,6 +5,7 @@ package com.zeta.business.cognitiondevice;
  */
 public enum CognitionDeviceType {
     IED,
+    OTHER_DEVICE,
     TERMINAL_GROUP,
     PLATE_GROUP
 }

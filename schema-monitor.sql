@@ -48,12 +48,12 @@ CREATE TABLE IF NOT EXISTS device_display_items (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='认知设备展示条目';
 
 -- ============================================================================
--- 屏柜认知图上的抽象设备（IED / 端子组 / 压板组）
+-- 屏柜认知图上的抽象设备（IED / 其他设备 / 端子组 / 压板组）
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS cognition_devices (
     id                      BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
     cabinet_display_item_id BIGINT UNSIGNED  NOT NULL COMMENT '所属屏柜认知条目',
-    device_type             VARCHAR(32)      NOT NULL COMMENT 'IED / TERMINAL_GROUP / PLATE_GROUP',
+    device_type             VARCHAR(32)      NOT NULL COMMENT 'IED / OTHER_DEVICE / TERMINAL_GROUP / PLATE_GROUP',
     screen_device_id        BIGINT UNSIGNED  NULL COMMENT 'IED 类型时引用 ied_device.id',
     title                   VARCHAR(128)     NOT NULL,
     left_percent            DOUBLE           NOT NULL,

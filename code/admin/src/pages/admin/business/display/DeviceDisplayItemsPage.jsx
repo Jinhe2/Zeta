@@ -27,6 +27,7 @@ const EMPTY_CREATE = {
 
 const DEVICE_TYPE_LABELS = {
   IED: 'IED 设备',
+  OTHER_DEVICE: '其他设备',
   TERMINAL_GROUP: '端子组',
   PLATE_GROUP: '压板组',
 }

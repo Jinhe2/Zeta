@@ -39,7 +39,9 @@ export default function useFilteredCabinetCognition(deviceType) {
             const devices = await api.listKnowledgeCognitionDevices(item.id)
             return {
               item,
-              devices: devices.filter((device) => device.deviceType === deviceType),
+              devices: devices.filter((device) =>
+                Array.isArray(deviceType) ? deviceType.includes(device.deviceType) : device.deviceType === deviceType,
+              ),
             }
           }),
         )

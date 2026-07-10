@@ -20,7 +20,7 @@ const SECTIONS = [
 ]
 
 const DEVICE_SECTION_TYPES = {
-  device: 'IED',
+  device: ['IED', 'OTHER_DEVICE'],
   plate: 'PLATE_GROUP',
   terminal: 'TERMINAL_GROUP',
 }
@@ -69,7 +69,9 @@ async function buildDeviceSectionPages(sectionId, cabinetItems) {
       const devices = await api.listKnowledgeCognitionDevices(item.id)
       return {
         item,
-        devices: devices.filter((device) => device.deviceType === deviceType),
+        devices: devices.filter((device) =>
+          Array.isArray(deviceType) ? deviceType.includes(device.deviceType) : device.deviceType === deviceType,
+        ),
       }
     }),
   )

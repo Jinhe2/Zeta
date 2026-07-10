@@ -29,7 +29,7 @@ export default function CognitionMediaViewer({ item, imageType, region, alt }) {
         className="cognition-media-viewer__video"
         src={videoUrl(imageType, item.id)}
         controls
-        preload="auto"
+        preload="metadata"
         playsInline
         onError={() => setVideoError(true)}
       >

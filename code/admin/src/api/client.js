@@ -55,6 +55,11 @@ export function imageUrl(typeOrPath, id, cacheKey) {
   return base + typeOrPath
 }
 
+export function videoUrl(type, id) {
+  if (!id) return ''
+  return getBase() + `/api/videos/${type}/${id}`
+}
+
 /** 拼接 public 目录下的静态资源 URL（兼容 Electron file:// 与 Web） */
 export function publicUrl(path) {
   const normalized = String(path ?? '').replace(/^\//, '')
@@ -487,6 +492,17 @@ export const api = {
     const formData = new FormData()
     formData.append('file', file)
     return uploadRequest('/api/admin/device-display-images', formData)
+  },
+
+  uploadCognitionVideo(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return uploadRequest('/api/admin/cognition-videos', formData)
+  },
+
+  deleteUnreferencedCognitionVideo(path) {
+    if (!path) return Promise.resolve()
+    return request(`/api/admin/cognition-videos?path=${encodeURIComponent(path)}`, { method: 'DELETE' })
   },
 
   listLogicLearningNodes(logicDiagramId) {

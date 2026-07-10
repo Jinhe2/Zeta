@@ -6,6 +6,7 @@ import lombok.Setter;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import com.zeta.business.media.CognitionMediaType;
 
 @Getter
 @Setter
@@ -19,6 +20,12 @@ public class UpdateDeviceDisplayItemRequest {
 
     @Size(max = 512, message = "图片地址过长")
     private String imageUrl;
+
+    @NotNull(message = "请选择媒体类型")
+    private CognitionMediaType mediaType;
+
+    @Size(max = 512, message = "视频路径过长")
+    private String videoPath;
 
     private Double leftPercent;
 

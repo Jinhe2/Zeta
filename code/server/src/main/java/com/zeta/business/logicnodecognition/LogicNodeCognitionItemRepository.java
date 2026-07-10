@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface LogicNodeCognitionItemRepository extends JpaRepository<LogicNodeCognitionItem, Long> {
+    boolean existsByVideoPath(String videoPath);
 
     List<LogicNodeCognitionItem> findByLogicDiagramIdAndNodeIdOrderBySortOrderAscIdAsc(
             Long logicDiagramId,

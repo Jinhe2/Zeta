@@ -72,3 +72,12 @@
   color: #90a4ae;
   font-size: 13px;
 }
+.device-display-items__media-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #dbeafe;
+  font-size: 13px;
+  font-weight: 600;
+}

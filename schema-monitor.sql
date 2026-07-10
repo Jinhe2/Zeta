@@ -30,7 +30,15 @@ CREATE TABLE IF NOT EXISTS device_display_items (
     id                  BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
     cognition_device_id BIGINT UNSIGNED  NOT NULL COMMENT '认知设备 id',
     title               VARCHAR(128)     NOT NULL,
-    image_url           VARCHAR(512)     NOT NULL COMMENT '认知图片路径',
+    image_url           VARCHAR(512)     NULL COMMENT '认知图片路径',
+    image_data          LONGBLOB         NULL COMMENT '图片二进制数据',
+    image_content_type  VARCHAR(100)     NULL COMMENT '图片 MIME 类型',
+    media_type          VARCHAR(16)      NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO',
+    video_path          VARCHAR(512)     NULL COMMENT 'JAR 同级视频相对路径',
+    left_percent        DOUBLE           NULL,
+    top_percent         DOUBLE           NULL,
+    width_percent       DOUBLE           NULL,
+    height_percent      DOUBLE           NULL,
     content             TEXT             NOT NULL,
     sort_order          INT              NOT NULL DEFAULT 0,
     enabled             TINYINT(1)       NOT NULL DEFAULT 1,
@@ -74,3 +82,31 @@ CREATE TABLE IF NOT EXISTS cabinet_display_items (
     PRIMARY KEY (id),
     INDEX idx_cdi_cabinet (screen_cabinet_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='屏柜认知条目';
+
+-- ============================================================================
+-- 逻辑节点认知条目
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS logic_node_cognition_items (
+    id                  BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    logic_diagram_id    BIGINT UNSIGNED  NOT NULL,
+    node_id             VARCHAR(128)     NOT NULL,
+    node_type           VARCHAR(32)      NOT NULL,
+    node_name           VARCHAR(256)     NOT NULL,
+    title               VARCHAR(128)     NOT NULL,
+    image_url           VARCHAR(512)     NULL,
+    image_data          LONGBLOB         NULL,
+    image_content_type  VARCHAR(100)     NULL,
+    media_type          VARCHAR(16)      NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO / TEXT',
+    video_path          VARCHAR(512)     NULL COMMENT 'JAR 同级视频相对路径',
+    left_percent        DOUBLE           NULL,
+    top_percent         DOUBLE           NULL,
+    width_percent       DOUBLE           NULL,
+    height_percent      DOUBLE           NULL,
+    content             LONGTEXT         NOT NULL,
+    sort_order          INT              NOT NULL DEFAULT 0,
+    enabled             TINYINT(1)       NOT NULL DEFAULT 1,
+    created_at          TIMESTAMP(6)     NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (id),
+    INDEX idx_logic_node_cognition_node (logic_diagram_id, node_id),
+    INDEX idx_logic_node_cognition_order (logic_diagram_id, node_id, sort_order, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='逻辑节点认知条目';

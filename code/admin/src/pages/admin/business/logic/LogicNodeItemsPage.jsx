@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { api, imageUrl } from '../../../../api/client'
+import { api, imageUrl, videoUrl } from '../../../../api/client'
 import CabinetImageUploadField from '../../../../components/CabinetImageUploadField'
+import CognitionVideoUploadField from '../../../../components/CognitionVideoUploadField'
 import ImageRegionEditor from '../../../../components/ImageRegionEditor'
 import { DEFAULT_REGION, normalizeRegion } from '../../../../utils/imageRegionUtils'
 import '../UsersPage.css'
@@ -11,6 +12,8 @@ import './LogicLearningPage.css'
 
 const EMPTY_FORM = {
   title: '',
+  mediaType: 'IMAGE',
+  videoPath: '',
   imageId: null,
   imageUrl: '',
   hasImage: false,
@@ -59,8 +62,16 @@ function hasItemImage(item) {
 }
 
 function validateFormContent(form, setError) {
-  if (!hasFormImage(form) && !hasText(form.content)) {
-    setError('请上传认知图片或填写文字描述')
+  if (form.mediaType === 'VIDEO' && !form.videoPath) {
+    setError('请上传认知视频')
+    return false
+  }
+  if (form.mediaType === 'TEXT' && !hasText(form.content)) {
+    setError('请填写文字描述')
+    return false
+  }
+  if (form.mediaType === 'IMAGE' && !hasFormImage(form)) {
+    setError('请上传认知图片')
     return false
   }
   return true
@@ -242,6 +253,8 @@ export default function LogicNodeItemsPage() {
     setEditingItem(item)
     setEditForm({
       title: item.title,
+      mediaType: item.mediaType || (hasItemImage(item) ? 'IMAGE' : 'TEXT'),
+      videoPath: item.videoPath || '',
       imageId: null,
       imageUrl: item.imageUrl,
       hasImage: hasItemImage(item),
@@ -292,14 +305,23 @@ export default function LogicNodeItemsPage() {
     }
   }
 
+  const cleanupDraftVideo = (path, savedPath = '') => {
+    if (path && path !== savedPath) api.deleteUnreferencedCognitionVideo(path).catch(() => {})
+  }
+
   const renderDialog = (mode) => {
     const isCreate = mode === 'create'
     const form = isCreate ? createForm : editForm
     const setForm = isCreate ? setCreateForm : setEditForm
     const busy = isCreate ? creating : saving
     const close = () => {
-      if (isCreate) setShowCreate(false)
-      else setEditingItem(null)
+      cleanupDraftVideo(form.videoPath, isCreate ? '' : editingItem?.videoPath)
+      if (isCreate) {
+        setShowCreate(false)
+        setCreateForm(EMPTY_FORM)
+      } else {
+        setEditingItem(null)
+      }
     }
 
     return (
@@ -314,26 +336,61 @@ export default function LogicNodeItemsPage() {
             条目名称
             <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
           </label>
-          <CabinetImageUploadField
-            imageUrl={form.imageUrl}
-            previewUrl={!isCreate && editingItem && form.hasImage
-              ? imageUrl('logic-node-cognition', editingItem.id, imageVersion)
-              : ''}
-            onChange={(url, result) => setForm((current) => ({
-              ...current,
-              imageUrl: url,
-              imageId: result?.imageId ?? null,
-              hasImage: Boolean(url || result?.imageId) || (current.hasImage && !result?.removeImage),
-              removeImage: Boolean(result?.removeImage),
-              ...(!url && result?.removeImage ? regionFields(null) : {}),
-            }))}
-            uploadImage={api.uploadDeviceDisplayImage}
-            disabled={busy}
-            allowClear
-            renderPreviewExtra={(previewSrc) => (
-              <HighlightRegionField form={form} setForm={setForm} previewSrc={previewSrc} disabled={busy} />
-            )}
-          />
+          <label>
+            媒体类型
+            <select
+              value={form.mediaType}
+              onChange={(e) => {
+                const mediaType = e.target.value
+                const savedPath = isCreate ? '' : editingItem?.videoPath
+                if (mediaType !== 'VIDEO') cleanupDraftVideo(form.videoPath, savedPath)
+                setForm((current) => ({
+                  ...current,
+                  mediaType,
+                  videoPath: mediaType === 'VIDEO' || current.videoPath === savedPath
+                    ? current.videoPath
+                    : '',
+                  ...(mediaType !== 'IMAGE' ? regionFields(null) : {}),
+                }))
+              }}
+            >
+              <option value="IMAGE">图片</option>
+              <option value="VIDEO">视频</option>
+              <option value="TEXT">仅文字</option>
+            </select>
+          </label>
+          {form.mediaType === 'IMAGE' && (
+            <CabinetImageUploadField
+              imageUrl={form.imageUrl}
+              previewUrl={!isCreate && editingItem && form.hasImage && editingItem.mediaType !== 'VIDEO'
+                ? imageUrl('logic-node-cognition', editingItem.id, imageVersion)
+                : ''}
+              onChange={(url, result) => setForm((current) => ({
+                ...current,
+                imageUrl: url,
+                imageId: result?.imageId ?? null,
+                hasImage: Boolean(url || result?.imageId) || (current.hasImage && !result?.removeImage),
+                removeImage: Boolean(result?.removeImage),
+                ...(!url && result?.removeImage ? regionFields(null) : {}),
+              }))}
+              uploadImage={api.uploadDeviceDisplayImage}
+              disabled={busy}
+              allowClear
+              renderPreviewExtra={(previewSrc) => (
+                <HighlightRegionField form={form} setForm={setForm} previewSrc={previewSrc} disabled={busy} />
+              )}
+            />
+          )}
+          {form.mediaType === 'VIDEO' && (
+            <CognitionVideoUploadField
+              value={form.videoPath}
+              previewUrl={!isCreate && editingItem?.mediaType === 'VIDEO'
+                ? videoUrl('logic-node-cognition', editingItem.id)
+                : ''}
+              onChange={(videoPath) => setForm((current) => ({ ...current, videoPath }))}
+              disabled={busy}
+            />
+          )}
           <label>
             文字描述
             <textarea
@@ -424,7 +481,7 @@ export default function LogicNodeItemsPage() {
           <table className="users-page__table">
             <thead>
               <tr>
-                <th>图片</th>
+                <th>媒体</th>
                 <th>名称</th>
                 <th>描述摘要</th>
                 <th>排序</th>
@@ -442,7 +499,11 @@ export default function LogicNodeItemsPage() {
                 items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      {hasItemImage(item) ? (
+                      {item.mediaType === 'VIDEO' ? (
+                        <span className="logic-learning__media-badge">视频</span>
+                      ) : item.mediaType === 'TEXT' ? (
+                        <span className="logic-learning__media-badge logic-learning__media-badge--text">文字</span>
+                      ) : hasItemImage(item) ? (
                         <img
                           className="logic-learning__thumb"
                           src={imageUrl('logic-node-cognition', item.id, imageVersion)}

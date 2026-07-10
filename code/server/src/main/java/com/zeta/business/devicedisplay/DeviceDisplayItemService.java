@@ -4,6 +4,8 @@ import com.zeta.business.cabinetdisplay.TemporaryImage;
 import com.zeta.business.cabinetdisplay.TemporaryImageRepository;
 import com.zeta.business.cognitiondevice.CognitionDevice;
 import com.zeta.business.cognitiondevice.CognitionDeviceService;
+import com.zeta.business.media.CognitionMediaType;
+import com.zeta.business.media.CognitionVideoStorage;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,16 +24,19 @@ public class DeviceDisplayItemService {
     private final DeviceDisplayItemRepository displayItemRepository;
     private final DeviceDisplayImageStorage imageStorage;
     private final TemporaryImageRepository temporaryImageRepository;
+    private final CognitionVideoStorage videoStorage;
 
     public DeviceDisplayItemService(
             CognitionDeviceService cognitionDeviceService,
             DeviceDisplayItemRepository displayItemRepository,
             DeviceDisplayImageStorage imageStorage,
-            TemporaryImageRepository temporaryImageRepository) {
+            TemporaryImageRepository temporaryImageRepository,
+            CognitionVideoStorage videoStorage) {
         this.cognitionDeviceService = cognitionDeviceService;
         this.displayItemRepository = displayItemRepository;
         this.imageStorage = imageStorage;
         this.temporaryImageRepository = temporaryImageRepository;
+        this.videoStorage = videoStorage;
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
@@ -57,7 +62,7 @@ public class DeviceDisplayItemService {
         DeviceDisplayItem item = new DeviceDisplayItem();
         item.setCognitionDeviceId(cognitionDeviceId);
         item.setTitle(request.getTitle().trim());
-        applyImageData(item, request.getImageId(), request.getImageUrl());
+        applyMedia(item, request.getMediaType(), request.getImageId(), request.getImageUrl(), request.getVideoPath());
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
                 request.getWidthPercent(), request.getHeightPercent());
         item.setContent(request.getContent().trim());
@@ -71,9 +76,10 @@ public class DeviceDisplayItemService {
     public DeviceDisplayItemAdminResponse update(Long id, UpdateDeviceDisplayItemRequest request) {
         DeviceDisplayItem item = requireItem(id);
         String previousImageUrl = item.getImageUrl();
+        String previousVideoPath = item.getVideoPath();
 
         item.setTitle(request.getTitle().trim());
-        applyImageData(item, request.getImageId(), request.getImageUrl());
+        applyMedia(item, request.getMediaType(), request.getImageId(), request.getImageUrl(), request.getVideoPath());
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
                 request.getWidthPercent(), request.getHeightPercent());
         item.setContent(request.getContent().trim());
@@ -85,6 +91,9 @@ public class DeviceDisplayItemService {
         if (!Objects.equals(nextImageUrl, previousImageUrl)) {
             imageStorage.deleteIfManaged(previousImageUrl);
         }
+        if (!Objects.equals(item.getVideoPath(), previousVideoPath)) {
+            videoStorage.deleteAfterCommit(previousVideoPath);
+        }
         return toAdminResponse(saved);
     }
 
@@ -92,12 +101,32 @@ public class DeviceDisplayItemService {
     public void delete(Long id) {
         DeviceDisplayItem item = requireItem(id);
         imageStorage.deleteIfManaged(item.getImageUrl());
+        videoStorage.deleteAfterCommit(item.getVideoPath());
         displayItemRepository.delete(item);
     }
 
     private DeviceDisplayItem requireItem(Long id) {
         return displayItemRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "设备展示条目不存在"));
+    }
+
+    private void applyMedia(DeviceDisplayItem item, CognitionMediaType mediaType, Long imageId,
+                            String imageUrl, String videoPath) {
+        if (mediaType == CognitionMediaType.TEXT) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "设备认知条目不支持纯文字类型");
+        }
+        item.setMediaType(mediaType);
+        if (mediaType == CognitionMediaType.VIDEO) {
+            String normalized = videoStorage.normalizeManagedPath(videoPath);
+            if (!videoStorage.exists(normalized)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "认知视频不存在，请重新上传");
+            }
+            item.setVideoPath(normalized);
+            clearImage(item);
+            return;
+        }
+        item.setVideoPath(null);
+        applyImageData(item, imageId, imageUrl);
     }
 
     private void applyImageData(DeviceDisplayItem item, Long imageId, String imageUrl) {
@@ -119,6 +148,16 @@ public class DeviceDisplayItemService {
         }
     }
 
+    private void clearImage(DeviceDisplayItem item) {
+        item.setImageUrl(null);
+        item.setImageData(null);
+        item.setImageContentType(null);
+        item.setLeftPercent(null);
+        item.setTopPercent(null);
+        item.setWidthPercent(null);
+        item.setHeightPercent(null);
+    }
+
     private boolean hasExistingImage(DeviceDisplayItem item) {
         return StringUtils.hasText(item.getImageUrl())
                 || (item.getImageData() != null && item.getImageData().length > 0);
@@ -130,6 +169,13 @@ public class DeviceDisplayItemService {
             Double top,
             Double width,
             Double height) {
+        if (item.getMediaType() != CognitionMediaType.IMAGE) {
+            item.setLeftPercent(null);
+            item.setTopPercent(null);
+            item.setWidthPercent(null);
+            item.setHeightPercent(null);
+            return;
+        }
         if (left == null && top == null && width == null && height == null) {
             item.setLeftPercent(null);
             item.setTopPercent(null);
@@ -178,6 +224,8 @@ public class DeviceDisplayItemService {
                 cognitionDevice.getTitle(),
                 item.getTitle(),
                 item.getImageUrl(),
+                item.getMediaType(),
+                item.getVideoPath(),
                 item.getLeftPercent(),
                 item.getTopPercent(),
                 item.getWidthPercent(),
@@ -193,6 +241,7 @@ public class DeviceDisplayItemService {
                 item.getId(),
                 item.getTitle(),
                 item.getImageUrl(),
+                item.getMediaType(),
                 item.getLeftPercent(),
                 item.getTopPercent(),
                 item.getWidthPercent(),

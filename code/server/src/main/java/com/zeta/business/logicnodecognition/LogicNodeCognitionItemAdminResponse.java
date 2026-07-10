@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.time.Instant;
+import com.zeta.business.media.CognitionMediaType;
 
 @Getter
 @AllArgsConstructor
@@ -17,6 +18,8 @@ public class LogicNodeCognitionItemAdminResponse {
     private String title;
     private String imageUrl;
     private boolean hasImage;
+    private CognitionMediaType mediaType;
+    private String videoPath;
     private Double leftPercent;
     private Double topPercent;
     private Double widthPercent;

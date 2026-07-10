@@ -1,0 +1,33 @@
+.cognition-video-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cognition-video-upload__label {
+  font-weight: 600;
+}
+
+.cognition-video-upload__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cognition-video-upload__hint {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.cognition-video-upload__error {
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.cognition-video-upload__preview {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  background: #000;
+  border-radius: 8px;
+}

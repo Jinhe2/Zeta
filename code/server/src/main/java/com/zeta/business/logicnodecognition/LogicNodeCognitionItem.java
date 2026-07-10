@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.Instant;
+import com.zeta.business.media.CognitionMediaType;
 
 /** 逻辑框图节点的认知条目，节点本身来自 screen 库，只在业务库保存教学内容。 */
 @Entity
@@ -43,6 +44,14 @@ public class LogicNodeCognitionItem {
 
     @Column(name = "image_content_type", length = 100)
     private String imageContentType;
+
+    @Enumerated(EnumType.STRING)
+    /** 见 DeviceDisplayItem：启动迁移负责旧数据回填及数据库默认值。 */
+    @Column(name = "media_type", length = 16)
+    private CognitionMediaType mediaType = CognitionMediaType.IMAGE;
+
+    @Column(name = "video_path", length = 512)
+    private String videoPath;
 
     @Column(name = "left_percent")
     private Double leftPercent;

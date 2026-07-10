@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
+import CognitionMediaViewer from '../../../components/CognitionMediaViewer'
 import { hasRegion, normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
@@ -183,9 +184,10 @@ export default function TerminalCognitionContent({ navigationTarget, onPageChang
         )}
         {!loading && !error && currentDisplayItem && (
           <>
-            <ImageRegionViewer
-              key={currentSlide}
-              imageUrl={imageUrl('device-display', currentDisplayItem.id)}
+            <CognitionMediaViewer
+              key={currentDisplayItem.id}
+              item={currentDisplayItem}
+              imageType="device-display"
               region={itemHighlightRegion}
               alt={currentDisplayItem.title}
             />

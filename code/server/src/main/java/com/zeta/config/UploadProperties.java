@@ -16,4 +16,7 @@ public class UploadProperties {
 
     /** 对外访问 URL 前缀 */
     private String publicPathPrefix = "/uploads";
+
+    /** 视频存储基准目录；留空时自动使用 JAR 所在目录 */
+    private String videoStorageDir;
 }

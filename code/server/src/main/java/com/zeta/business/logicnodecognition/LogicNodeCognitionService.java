@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zeta.business.cabinetdisplay.TemporaryImage;
 import com.zeta.business.cabinetdisplay.TemporaryImageRepository;
 import com.zeta.business.devicedisplay.DeviceDisplayImageStorage;
+import com.zeta.business.media.CognitionMediaType;
+import com.zeta.business.media.CognitionVideoStorage;
 import com.zeta.screen.logicdiagram.ProtectionLogic;
 import com.zeta.screen.logicdiagram.ProtectionLogicRepository;
 import com.zeta.screen.logicdiagram.dto.ConfigDto;
@@ -30,18 +32,21 @@ public class LogicNodeCognitionService {
     private final TemporaryImageRepository temporaryImageRepository;
     private final DeviceDisplayImageStorage imageStorage;
     private final ObjectMapper objectMapper;
+    private final CognitionVideoStorage videoStorage;
 
     public LogicNodeCognitionService(
             ProtectionLogicRepository protectionLogicRepository,
             LogicNodeCognitionItemRepository itemRepository,
             TemporaryImageRepository temporaryImageRepository,
             DeviceDisplayImageStorage imageStorage,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            CognitionVideoStorage videoStorage) {
         this.protectionLogicRepository = protectionLogicRepository;
         this.itemRepository = itemRepository;
         this.temporaryImageRepository = temporaryImageRepository;
         this.imageStorage = imageStorage;
         this.objectMapper = objectMapper;
+        this.videoStorage = videoStorage;
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
@@ -86,7 +91,8 @@ public class LogicNodeCognitionService {
         item.setNodeType(node.getNodeType().name());
         item.setNodeName(node.getNodeName());
         item.setTitle(request.getTitle().trim());
-        applyImageData(item, request.getImageId(), request.getImageUrl(), false);
+        applyMedia(item, request.getMediaType(), request.getImageId(), request.getImageUrl(),
+                request.getVideoPath(), false);
         item.setContent(normalizeContent(request.getContent()));
         validateCognitionContent(item);
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
@@ -102,11 +108,13 @@ public class LogicNodeCognitionService {
         LogicNodeCognitionItem item = requireItem(id);
         LogicNodeInfo node = requireNode(item.getLogicDiagramId(), item.getNodeId());
         String previousImageUrl = item.getImageUrl();
+        String previousVideoPath = item.getVideoPath();
 
         item.setNodeType(node.getNodeType().name());
         item.setNodeName(node.getNodeName());
         item.setTitle(request.getTitle().trim());
-        applyImageData(item, request.getImageId(), request.getImageUrl(), Boolean.TRUE.equals(request.getRemoveImage()));
+        applyMedia(item, request.getMediaType(), request.getImageId(), request.getImageUrl(),
+                request.getVideoPath(), Boolean.TRUE.equals(request.getRemoveImage()));
         item.setContent(normalizeContent(request.getContent()));
         validateCognitionContent(item);
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
@@ -119,6 +127,9 @@ public class LogicNodeCognitionService {
         if (!Objects.equals(nextImageUrl, previousImageUrl)) {
             imageStorage.deleteIfManaged(previousImageUrl);
         }
+        if (!Objects.equals(item.getVideoPath(), previousVideoPath)) {
+            videoStorage.deleteAfterCommit(previousVideoPath);
+        }
         return toAdminResponse(saved);
     }
 
@@ -126,6 +137,7 @@ public class LogicNodeCognitionService {
     public void delete(Long id) {
         LogicNodeCognitionItem item = requireItem(id);
         imageStorage.deleteIfManaged(item.getImageUrl());
+        videoStorage.deleteAfterCommit(item.getVideoPath());
         itemRepository.delete(item);
     }
 
@@ -192,6 +204,26 @@ public class LogicNodeCognitionService {
         nodes.add(new LogicNodeInfo(normalizedId, resolvedName, nodeType));
     }
 
+    private void applyMedia(LogicNodeCognitionItem item, CognitionMediaType mediaType, Long imageId,
+                            String imageUrl, String videoPath, boolean removeImage) {
+        item.setMediaType(mediaType);
+        if (mediaType == CognitionMediaType.VIDEO) {
+            String normalized = videoStorage.normalizeManagedPath(videoPath);
+            if (!videoStorage.exists(normalized)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "认知视频不存在，请重新上传");
+            }
+            item.setVideoPath(normalized);
+            clearImage(item);
+            return;
+        }
+        item.setVideoPath(null);
+        if (mediaType == CognitionMediaType.TEXT) {
+            clearImage(item);
+            return;
+        }
+        applyImageData(item, imageId, imageUrl, removeImage);
+    }
+
     private void applyImageData(LogicNodeCognitionItem item, Long imageId, String imageUrl, boolean removeImage) {
         if (removeImage) {
             item.setImageUrl(null);
@@ -213,6 +245,16 @@ public class LogicNodeCognitionService {
         }
     }
 
+    private void clearImage(LogicNodeCognitionItem item) {
+        item.setImageUrl(null);
+        item.setImageData(null);
+        item.setImageContentType(null);
+        item.setLeftPercent(null);
+        item.setTopPercent(null);
+        item.setWidthPercent(null);
+        item.setHeightPercent(null);
+    }
+
     private boolean hasExistingImage(LogicNodeCognitionItem item) {
         return StringUtils.hasText(item.getImageUrl())
                 || (item.getImageData() != null && item.getImageData().length > 0);
@@ -223,8 +265,14 @@ public class LogicNodeCognitionService {
     }
 
     private void validateCognitionContent(LogicNodeCognitionItem item) {
-        if (!hasExistingImage(item) && !StringUtils.hasText(item.getContent())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请上传认知图片或填写文字描述");
+        if (item.getMediaType() == CognitionMediaType.VIDEO && !StringUtils.hasText(item.getVideoPath())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请上传认知视频");
+        }
+        if (item.getMediaType() == CognitionMediaType.IMAGE && !hasExistingImage(item)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请上传认知图片");
+        }
+        if (item.getMediaType() == CognitionMediaType.TEXT && !StringUtils.hasText(item.getContent())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请填写文字描述");
         }
     }
 
@@ -234,6 +282,13 @@ public class LogicNodeCognitionService {
             Double top,
             Double width,
             Double height) {
+        if (item.getMediaType() != CognitionMediaType.IMAGE) {
+            item.setLeftPercent(null);
+            item.setTopPercent(null);
+            item.setWidthPercent(null);
+            item.setHeightPercent(null);
+            return;
+        }
         if (left == null && top == null && width == null && height == null) {
             item.setLeftPercent(null);
             item.setTopPercent(null);
@@ -287,6 +342,8 @@ public class LogicNodeCognitionService {
                 item.getTitle(),
                 item.getImageUrl(),
                 hasExistingImage(item),
+                item.getMediaType(),
+                item.getVideoPath(),
                 item.getLeftPercent(),
                 item.getTopPercent(),
                 item.getWidthPercent(),
@@ -303,6 +360,7 @@ public class LogicNodeCognitionService {
                 item.getTitle(),
                 item.getImageUrl(),
                 hasExistingImage(item),
+                item.getMediaType(),
                 item.getLeftPercent(),
                 item.getTopPercent(),
                 item.getWidthPercent(),

@@ -121,3 +121,14 @@
   color: #4b5563;
   background: #f3f4f6;
 }
+
+.logic-learning__sort-input {
+  width: 88px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 5px;
+  padding: 7px 8px;
+  background: #111b28;
+  color: #eef5fc;
+  font: inherit;
+}

@@ -251,6 +251,13 @@ export const api = {
     return request(`/api/knowledge/devices/${deviceId}/protection-logics`)
   },
 
+  updateLogicLearningSortOrder(logicDiagramId, sortOrder) {
+    return request(`/api/admin/logic-learning/logics/${logicDiagramId}/sort-order`, {
+      method: 'PUT',
+      body: JSON.stringify({ sortOrder }),
+    })
+  },
+
   listKnowledgeDeviceDisplayItems(deviceId) {
     return request(`/api/knowledge/devices/${deviceId}/display-items`)
   },

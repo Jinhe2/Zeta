@@ -15,4 +15,5 @@ public class ProtectionLogicSummaryResponse {
     private int inputCount;
     private int gateCount;
     private int outputCount;
+    private int sortOrder;
 }

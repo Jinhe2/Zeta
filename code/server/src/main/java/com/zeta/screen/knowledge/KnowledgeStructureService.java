@@ -1,5 +1,6 @@
 package com.zeta.screen.knowledge;
 
+import com.zeta.business.logiclearning.LogicLearningConfigService;
 import com.zeta.screen.cabinet.Cabinet;
 import com.zeta.screen.ieddevice.Device;
 import com.zeta.screen.logicdiagram.ProtectionLogic;
@@ -12,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,14 +25,17 @@ public class KnowledgeStructureService {
     private final CabinetRepository cabinetRepository;
     private final DeviceRepository deviceRepository;
     private final ProtectionLogicRepository protectionLogicRepository;
+    private final LogicLearningConfigService logicLearningConfigService;
 
     public KnowledgeStructureService(
             CabinetRepository cabinetRepository,
             DeviceRepository deviceRepository,
-            ProtectionLogicRepository protectionLogicRepository) {
+            ProtectionLogicRepository protectionLogicRepository,
+            LogicLearningConfigService logicLearningConfigService) {
         this.cabinetRepository = cabinetRepository;
         this.deviceRepository = deviceRepository;
         this.protectionLogicRepository = protectionLogicRepository;
+        this.logicLearningConfigService = logicLearningConfigService;
     }
 
     public List<CabinetSummaryResponse> listCabinets() {
@@ -86,9 +92,7 @@ public class KnowledgeStructureService {
 
     public List<ProtectionLogicBriefResponse> listProtectionLogicsByDevice(Long deviceId) {
         requireDevice(deviceId);
-        return protectionLogicRepository.findByDeviceIdOrderByIdAsc(deviceId).stream()
-                .map(this::toProtectionLogicBrief)
-                .collect(Collectors.toList());
+        return toProtectionLogicBriefs(protectionLogicRepository.findByDeviceIdOrderByIdAsc(deviceId));
     }
 
     public KnowledgeTreeResponse getKnowledgeTree() {
@@ -96,11 +100,8 @@ public class KnowledgeStructureService {
         for (Cabinet cabinet : cabinetRepository.findAllByOrderByIdAsc()) {
             List<DeviceTreeNodeResponse> devices = new ArrayList<>();
             for (Device device : deviceRepository.findByCabinetIdOrderByIdAsc(cabinet.getId())) {
-                List<ProtectionLogicBriefResponse> logics = protectionLogicRepository
-                        .findByDeviceIdOrderByIdAsc(device.getId())
-                        .stream()
-                        .map(this::toProtectionLogicBrief)
-                        .collect(Collectors.toList());
+                List<ProtectionLogicBriefResponse> logics = toProtectionLogicBriefs(
+                        protectionLogicRepository.findByDeviceIdOrderByIdAsc(device.getId()));
                 devices.add(new DeviceTreeNodeResponse(
                         device.getId(),
                         device.getCode(),
@@ -134,7 +135,18 @@ public class KnowledgeStructureService {
                 logicCount);
     }
 
-    private ProtectionLogicBriefResponse toProtectionLogicBrief(ProtectionLogic logic) {
+    private List<ProtectionLogicBriefResponse> toProtectionLogicBriefs(List<ProtectionLogic> logics) {
+        Map<Long, Integer> sortOrders = logicLearningConfigService.getSortOrders(
+                logics.stream().map(ProtectionLogic::getId).collect(Collectors.toList()));
+        return logics.stream()
+                .sorted(Comparator
+                        .comparingInt((ProtectionLogic logic) -> sortOrders.getOrDefault(logic.getId(), 0))
+                        .thenComparing(ProtectionLogic::getId))
+                .map(logic -> toProtectionLogicBrief(logic, sortOrders.getOrDefault(logic.getId(), 0)))
+                .collect(Collectors.toList());
+    }
+
+    private ProtectionLogicBriefResponse toProtectionLogicBrief(ProtectionLogic logic, int sortOrder) {
         return new ProtectionLogicBriefResponse(
                 logic.getId(),
                 logic.getDevice().getId(),
@@ -142,7 +154,7 @@ public class KnowledgeStructureService {
                 logic.getTitle(),
                 logic.getDescription(),
                 logic.getCategory(),
-                0);
+                sortOrder);
     }
 
     private Cabinet requireCabinet(Long id) {

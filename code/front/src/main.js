@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, screen, dialog } = require('electron')
+const { app, BrowserWindow, Menu, screen, dialog, ipcMain } = require('electron')
 const path = require('path')
 const fs = require('fs')
 
@@ -34,34 +34,92 @@ log('userData:', app.getPath('userData'))
 
 // ── 运行时配置 ──────────────────────────────────────────────
 
-function loadSettings() {
-  // 打包后在 resources/settings.json；开发时在项目根
-  const resourcePath = path.join(process.resourcesPath || '', 'settings.json')
-  const devPath = path.join(__dirname, '..', 'settings.json')
+const DEFAULT_SETTINGS = {
+  apiBaseUrl: 'https://zeta-api.qyabc.cn',
+  windowTitle: 'Zeta 继电保护逻辑教学系统',
+}
 
-  log('resourcesPath:', process.resourcesPath)
-  log('looking for settings at:', resourcePath, devPath)
-
-  for (const p of [resourcePath, devPath]) {
-    try {
-      if (fs.existsSync(p)) {
-        log('✅ loaded settings from', p)
-        return JSON.parse(fs.readFileSync(p, 'utf-8'))
-      }
-    } catch (e) {
-      log('⚠️ Failed to load settings from', p, e.message)
-    }
-  }
-
-  log('⚠️ using default settings')
-  // 默认配置
+function getSettingsPaths() {
   return {
-    apiBaseUrl: 'https://zeta-api.qyabc.cn',
-    windowTitle: 'Zeta 继电保护逻辑教学系统',
+    userPath: path.join(app.getPath('userData'), 'settings.json'),
+    resourcePath: path.join(process.resourcesPath || '', 'settings.json'),
+    devPath: path.join(__dirname, '..', 'settings.json'),
   }
 }
 
-const settings = loadSettings()
+function readJsonFile(filePath) {
+  try {
+    if (fs.existsSync(filePath)) {
+      return JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+    }
+  } catch (e) {
+    log('⚠️ Failed to load settings from', filePath, e.message)
+  }
+  return null
+}
+
+function loadSettings() {
+  const { userPath, resourcePath, devPath } = getSettingsPaths()
+
+  log('resourcesPath:', process.resourcesPath)
+  log('looking for settings at:', userPath, resourcePath, devPath)
+
+  let merged = { ...DEFAULT_SETTINGS }
+
+  const packaged = readJsonFile(resourcePath) || readJsonFile(devPath)
+  if (packaged) {
+    merged = { ...merged, ...packaged }
+    log('✅ loaded packaged settings')
+  } else {
+    log('⚠️ using default packaged settings')
+  }
+
+  const user = readJsonFile(userPath)
+  if (user) {
+    merged = { ...merged, ...user }
+    log('✅ applied user settings from', userPath)
+  }
+
+  return merged
+}
+
+function saveUserSettings(partial) {
+  const { userPath } = getSettingsPaths()
+  const currentUser = readJsonFile(userPath) || {}
+  const next = { ...currentUser, ...partial }
+
+  if ('apiBaseUrl' in partial && !partial.apiBaseUrl) {
+    delete next.apiBaseUrl
+  }
+
+  try {
+    if (Object.keys(next).length === 0) {
+      if (fs.existsSync(userPath)) {
+        fs.unlinkSync(userPath)
+      }
+    } else {
+      fs.mkdirSync(path.dirname(userPath), { recursive: true })
+      fs.writeFileSync(userPath, JSON.stringify(next, null, 2), 'utf-8')
+    }
+    log('✅ saved user settings to', userPath)
+  } catch (e) {
+    log('❌ failed to save user settings:', e.message)
+    throw e
+  }
+
+  return loadSettings()
+}
+
+let settings = loadSettings()
+
+ipcMain.on('settings:get-sync', (event) => {
+  event.returnValue = { ...settings }
+})
+
+ipcMain.handle('settings:save', (_, partial) => {
+  settings = saveUserSettings(partial)
+  return { ...settings }
+})
 
 // ── 窗口创建 ────────────────────────────────────────────────
 

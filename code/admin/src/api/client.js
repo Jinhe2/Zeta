@@ -4,8 +4,8 @@ const API_BASE_URL_KEY = 'zeta_api_base_url'
 
 /**
  * 获取 API 基地址，优先级：
- *  1. Electron 运行时配置（window.electronAPI.getSettings().apiBaseUrl）
- *  2. localStorage 用户配置（局域网部署场景）
+ *  1. Electron 运行时配置（含界面保存到 userData/settings.json 的地址）
+ *  2. localStorage 用户配置（Web 局域网部署场景）
  *  3. Vite 编译时环境变量（VITE_API_BASE_URL）
  *  4. 空字符串（开发环境，走 Vite proxy）
  */
@@ -16,7 +16,12 @@ export function getApiBaseUrl() {
     || ''
 }
 
-export function setApiBaseUrl(url) {
+export async function setApiBaseUrl(url) {
+  if (window.electronAPI?.saveSettings) {
+    await window.electronAPI.saveSettings({ apiBaseUrl: url || '' })
+    return
+  }
+
   if (url) {
     localStorage.setItem(API_BASE_URL_KEY, url)
   } else {
@@ -24,7 +29,12 @@ export function setApiBaseUrl(url) {
   }
 }
 
-export function clearApiBaseUrl() {
+export async function clearApiBaseUrl() {
+  if (window.electronAPI?.saveSettings) {
+    await window.electronAPI.saveSettings({ apiBaseUrl: '' })
+    return
+  }
+
   localStorage.removeItem(API_BASE_URL_KEY)
 }
 

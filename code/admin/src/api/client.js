@@ -325,6 +325,13 @@ export const api = {
     return request(`/api/monitor/terminal-status/${cabinetId}`)
   },
 
+  triggerIedCommStatus(cabinetId) {
+    return request('/api/monitor/commands/ied-comm-status', {
+      method: 'POST',
+      body: JSON.stringify({ cabinetId }),
+    })
+  },
+
   listHardPressboards(cabinetId) {
     return request(`/api/hard-pressboards?cabinetId=${cabinetId}`)
   },

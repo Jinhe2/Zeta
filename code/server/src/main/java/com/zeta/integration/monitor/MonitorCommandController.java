@@ -58,6 +58,19 @@ public class MonitorCommandController {
         return awaitResponse(future, "summon_terminal_status");
     }
 
+    /** 触发 IED 通讯状态读取。 */
+    @PostMapping("/commands/ied-comm-status")
+    public Map<String, Object> triggerIedCommStatus(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody Map<String, Object> body) {
+        authService.requireUser(authorization);
+
+        Long cabinetId = extractCabinetId(body);
+        CompletableFuture<ScreenQueueMessage> future = commandService.sendIedCommStatusRequest(cabinetId);
+
+        return awaitIedCommResponse(future);
+    }
+
     /** 查询最近一次压板状态 */
     @GetMapping("/pressboard-status/{cabinetId}")
     public Map<String, Object> getPressboardStatus(
@@ -216,6 +229,37 @@ public class MonitorCommandController {
                         "monitord 返回错误: " + response.getErrorMessage());
             }
             return response.getData();
+        } catch (java.util.concurrent.TimeoutException e) {
+            throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+        } catch (java.util.concurrent.ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof java.util.concurrent.TimeoutException) {
+                throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+            }
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "命令执行失败: " + (cause != null ? cause.getMessage() : e.getMessage()));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "命令被中断");
+        }
+    }
+
+    /**
+     * 通讯状态即使所有 Redis 状态均不可读，也会携带 completed/devices 数据。
+     * 此时返回该数据供页面展示为中断；只有没有可展示数据的命令失败才返回 HTTP 错误。
+     */
+    private Map<String, Object> awaitIedCommResponse(CompletableFuture<ScreenQueueMessage> future) {
+        try {
+            ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);
+            Map<String, Object> data = response.getData();
+            if (data != null && "completed".equals(String.valueOf(data.getOrDefault("phase", "")))) {
+                return data;
+            }
+            if (Boolean.FALSE.equals(response.getSuccess())) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "monitord 返回错误: " + response.getErrorMessage());
+            }
+            return data;
         } catch (java.util.concurrent.TimeoutException e) {
             throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
         } catch (java.util.concurrent.ExecutionException e) {

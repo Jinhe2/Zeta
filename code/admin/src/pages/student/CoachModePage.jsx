@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
+import IedCommunicationStatus from '../../components/IedCommunicationStatus'
 import './TabletShell.css'
 import './CoachModePage.css'
 
@@ -173,6 +174,7 @@ export default function CoachModePage() {
           })}
         </div>
       </main>
+      <IedCommunicationStatus />
     </div>
   )
 }

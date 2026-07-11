@@ -1,0 +1,61 @@
+.ied-status-toggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(142, 197, 248, 0.45);
+  border-radius: 18px;
+  background: rgba(10, 22, 38, 0.94);
+  color: #e8f0f8;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.42);
+}
+
+.ied-status-toggle:hover { background: rgba(28, 55, 82, 0.97); }
+
+.ied-status-toggle__light,
+.ied-status-device__state--ok span,
+.ied-status-device__state--error span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.ied-status-toggle__light--ok, .ied-status-device__state--ok span { background: #52c41a; box-shadow: 0 0 7px #52c41a; }
+.ied-status-toggle__light--warning { background: #f0b429; box-shadow: 0 0 7px #f0b429; }
+.ied-status-toggle__light--error, .ied-status-device__state--error span { background: #f05252; box-shadow: 0 0 7px #f05252; }
+
+.ied-status-dialog { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; }
+.ied-status-dialog__mask { position: absolute; inset: 0; border: 0; background: rgba(0, 0, 0, 0.58); cursor: default; }
+.ied-status-dialog__panel { position: relative; width: min(680px, 100%); border: 1px solid rgba(142, 197, 248, 0.42); border-radius: 12px; background: #101f31; color: #e8f0f8; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.58); overflow: hidden; }
+.ied-status-dialog__header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid rgba(142, 197, 248, 0.2); background: rgba(66, 132, 186, 0.13); }
+.ied-status-dialog__header h2 { margin: 0; font-size: 19px; }
+.ied-status-dialog__header p { margin: 5px 0 0; color: #9eb7cd; font-size: 13px; }
+.ied-status-dialog__actions { display: flex; gap: 8px; }
+.ied-status-dialog__actions button { min-width: 32px; height: 30px; border: 1px solid rgba(142, 197, 248, 0.35); border-radius: 5px; background: rgba(255, 255, 255, 0.06); color: #d9e8f5; cursor: pointer; }
+.ied-status-dialog__actions button:hover { background: rgba(142, 197, 248, 0.2); }
+.ied-status-dialog__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px; }
+.ied-status-device { min-width: 0; padding: 13px; border: 1px solid rgba(142, 197, 248, 0.22); border-radius: 8px; background: rgba(0, 0, 0, 0.13); }
+.ied-status-device__name { overflow: hidden; color: #fff; font-size: 15px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.ied-status-device dl { margin: 11px 0 0; display: grid; gap: 7px; }
+.ied-status-device dl div { display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: 8px; align-items: center; }
+.ied-status-device dt { color: #94abc0; font-size: 12px; }
+.ied-status-device dd { min-width: 0; margin: 0; overflow: hidden; color: #dce9f5; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.ied-status-device__state--ok, .ied-status-device__state--error { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.ied-status-device__state--ok { color: #67d46b !important; }
+.ied-status-device__state--error { color: #ff7777 !important; }
+.ied-status-dialog__message { margin: 0; padding: 32px 20px; color: #b5c6d5; text-align: center; }
+.ied-status-dialog__message--error { color: #ff8585; }
+
+@media (max-width: 560px) {
+  .ied-status-dialog { padding: 12px; }
+  .ied-status-dialog__grid { grid-template-columns: 1fr; max-height: 70vh; overflow-y: auto; }
+}

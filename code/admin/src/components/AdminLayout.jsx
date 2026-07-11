@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { api } from '../api/client'
 import './AdminLayout.css'
 
 /** 业务模块（持续迭代） */
@@ -74,6 +75,23 @@ function NavGroup({ item }) {
 export default function AdminLayout() {
   const { session, logout } = useAuth()
   const navigate = useNavigate()
+  const [cabinetPickerOpen, setCabinetPickerOpen] = useState(false)
+  const [cabinets, setCabinets] = useState([])
+  const [cabinetPickerLoading, setCabinetPickerLoading] = useState(false)
+  const [cabinetPickerError, setCabinetPickerError] = useState('')
+
+  const openStudentViewPicker = async () => {
+    setCabinetPickerOpen(true)
+    setCabinetPickerLoading(true)
+    setCabinetPickerError('')
+    try {
+      setCabinets(await api.listKnowledgeCabinets())
+    } catch (err) {
+      setCabinetPickerError(err.message || '屏柜列表加载失败')
+    } finally {
+      setCabinetPickerLoading(false)
+    }
+  }
 
   return (
     <div className="admin-layout">
@@ -125,7 +143,7 @@ export default function AdminLayout() {
           <button
             type="button"
             className="admin-layout__student-entry"
-            onClick={() => navigate('/student')}
+            onClick={openStudentViewPicker}
           >
             学员视图
           </button>
@@ -145,6 +163,25 @@ export default function AdminLayout() {
           <Outlet />
         </main>
       </div>
+      {cabinetPickerOpen && (
+        <div className="admin-layout__picker-overlay" role="dialog" aria-modal="true" aria-labelledby="student-view-picker-title">
+          <button type="button" className="admin-layout__picker-mask" aria-label="关闭" onClick={() => setCabinetPickerOpen(false)} />
+          <section className="admin-layout__picker-panel">
+            <h2 id="student-view-picker-title">选择学员视图屏柜</h2>
+            <p>请选择要验证配置的屏柜。</p>
+            {cabinetPickerLoading ? <p>加载中…</p> : cabinetPickerError ? <p className="admin-layout__picker-error">{cabinetPickerError}</p> : cabinets.length === 0 ? <p>暂无可用屏柜。</p> : (
+              <div className="admin-layout__picker-list">
+                {cabinets.map((cabinet) => (
+                  <button key={cabinet.id} type="button" onClick={() => navigate(`/student?cabinetId=${cabinet.id}`)}>
+                    {cabinet.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="admin-layout__picker-actions"><button type="button" onClick={() => setCabinetPickerOpen(false)}>取消</button></div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }

@@ -68,24 +68,26 @@ public class LearningResourceController {
     @GetMapping("/api/learning-resources")
     public List<LearningResourceResponse> listForLearner(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestParam LearningResourceType type, @RequestParam String bindId) {
+            @RequestParam LearningResourceType type, @RequestParam String bindId,
+            @RequestParam(required = false) Long cabinetId) {
         User user = authService.requireUser(authorization);
-        return service.listForBoundCabinet(type, bindId, user.getRole() == UserRole.ADMIN);
+        return service.listForBoundCabinet(type, bindId, cabinetId, user.getRole() == UserRole.ADMIN);
     }
 
     @GetMapping("/api/learning-resources/{id}")
     public LearningResourceResponse getForLearner(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @PathVariable Long id, @RequestParam String bindId) {
+            @PathVariable Long id, @RequestParam String bindId,
+            @RequestParam(required = false) Long cabinetId) {
         User user = authService.requireUser(authorization);
-        return service.getForBoundCabinet(id, bindId, user.getRole() == UserRole.ADMIN);
+        return service.getForBoundCabinet(id, bindId, cabinetId, user.getRole() == UserRole.ADMIN);
     }
 
     /** 嵌入 video/iframe 无法携带 Bearer Header，因此用绑定 ID 再次校验资料范围。 */
     @GetMapping("/api/learning-resources/{id}/content")
     public ResponseEntity<Resource> content(@PathVariable Long id, @RequestParam String bindId,
-                                            @RequestParam(defaultValue = "false") boolean fallbackToFirstCabinet) {
-        LearningResource item = service.getFileForBoundCabinet(id, bindId, fallbackToFirstCabinet);
+                                            @RequestParam(required = false) Long cabinetId) {
+        LearningResource item = service.getFileForBoundCabinet(id, bindId, cabinetId, cabinetId != null);
         String filename = item.getOriginalFilename();
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(item.getContentType()))

@@ -553,12 +553,12 @@ export const api = {
     return request(`/api/admin/learning-resources/${id}`, { method: 'DELETE' })
   },
 
-  listStudentLearningResources(type, bindId, fallbackToFirstCabinet = false) {
-    return request(`/api/learning-resources?type=${encodeURIComponent(type)}&bindId=${encodeURIComponent(bindId)}${fallbackToFirstCabinet ? '&fallbackToFirstCabinet=true' : ''}`)
+  listStudentLearningResources(type, bindId, cabinetId = null) {
+    return request(`/api/learning-resources?type=${encodeURIComponent(type)}&bindId=${encodeURIComponent(bindId)}${cabinetId ? `&cabinetId=${encodeURIComponent(cabinetId)}` : ''}`)
   },
 
-  getStudentLearningResource(id, bindId, fallbackToFirstCabinet = false) {
-    return request(`/api/learning-resources/${id}?bindId=${encodeURIComponent(bindId)}${fallbackToFirstCabinet ? '&fallbackToFirstCabinet=true' : ''}`)
+  getStudentLearningResource(id, bindId, cabinetId = null) {
+    return request(`/api/learning-resources/${id}?bindId=${encodeURIComponent(bindId)}${cabinetId ? `&cabinetId=${encodeURIComponent(cabinetId)}` : ''}`)
   },
 
   listLogicLearningNodes(logicDiagramId) {
@@ -625,6 +625,6 @@ export const api = {
   },
 }
 
-export function learningResourceContentUrl(id, bindId, fallbackToFirstCabinet = false) {
-  return apiUrl(`/api/learning-resources/${id}/content?bindId=${encodeURIComponent(bindId)}${fallbackToFirstCabinet ? '&fallbackToFirstCabinet=true' : ''}`)
+export function learningResourceContentUrl(id, bindId, cabinetId = null) {
+  return apiUrl(`/api/learning-resources/${id}/content?bindId=${encodeURIComponent(bindId)}${cabinetId ? `&cabinetId=${encodeURIComponent(cabinetId)}` : ''}`)
 }

@@ -5,6 +5,8 @@
   background: #0f1420;
 }
 
+.admin-layout__picker-overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}.admin-layout__picker-mask{position:absolute;inset:0;border:0;background:rgba(0,0,0,.58);cursor:default}.admin-layout__picker-panel{position:relative;width:min(440px,100%);max-height:calc(100vh - 40px);overflow:auto;padding:24px;border:1px solid rgba(142,197,248,.32);border-radius:12px;background:#172231;color:#e8f0f8;box-shadow:0 18px 48px rgba(0,0,0,.45)}.admin-layout__picker-panel h2,.admin-layout__picker-panel p{margin-top:0}.admin-layout__picker-panel p{color:#b8c7d3}.admin-layout__picker-list{display:grid;gap:10px}.admin-layout__picker-list button,.admin-layout__picker-actions button{width:100%;padding:11px 14px;border:1px solid rgba(142,197,248,.28);border-radius:7px;background:rgba(94,179,255,.1);color:#e8f0f8;text-align:left;cursor:pointer;font:inherit}.admin-layout__picker-list button:hover{background:rgba(94,179,255,.24);border-color:#5eb3ff}.admin-layout__picker-actions{margin-top:18px}.admin-layout__picker-actions button{width:auto}.admin-layout__picker-error{color:#ffb4ab!important}
+
 .admin-layout__sidebar {
   width: 220px;
   flex-shrink: 0;

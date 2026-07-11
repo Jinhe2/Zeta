@@ -96,8 +96,8 @@ public class LearningResourceService {
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
     public List<LearningResourceResponse> listForBoundCabinet(LearningResourceType type, String bindId,
-                                                               boolean fallbackToFirstCabinet) {
-        Long cabinetId = resolveCabinet(bindId, fallbackToFirstCabinet);
+                                                               Long selectedCabinetId, boolean allowSelectedCabinet) {
+        Long cabinetId = resolveCabinet(bindId, selectedCabinetId, allowSelectedCabinet);
         return repository.findAllByOrderByUpdatedAtDescIdDesc().stream()
                 .filter(item -> item.getResourceType() == type)
                 .filter(item -> item.getScreenCabinetId() == null || cabinetId.equals(item.getScreenCabinetId()))
@@ -106,17 +106,20 @@ public class LearningResourceService {
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
-    public LearningResourceResponse getForBoundCabinet(Long id, String bindId, boolean fallbackToFirstCabinet) {
-        return toResponse(requireAccessible(id, bindId, fallbackToFirstCabinet));
+    public LearningResourceResponse getForBoundCabinet(Long id, String bindId, Long selectedCabinetId,
+                                                        boolean allowSelectedCabinet) {
+        return toResponse(requireAccessible(id, bindId, selectedCabinetId, allowSelectedCabinet));
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
-    public LearningResource getFileForBoundCabinet(Long id, String bindId, boolean fallbackToFirstCabinet) {
-        return requireAccessible(id, bindId, fallbackToFirstCabinet);
+    public LearningResource getFileForBoundCabinet(Long id, String bindId, Long selectedCabinetId,
+                                                    boolean allowSelectedCabinet) {
+        return requireAccessible(id, bindId, selectedCabinetId, allowSelectedCabinet);
     }
 
-    private LearningResource requireAccessible(Long id, String bindId, boolean fallbackToFirstCabinet) {
-        Long cabinetId = resolveCabinet(bindId, fallbackToFirstCabinet);
+    private LearningResource requireAccessible(Long id, String bindId, Long selectedCabinetId,
+                                               boolean allowSelectedCabinet) {
+        Long cabinetId = resolveCabinet(bindId, selectedCabinetId, allowSelectedCabinet);
         LearningResource item = require(id);
         if (item.getScreenCabinetId() != null && !cabinetId.equals(item.getScreenCabinetId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "学习资料不存在");
@@ -124,15 +127,16 @@ public class LearningResourceService {
         return item;
     }
 
-    private Long resolveCabinet(String bindId, boolean fallbackToFirstCabinet) {
+    private Long resolveCabinet(String bindId, Long selectedCabinetId, boolean allowSelectedCabinet) {
+        if (allowSelectedCabinet && selectedCabinetId != null) {
+            if (!cabinetRepository.existsById(selectedCabinetId)) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "指定屏柜不存在");
+            }
+            return selectedCabinetId;
+        }
         BindingCheckResponse binding = bindingService.checkBinding(bindId);
         if ("BOUND".equals(binding.getStatus()) && binding.getCabinetId() != null) {
             return binding.getCabinetId();
-        }
-        if (fallbackToFirstCabinet) {
-            return cabinetRepository.findAllByOrderByIdAsc().stream().findFirst()
-                    .map(Cabinet::getId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "系统中暂无屏柜"));
         }
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "当前设备未绑定屏柜");
     }

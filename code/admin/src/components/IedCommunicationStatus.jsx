@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
 import { getDeviceBindId } from '../api/deviceBinding'
 import { useAuth } from '../auth/AuthContext'
+import { useStudentCabinetId } from '../pages/student/studentCabinet'
 import './IedCommunicationStatus.css'
 
 const POLL_INTERVAL = 5000
@@ -21,6 +22,7 @@ function getSummaryState(devices, failed) {
 export default function IedCommunicationStatus() {
   const { session } = useAuth()
   const isAdmin = session?.role === 'ADMIN'
+  const selectedCabinetId = useStudentCabinetId()
   const [devices, setDevices] = useState([])
   const [error, setError] = useState('')
   const [open, setOpen] = useState(false)
@@ -32,13 +34,8 @@ export default function IedCommunicationStatus() {
     try {
       let cabinetId
       if (isAdmin) {
-        const cabinets = await api.listBindingCabinets()
-        cabinetId = (Array.isArray(cabinets) ? cabinets : [])
-          .map((cabinet) => cabinet?.cabinetId)
-          .filter((id) => id !== null && id !== undefined && Number.isFinite(Number(id)))
-          .map(Number)
-          .sort((a, b) => a - b)[0]
-        if (!cabinetId) throw new Error('暂无可展示的屏柜')
+        cabinetId = selectedCabinetId
+        if (!cabinetId) throw new Error('请从管理后台选择要查看的屏柜')
       } else {
         const binding = await api.checkBinding(getDeviceBindId())
         if (binding?.status !== 'BOUND' || !binding?.cabinetId) {
@@ -55,7 +52,7 @@ export default function IedCommunicationStatus() {
     } finally {
       requestInFlight.current = false
     }
-  }, [isAdmin])
+  }, [isAdmin, selectedCabinetId])
 
   useEffect(() => {
     const initialRefresh = window.setTimeout(refresh, 0)

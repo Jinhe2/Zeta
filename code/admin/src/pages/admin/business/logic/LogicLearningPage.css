@@ -107,3 +107,28 @@
     grid-template-columns: 1fr;
   }
 }
+.logic-learning__media-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #dbeafe;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.logic-learning__media-badge--text {
+  color: #4b5563;
+  background: #f3f4f6;
+}
+
+.logic-learning__sort-input {
+  width: 88px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 5px;
+  padding: 7px 8px;
+  background: #111b28;
+  color: #eef5fc;
+  font: inherit;
+}

@@ -36,6 +36,8 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         migrateCabinetDisplayImageUrl();
         migrateDeviceDisplayImageUrl();
         migrateCognitionDevices();
+        migrateCognitionMediaFields();
+        createLearningResourcesTable();
     }
 
     private void migrateUsers() {
@@ -72,6 +74,91 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         createCognitionDevicesTable();
         migrateLegacyDeviceCabinetRegions();
         migrateDeviceDisplayItemsCognitionDeviceId();
+    }
+
+    /**
+     * 视频认知字段迁移。
+     *
+     * Hibernate 的 ddl-auto:update 会依据 nullable=false 添加 NOT NULL 列，但不会把
+     * Java 字段的初始值写成数据库 DEFAULT；MariaDB 会将旧行填为 ''，随后枚举读取失败。
+     * 因此这里始终先以可空列补齐，再回填并收紧为 NOT NULL DEFAULT。
+     */
+    private void migrateCognitionMediaFields() {
+        migrateDeviceDisplayMediaFields();
+        migrateLogicNodeMediaFields();
+    }
+
+    /** 生产环境关闭 Hibernate DDL 时也创建学习资料表。 */
+    private void createLearningResourcesTable() {
+        if (tableExists("learning_resources")) {
+            return;
+        }
+        String sql = "CREATE TABLE IF NOT EXISTS learning_resources ("
+                + "id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, "
+                + "name VARCHAR(128) NOT NULL, "
+                + "description LONGTEXT NOT NULL, "
+                + "resource_type VARCHAR(32) NOT NULL, "
+                + "screen_cabinet_id BIGINT UNSIGNED NULL COMMENT 'ct-screen.cabinet.id；NULL 表示所有屏柜', "
+                + "file_path VARCHAR(512) NOT NULL, "
+                + "original_filename VARCHAR(255) NOT NULL, "
+                + "content_type VARCHAR(100) NOT NULL, "
+                + "file_size BIGINT NOT NULL, "
+                + "created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), "
+                + "updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), "
+                + "PRIMARY KEY (id), "
+                + "INDEX idx_learning_resources_scope (resource_type, screen_cabinet_id, updated_at, id)"
+                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学员学习资料'";
+        if (executeIgnoreError(sql)) {
+            log.info("业务库：创建表 learning_resources");
+        }
+    }
+
+    private void migrateDeviceDisplayMediaFields() {
+        String table = "device_display_items";
+        if (!tableExists(table)) {
+            return;
+        }
+        addColumnIfMissing(table, "media_type", "VARCHAR(16) NULL COMMENT 'IMAGE / VIDEO'");
+        addColumnIfMissing(table, "video_path", "VARCHAR(512) NULL COMMENT 'JAR 同级视频相对路径'");
+        executeRequired("UPDATE `" + table + "` SET `media_type` = 'IMAGE' "
+                + "WHERE `media_type` IS NULL OR TRIM(`media_type`) = '' "
+                + "OR `media_type` NOT IN ('IMAGE', 'VIDEO')");
+        executeRequired("ALTER TABLE `" + table + "` MODIFY COLUMN `media_type` "
+                + "VARCHAR(16) NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO'");
+        log.info("业务库 {}：认知媒体字段迁移完成", table);
+    }
+
+    private void migrateLogicNodeMediaFields() {
+        String table = "logic_node_cognition_items";
+        if (!tableExists(table)) {
+            return;
+        }
+        addColumnIfMissing(table, "media_type", "VARCHAR(16) NULL COMMENT 'IMAGE / VIDEO / TEXT'");
+        addColumnIfMissing(table, "video_path", "VARCHAR(512) NULL COMMENT 'JAR 同级视频相对路径'");
+        executeRequired("UPDATE `" + table + "` SET `media_type` = CASE "
+                + "WHEN `image_url` IS NOT NULL OR `image_data` IS NOT NULL THEN 'IMAGE' "
+                + "ELSE 'TEXT' END "
+                + "WHERE `media_type` IS NULL OR TRIM(`media_type`) = '' "
+                + "OR `media_type` NOT IN ('IMAGE', 'VIDEO', 'TEXT')");
+        executeRequired("ALTER TABLE `" + table + "` MODIFY COLUMN `media_type` "
+                + "VARCHAR(16) NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO / TEXT'");
+        log.info("业务库 {}：认知媒体字段迁移完成", table);
+    }
+
+    private void addColumnIfMissing(String table, String column, String definition) {
+        if (columnExists(table, column)) {
+            return;
+        }
+        executeRequired("ALTER TABLE `" + table + "` ADD COLUMN `" + column + "` " + definition);
+        log.info("业务库 {}：新增列 {}", table, column);
+    }
+
+    private void executeRequired(String sql) {
+        try {
+            jdbcTemplate.execute(sql);
+        } catch (Exception ex) {
+            throw new IllegalStateException("业务库认知视频字段迁移失败: " + sql, ex);
+        }
     }
 
     private void createCognitionDevicesTable() {

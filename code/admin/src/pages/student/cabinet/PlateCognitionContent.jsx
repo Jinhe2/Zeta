@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, imageUrl, publicUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
+import CognitionMediaViewer from '../../../components/CognitionMediaViewer'
 import { hasRegion, normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
@@ -569,9 +570,10 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
         )}
         {!loading && !error && currentDisplayItem && (
           <>
-            <ImageRegionViewer
-              key={activeSlide}
-              imageUrl={imageUrl('device-display', currentDisplayItem.id)}
+            <CognitionMediaViewer
+              key={currentDisplayItem.id}
+              item={currentDisplayItem}
+              imageType="device-display"
               region={itemHighlightRegion}
               alt={currentDisplayItem.title}
             />

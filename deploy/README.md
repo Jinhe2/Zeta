@@ -176,6 +176,7 @@ sudo ./scripts/upgrade.sh
 | 业务数据 | MySQL `ct-screen-monitor` |
 | 屏柜数据 | MySQL `ct-screen`（若本机维护） |
 | 认知图片 | `/opt/zeta/data/uploads/` |
+| 认知视频 | `/opt/zeta/bin/resource/video/` |
 | 配置 | `/opt/zeta/config/` |
 
 ---
@@ -184,6 +185,9 @@ sudo ./scripts/upgrade.sh
 
 **Q: 上传图片失败？**  
 检查 `/opt/zeta/data/uploads` 是否存在且 `zeta` 用户可写；Nginx `client_max_body_size` ≥ 10m。
+
+**Q: 上传视频失败？**
+检查 JAR 同级的 `resource/video` 是否允许后端运行用户创建和写入；视频仅支持 MP4、最大 50MB，反向代理请求体上限需至少为 51m。
 
 **Q: 401 / 登录后立即失效？**  
 检查 Redis 是否运行、`redis.yml` 是否正确。

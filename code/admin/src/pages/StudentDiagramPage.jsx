@@ -2,12 +2,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ZetaGraphView } from '@zeta/diagram'
-import { api, imageUrl } from '../api/client'
+import { api } from '../api/client'
 import SectionSelector from '../components/SectionSelector'
 import ConfigPanel from '../components/ConfigPanel'
 import JsonViewerModal from '../components/JsonViewerModal'
 import SnapshotImportModal from '../components/SnapshotImportModal'
-import { ImageRegionViewer } from '../components/ImageRegionEditor'
+import CognitionMediaViewer from '../components/CognitionMediaViewer'
 import { useAuth } from '../auth/AuthContext'
 import './student/TabletShell.css'
 import './StudentPages.css'
@@ -486,7 +486,6 @@ export default function StudentDiagramPage() {
   }, [detail?.id, selectedLogicNodeId])
 
   const currentNodeCognitionItem = nodeCognitionItems[nodeCognitionIndex] ?? null
-  const currentNodeCognitionHasImage = Boolean(currentNodeCognitionItem?.hasImage || currentNodeCognitionItem?.imageUrl)
 
   const closeNodeCognition = useCallback(() => {
     setSelectedLogicNodeId(null)
@@ -723,7 +722,7 @@ export default function StudentDiagramPage() {
         <div className="logic-node-cognition-dialog" role="dialog" aria-modal="false" aria-labelledby="logic-node-cognition-title">
           <div
             className={`logic-node-cognition-dialog__panel${
-              currentNodeCognitionItem && !currentNodeCognitionHasImage ? ' logic-node-cognition-dialog__panel--text-only' : ''
+              currentNodeCognitionItem && currentNodeCognitionItem.mediaType === 'TEXT' ? ' logic-node-cognition-dialog__panel--text-only' : ''
             }`}
           >
             <div className="logic-node-cognition-dialog__header">
@@ -738,15 +737,17 @@ export default function StudentDiagramPage() {
               )}
             </div>
 
-            {(!currentNodeCognitionItem || currentNodeCognitionHasImage || nodeCognitionLoading || nodeCognitionError) && (
+            {(!currentNodeCognitionItem || currentNodeCognitionItem.mediaType !== 'TEXT' || nodeCognitionLoading || nodeCognitionError) && (
               <div className="logic-node-cognition-dialog__image">
                 {nodeCognitionLoading ? (
                   <p>正在加载…</p>
                 ) : nodeCognitionError ? (
                   <p className="logic-node-cognition-dialog__error">{nodeCognitionError}</p>
-                ) : currentNodeCognitionItem && currentNodeCognitionHasImage ? (
-                  <ImageRegionViewer
-                    imageUrl={imageUrl('logic-node-cognition', currentNodeCognitionItem.id)}
+                ) : currentNodeCognitionItem && currentNodeCognitionItem.mediaType !== 'TEXT' ? (
+                  <CognitionMediaViewer
+                    key={currentNodeCognitionItem.id}
+                    item={currentNodeCognitionItem}
+                    imageType="logic-node-cognition"
                     region={normalizeRegion(currentNodeCognitionItem)}
                     alt={currentNodeCognitionItem.title}
                   />

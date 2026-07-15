@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
+import CognitionMediaViewer from '../../../components/CognitionMediaViewer'
 import { hasRegion, normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
+
+const DEVICE_COGNITION_TYPES = ['IED', 'OTHER_DEVICE']
 
 export default function DeviceCognitionContent({ navigationTarget, onPageChange }) {
   const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
@@ -17,7 +20,7 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
     loading,
     error,
     setError,
-  } = useFilteredCabinetCognition('IED')
+  } = useFilteredCabinetCognition(DEVICE_COGNITION_TYPES)
 
   const selectedCognitionDevice =
     cognitionDevices.find((d) => d.id === selectedCognitionDeviceId) ?? cognitionDevices[0] ?? null
@@ -183,9 +186,10 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
         )}
         {!loading && !error && currentDisplayItem && (
           <>
-            <ImageRegionViewer
-              key={currentSlide}
-              imageUrl={imageUrl('device-display', currentDisplayItem.id)}
+            <CognitionMediaViewer
+              key={currentDisplayItem.id}
+              item={currentDisplayItem}
+              imageType="device-display"
               region={itemHighlightRegion}
               alt={currentDisplayItem.title}
             />

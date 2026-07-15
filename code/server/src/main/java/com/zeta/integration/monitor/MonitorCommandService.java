@@ -86,6 +86,17 @@ public class MonitorCommandService {
         return sendCommand("summon_terminal_status", null, data, "terminal:" + cabinetId);
     }
 
+    /**
+     * 发送 IED 通讯状态读取命令。
+     */
+    public CompletableFuture<ScreenQueueMessage> sendIedCommStatusRequest(Long cabinetId) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("cabinet_id", cabinetId);
+        data.put("ied_device_ids", Collections.emptyList());
+
+        return sendCommand("summon_ied_comm_status", null, data, "ied-comm:" + cabinetId);
+    }
+
     // ── 实验监视 summon_logic_monitor ──────────────────────────────────────
 
     /**
@@ -371,7 +382,9 @@ public class MonitorCommandService {
         if (Boolean.FALSE.equals(message.getSuccess())) {
             return true;
         }
-        if ("summon_pressboard_status".equals(command) || "summon_terminal_status".equals(command)) {
+        if ("summon_pressboard_status".equals(command)
+                || "summon_terminal_status".equals(command)
+                || "summon_ied_comm_status".equals(command)) {
             Map<String, Object> data = message.getData();
             return data != null && "completed".equals(String.valueOf(data.getOrDefault("phase", "")));
         }

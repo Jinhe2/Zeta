@@ -1,18 +1,9 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../../api/client'
-
-const DEFAULT_CABINET_CODE = 'cabinet-line-220'
-
-function findCabinetId(tree, cabinetCode) {
-  for (const cabinet of tree?.cabinets ?? []) {
-    if (cabinet.code === cabinetCode) {
-      return cabinet.id
-    }
-  }
-  return tree?.cabinets?.[0]?.id ?? null
-}
+import { resolveStudentCabinetId, useStudentCabinetId } from '../studentCabinet'
 
 export default function useFilteredCabinetCognition(deviceType) {
+  const selectedCabinetId = useStudentCabinetId()
   const [cabinetId, setCabinetId] = useState(null)
   const [cabinetItems, setCabinetItems] = useState([])
   const [devicesByItemId, setDevicesByItemId] = useState({})
@@ -28,7 +19,7 @@ export default function useFilteredCabinetCognition(deviceType) {
       setError(null)
       try {
         const tree = await api.getKnowledgeTree()
-        const nextCabinetId = findCabinetId(tree, DEFAULT_CABINET_CODE)
+        const nextCabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
         if (!nextCabinetId) {
           throw new Error('未找到屏柜学习数据')
         }
@@ -39,7 +30,9 @@ export default function useFilteredCabinetCognition(deviceType) {
             const devices = await api.listKnowledgeCognitionDevices(item.id)
             return {
               item,
-              devices: devices.filter((device) => device.deviceType === deviceType),
+              devices: devices.filter((device) =>
+                Array.isArray(deviceType) ? deviceType.includes(device.deviceType) : device.deviceType === deviceType,
+              ),
             }
           }),
         )
@@ -72,7 +65,7 @@ export default function useFilteredCabinetCognition(deviceType) {
     return () => {
       cancelled = true
     }
-  }, [deviceType])
+  }, [deviceType, selectedCabinetId])
 
   const selectedCabinetItem =
     cabinetItems.find((item) => item.id === selectedCabinetItemId) ?? cabinetItems[0] ?? null

@@ -1,18 +1,9 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
-
-const DEFAULT_CABINET_CODE = 'cabinet-line-220'
-
-function findCabinetId(tree, cabinetCode) {
-  for (const cabinet of tree?.cabinets ?? []) {
-    if (cabinet.code === cabinetCode) {
-      return cabinet.id
-    }
-  }
-  return tree?.cabinets?.[0]?.id ?? null
-}
+import { resolveStudentCabinetId, useStudentCabinetId } from '../studentCabinet'
 
 export default function StructureCognitionContent({ navigationTarget, onPageChange }) {
+  const selectedCabinetId = useStudentCabinetId()
   const [items, setItems] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -26,7 +17,7 @@ export default function StructureCognitionContent({ navigationTarget, onPageChan
       setError(null)
       try {
         const tree = await api.getKnowledgeTree()
-        const cabinetId = findCabinetId(tree, DEFAULT_CABINET_CODE)
+        const cabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
         if (!cabinetId) {
           throw new Error('未找到屏柜学习数据')
         }
@@ -46,7 +37,7 @@ export default function StructureCognitionContent({ navigationTarget, onPageChan
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [selectedCabinetId])
 
   useEffect(() => {
     if (navigationTarget?.sectionId !== 'structure') return

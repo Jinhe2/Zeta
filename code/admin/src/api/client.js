@@ -4,8 +4,8 @@ const API_BASE_URL_KEY = 'zeta_api_base_url'
 
 /**
  * 获取 API 基地址，优先级：
- *  1. Electron 运行时配置（window.electronAPI.getSettings().apiBaseUrl）
- *  2. localStorage 用户配置（局域网部署场景）
+ *  1. Electron 运行时配置（含界面保存到 userData/settings.json 的地址）
+ *  2. localStorage 用户配置（Web 局域网部署场景）
  *  3. Vite 编译时环境变量（VITE_API_BASE_URL）
  *  4. 空字符串（开发环境，走 Vite proxy）
  */
@@ -16,7 +16,12 @@ export function getApiBaseUrl() {
     || ''
 }
 
-export function setApiBaseUrl(url) {
+export async function setApiBaseUrl(url) {
+  if (window.electronAPI?.saveSettings) {
+    await window.electronAPI.saveSettings({ apiBaseUrl: url || '' })
+    return
+  }
+
   if (url) {
     localStorage.setItem(API_BASE_URL_KEY, url)
   } else {
@@ -24,7 +29,12 @@ export function setApiBaseUrl(url) {
   }
 }
 
-export function clearApiBaseUrl() {
+export async function clearApiBaseUrl() {
+  if (window.electronAPI?.saveSettings) {
+    await window.electronAPI.saveSettings({ apiBaseUrl: '' })
+    return
+  }
+
   localStorage.removeItem(API_BASE_URL_KEY)
 }
 
@@ -53,6 +63,11 @@ export function imageUrl(typeOrPath, id, cacheKey) {
   if (!typeOrPath) return ''
   if (typeOrPath.startsWith('http://') || typeOrPath.startsWith('https://') || typeOrPath.startsWith('data:')) return typeOrPath
   return base + typeOrPath
+}
+
+export function videoUrl(type, id) {
+  if (!id) return ''
+  return getBase() + `/api/videos/${type}/${id}`
 }
 
 /** 拼接 public 目录下的静态资源 URL（兼容 Electron file:// 与 Web） */
@@ -162,18 +177,22 @@ async function request(path, options = {}, retried = false) {
 }
 
 async function uploadRequest(path, formData, retried = false) {
+  return multipartRequest(path, 'POST', formData, retried)
+}
+
+async function multipartRequest(path, method, formData, retried = false) {
   const headers = {}
   const accessToken = getAccessToken()
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`
   }
 
-  const res = await fetch(apiUrl(path), { method: 'POST', headers, body: formData })
+  const res = await fetch(apiUrl(path), { method, headers, body: formData })
   const data = await parseResponse(res)
 
   if (res.status === 401 && !retried && getRefreshToken() && !path.includes('/api/auth/')) {
     await ensureRefreshed()
-    return uploadRequest(path, formData, true)
+    return multipartRequest(path, method, formData, true)
   }
 
   if (!res.ok) {
@@ -242,6 +261,13 @@ export const api = {
     return request(`/api/knowledge/devices/${deviceId}/protection-logics`)
   },
 
+  updateLogicLearningSortOrder(logicDiagramId, sortOrder) {
+    return request(`/api/admin/logic-learning/logics/${logicDiagramId}/sort-order`, {
+      method: 'PUT',
+      body: JSON.stringify({ sortOrder }),
+    })
+  },
+
   listKnowledgeDeviceDisplayItems(deviceId) {
     return request(`/api/knowledge/devices/${deviceId}/display-items`)
   },
@@ -307,6 +333,13 @@ export const api = {
 
   getTerminalStatus(cabinetId) {
     return request(`/api/monitor/terminal-status/${cabinetId}`)
+  },
+
+  triggerIedCommStatus(cabinetId) {
+    return request('/api/monitor/commands/ied-comm-status', {
+      method: 'POST',
+      body: JSON.stringify({ cabinetId }),
+    })
   },
 
   listHardPressboards(cabinetId) {
@@ -489,6 +522,45 @@ export const api = {
     return uploadRequest('/api/admin/device-display-images', formData)
   },
 
+  uploadCognitionVideo(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return uploadRequest('/api/admin/cognition-videos', formData)
+  },
+
+  deleteUnreferencedCognitionVideo(path) {
+    if (!path) return Promise.resolve()
+    return request(`/api/admin/cognition-videos?path=${encodeURIComponent(path)}`, { method: 'DELETE' })
+  },
+
+  listLearningResources(type, cabinetId) {
+    const params = new URLSearchParams()
+    if (type) params.set('type', type)
+    if (cabinetId) params.set('cabinetId', cabinetId)
+    const query = params.toString()
+    return request(`/api/admin/learning-resources${query ? `?${query}` : ''}`)
+  },
+
+  createLearningResource(formData) {
+    return multipartRequest('/api/admin/learning-resources', 'POST', formData)
+  },
+
+  updateLearningResource(id, formData) {
+    return multipartRequest(`/api/admin/learning-resources/${id}`, 'PUT', formData)
+  },
+
+  deleteLearningResource(id) {
+    return request(`/api/admin/learning-resources/${id}`, { method: 'DELETE' })
+  },
+
+  listStudentLearningResources(type, bindId, cabinetId = null) {
+    return request(`/api/learning-resources?type=${encodeURIComponent(type)}&bindId=${encodeURIComponent(bindId)}${cabinetId ? `&cabinetId=${encodeURIComponent(cabinetId)}` : ''}`)
+  },
+
+  getStudentLearningResource(id, bindId, cabinetId = null) {
+    return request(`/api/learning-resources/${id}?bindId=${encodeURIComponent(bindId)}${cabinetId ? `&cabinetId=${encodeURIComponent(cabinetId)}` : ''}`)
+  },
+
   listLogicLearningNodes(logicDiagramId) {
     return request(`/api/admin/logic-learning/logics/${logicDiagramId}/nodes`)
   },
@@ -551,4 +623,8 @@ export const api = {
   forceUnbindCabinet(cabinetId) {
     return request(`/api/bindings/cabinets/${cabinetId}/force`, { method: 'DELETE' })
   },
+}
+
+export function learningResourceContentUrl(id, bindId, cabinetId = null) {
+  return apiUrl(`/api/learning-resources/${id}/content?bindId=${encodeURIComponent(bindId)}${cabinetId ? `&cabinetId=${encodeURIComponent(cabinetId)}` : ''}`)
 }

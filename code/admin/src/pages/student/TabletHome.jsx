@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import AbilityChart from "./AbilityChart";
 import ExitConfirmDialog from "./ExitConfirmDialog";
+import IedCommunicationStatus from "../../components/IedCommunicationStatus";
 import "./TabletHome.css";
 
 const DIALOG_MESSAGES = {
@@ -213,6 +214,7 @@ export default function TabletHome() {
         onConfirm={handleConfirm}
         onCancel={() => setConfirmType(null)}
       />
+      <IedCommunicationStatus />
     </div>
   );
 }

@@ -2,6 +2,7 @@ package com.zeta.screen.logicdiagram;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zeta.business.logiclearning.LogicLearningConfigService;
 import com.zeta.screen.ieddevice.Device;
 import com.zeta.screen.logicdiagram.dto.*;
 import org.slf4j.Logger;
@@ -27,13 +28,18 @@ public class ProtectionLogicService {
 
     private final ProtectionLogicRepository repository;
     private final ObjectMapper objectMapper;
+    private final LogicLearningConfigService logicLearningConfigService;
 
     /** v2.3 snapshot data indexed by logicId from the snapshot JSON */
     private final Map<String, Map<String, Object>> snapshotCache = new LinkedHashMap<>();
 
-    public ProtectionLogicService(ProtectionLogicRepository repository, ObjectMapper objectMapper) {
+    public ProtectionLogicService(
+            ProtectionLogicRepository repository,
+            ObjectMapper objectMapper,
+            LogicLearningConfigService logicLearningConfigService) {
         this.repository = repository;
         this.objectMapper = objectMapper;
+        this.logicLearningConfigService = logicLearningConfigService;
     }
 
     @PostConstruct
@@ -62,11 +68,15 @@ public class ProtectionLogicService {
     }
 
     public List<ProtectionLogicSummaryResponse> listSummaries() {
-        List<ProtectionLogicSummaryResponse> result = new ArrayList<>();
-        for (ProtectionLogic logic : repository.findAllByOrderByIdAsc()) {
-            result.add(toSummary(logic));
-        }
-        return result;
+        List<ProtectionLogic> logics = repository.findAllByOrderByIdAsc();
+        Map<Long, Integer> sortOrders = logicLearningConfigService.getSortOrders(
+                logics.stream().map(ProtectionLogic::getId).collect(Collectors.toList()));
+        return logics.stream()
+                .sorted(Comparator
+                        .comparingInt((ProtectionLogic logic) -> sortOrders.getOrDefault(logic.getId(), 0))
+                        .thenComparing(ProtectionLogic::getId))
+                .map(logic -> toSummary(logic, sortOrders.getOrDefault(logic.getId(), 0)))
+                .collect(Collectors.toList());
     }
 
     public ProtectionLogicDetailResponse getDetail(Long id) {
@@ -173,7 +183,7 @@ public class ProtectionLogicService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "保护逻辑不存在"));
     }
 
-    private ProtectionLogicSummaryResponse toSummary(ProtectionLogic logic) {
+    private ProtectionLogicSummaryResponse toSummary(ProtectionLogic logic, int sortOrder) {
         ConfigDto config = parseConfig(logic.getConfigJson());
         return new ProtectionLogicSummaryResponse(
                 logic.getId(),
@@ -183,7 +193,8 @@ public class ProtectionLogicService {
                 logic.getCategory(),
                 sizeOf(config.getInputs()),
                 sizeOf(config.getGates()),
-                sizeOf(config.getOutputs()));
+                sizeOf(config.getOutputs()),
+                sortOrder);
     }
 
     private ProtectionLogicDetailResponse toDetail(ProtectionLogic logic) {

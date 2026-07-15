@@ -73,7 +73,7 @@ export default function ServerSettingsModal({ open, onClose, onSaved }) {
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const validationError = validateAddress(address)
     if (validationError) {
       setError(validationError)
@@ -83,7 +83,7 @@ export default function ServerSettingsModal({ open, onClose, onSaved }) {
     setSaving(true)
     try {
       const normalized = normalizeAddress(address)
-      setApiBaseUrl(normalized)
+      await setApiBaseUrl(normalized)
       onSaved?.(normalized)
       onClose()
     } catch (err) {
@@ -93,12 +93,19 @@ export default function ServerSettingsModal({ open, onClose, onSaved }) {
     }
   }
 
-  const handleClear = () => {
-    clearApiBaseUrl()
-    setAddress('')
-    setError(null)
-    setTestResult(null)
-    onSaved?.('')
+  const handleClear = async () => {
+    setSaving(true)
+    try {
+      await clearApiBaseUrl()
+      setAddress('')
+      setError(null)
+      setTestResult(null)
+      onSaved?.('')
+    } catch (err) {
+      setError('清除失败: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleBackdropClick = (e) => {
@@ -120,6 +127,9 @@ export default function ServerSettingsModal({ open, onClose, onSaved }) {
         <div className="server-settings-modal__body">
           <p className="server-settings-modal__desc">
             配置后端服务器地址，用于本地局域网部署场景。格式：<code>IP:端口</code>
+            {window.electronAPI?.isElectron && (
+              <>。保存后将写入本地配置文件，下次启动仍生效。</>
+            )}
           </p>
 
           <label className="server-settings-field">

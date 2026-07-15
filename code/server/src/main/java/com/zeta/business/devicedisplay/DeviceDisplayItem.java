@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.Instant;
+import com.zeta.business.media.CognitionMediaType;
 
 /**
  * 认知设备下的展示条目（图片 + 文字），隶属于 {@code cognition_devices}。
@@ -39,6 +40,17 @@ public class DeviceDisplayItem {
     /** 图片 MIME 类型 */
     @Column(name = "image_content_type", length = 100)
     private String imageContentType;
+
+    @Enumerated(EnumType.STRING)
+    /**
+     * 首次由 Hibernate 自动补列时必须允许 NULL；启动迁移会在旧数据回填后收紧为
+     * NOT NULL DEFAULT 'IMAGE'，避免 MariaDB 将已有行写成空字符串。
+     */
+    @Column(name = "media_type", length = 16)
+    private CognitionMediaType mediaType = CognitionMediaType.IMAGE;
+
+    @Column(name = "video_path", length = 512)
+    private String videoPath;
 
     /** 条目图片上的高亮区域，可为空表示不显示高亮 */
     @Column(name = "left_percent")

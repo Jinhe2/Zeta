@@ -6,10 +6,9 @@ import StructureCognitionContent from './cabinet/StructureCognitionContent'
 import DeviceCognitionContent from './cabinet/DeviceCognitionContent'
 import PlateCognitionContent from './cabinet/PlateCognitionContent'
 import TerminalCognitionContent from './cabinet/TerminalCognitionContent'
+import { resolveStudentCabinetId, useStudentCabinetId } from './studentCabinet'
 import './TabletShell.css'
 import './CabinetCognitionPage.css'
-
-const DEFAULT_CABINET_CODE = 'cabinet-line-220'
 
 const SECTIONS = [
   { id: 'structure', label: '结构认知' },
@@ -20,18 +19,9 @@ const SECTIONS = [
 ]
 
 const DEVICE_SECTION_TYPES = {
-  device: 'IED',
+  device: ['IED', 'OTHER_DEVICE'],
   plate: 'PLATE_GROUP',
   terminal: 'TERMINAL_GROUP',
-}
-
-function findCabinetId(tree, cabinetCode) {
-  for (const cabinet of tree?.cabinets ?? []) {
-    if (cabinet.code === cabinetCode) {
-      return cabinet.id
-    }
-  }
-  return tree?.cabinets?.[0]?.id ?? null
 }
 
 function fallbackPage(sectionId) {
@@ -69,7 +59,9 @@ async function buildDeviceSectionPages(sectionId, cabinetItems) {
       const devices = await api.listKnowledgeCognitionDevices(item.id)
       return {
         item,
-        devices: devices.filter((device) => device.deviceType === deviceType),
+        devices: devices.filter((device) =>
+          Array.isArray(deviceType) ? deviceType.includes(device.deviceType) : device.deviceType === deviceType,
+        ),
       }
     }),
   )
@@ -122,6 +114,7 @@ async function buildDeviceSectionPages(sectionId, cabinetItems) {
 export default function CabinetCognitionPage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
+  const selectedCabinetId = useStudentCabinetId()
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id)
   const [navigationPages, setNavigationPages] = useState(SECTIONS.map((section) => fallbackPage(section.id)))
   const [currentPageKey, setCurrentPageKey] = useState(pageKey(fallbackPage(SECTIONS[0].id)))
@@ -145,7 +138,7 @@ export default function CabinetCognitionPage() {
       setNavigationError(null)
       try {
         const tree = await api.getKnowledgeTree()
-        const cabinetId = findCabinetId(tree, DEFAULT_CABINET_CODE)
+        const cabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
         if (!cabinetId) {
           throw new Error('未找到屏柜学习数据')
         }
@@ -190,7 +183,7 @@ export default function CabinetCognitionPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [selectedCabinetId])
 
   const currentPageIndex = useMemo(
     () => navigationPages.findIndex((page) => page.key === currentPage?.key),

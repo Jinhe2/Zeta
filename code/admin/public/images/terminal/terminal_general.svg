@@ -1,0 +1,13 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+ <g id="Layer_1">
+  <title>Layer 1</title>
+  <rect stroke="#000" id="svg_1" height="28" width="164.99999" y="181.5" x="241" fill="#999999"/>
+  <line id="svg_3" y2="207.51851" x2="242" y1="180.5" x1="242" stroke="#000" fill="none"/>
+  <path id="svg_4" d="m276.5,207.5c-6.90608,0 -12.5,-5.59392 -12.5,-12.5c0,-6.90608 5.59392,-12.5 12.5,-12.5c6.90608,0 12.5,5.59392 12.5,12.5c0,6.90608 -5.59392,12.5 -12.5,12.5z" opacity="undefined" stroke="#000" fill="#DDDDDD"/>
+  <line id="svg_5" y2="200.5" x2="269" y1="189.5" x1="286" stroke="#000" fill="none"/>
+  <rect stroke="#000" id="svg_6" height="25" width="32" y="182.5" x="302.49998" fill="#444444"/>
+  <path id="svg_7" d="m371.5,207.5c-6.90608,0 -12.5,-5.59392 -12.5,-12.5c0,-6.90608 5.59392,-12.5 12.5,-12.5c6.90608,0 12.5,5.59392 12.5,12.5c0,6.90608 -5.59392,12.5 -12.5,12.5z" opacity="undefined" stroke="#000" fill="#DDDDDD"/>
+  <line id="svg_8" y2="205.5" x2="379" y1="184.5" x1="366" stroke="#000" fill="none"/>
+  <rect stroke="#000" id="svg_9" height="28" width="35" y="181.5" x="408" fill="none"/>
+ </g>
+</svg>

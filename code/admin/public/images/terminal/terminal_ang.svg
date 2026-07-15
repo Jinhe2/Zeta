@@ -1,0 +1,25 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+
+ <g>
+  <title>Layer 1</title>
+  <rect stroke="#000" id="svg_22" height="35" width="274.99999" y="160.5" x="245" fill="#444444"/>
+  <rect id="svg_1" height="6" width="275" y="158.5" x="244.5" stroke="#000" fill="#999999"/>
+  <rect id="svg_2" height="6" width="78" y="158.5" x="343" stroke="#000" fill="#444444"/>
+  <rect id="svg_3" height="6" width="275" y="158.5" x="244.5" stroke="#000" fill="#999999"/>
+  <rect id="svg_4" height="6" width="78" y="158.5" x="343" stroke="#000" fill="#444444"/>
+  <rect id="svg_5" height="6" width="275" y="192.5" x="244.5" stroke="#000" fill="#999999"/>
+  <rect id="svg_6" height="6" width="78" y="192.5" x="343" stroke="#000" fill="#444444"/>
+  <rect id="svg_7" height="6" width="275" y="192.5" x="244.5" stroke="#000" fill="#999999"/>
+  <rect id="svg_8" height="6" width="78" y="192.5" x="343" stroke="#000" fill="#444444"/>
+  <rect id="svg_9" height="27" width="35" y="166.5" x="522" stroke="#000" fill="none"/>
+  <ellipse stroke="#000" ry="13.5" rx="13.5" id="svg_11" cy="178" cx="265.5" fill="#DDDDDD"/>
+  <line stroke="#000" id="svg_12" y2="189.5" x2="273" y1="168.5" x1="258" fill="none"/>
+  <ellipse stroke="#000" ry="13.5" rx="13.5" id="svg_19" cy="178" cx="499.5" fill="#DDDDDD"/>
+  <line id="svg_20" y2="188.5" x2="506" y1="168.5" x1="492" stroke="#000" fill="none"/>
+  <path stroke="#000" id="svg_21" d="m286.665,178.67892l6.64286,-13.5l17.71428,0l6.64285,13.5l-6.64285,13.5l-17.71428,0l-6.64286,-13.5z" fill="#DDDDDD"/>
+  <path stroke="#000" id="svg_23" d="m445.665,178.67892l6.64285,-13.5l17.71428,0l6.64286,13.5l-6.64286,13.5l-17.71428,0l-6.64285,-13.5z" fill="#DDDDDD"/>
+  <rect id="svg_24" height="25" width="69" y="166.5" x="374" stroke="#000" fill="#DDDDDD"/>
+  <ellipse stroke="#000" ry="13.5" rx="13.5" id="svg_25" cy="179" cx="409.5" fill="#DDDDDD"/>
+  <line stroke="#000" id="svg_27" y2="178.5" x2="422" y1="178.5" x1="397" fill="none"/>
+ </g>
+</svg>

@@ -4,10 +4,18 @@ import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
 import CognitionMediaViewer from '../../../components/CognitionMediaViewer'
 import { hasRegion, normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
+import IedBaselineSettingContent from './IedBaselineSettingContent'
 
 const DEVICE_COGNITION_TYPES = ['IED', 'OTHER_DEVICE']
 
-export default function DeviceCognitionContent({ navigationTarget, onPageChange }) {
+export default function DeviceCognitionContent({
+  navigationTarget,
+  onPageChange,
+  sectionId = 'device',
+  deviceTypes = DEVICE_COGNITION_TYPES,
+  emptyMessage = '暂无设备认知条目',
+  navigationEvent,
+}) {
   const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedCognitionDeviceId, setSelectedCognitionDeviceId] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -20,7 +28,7 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
     loading,
     error,
     setError,
-  } = useFilteredCabinetCognition(DEVICE_COGNITION_TYPES)
+  } = useFilteredCabinetCognition(deviceTypes)
 
   const selectedCognitionDevice =
     cognitionDevices.find((d) => d.id === selectedCognitionDeviceId) ?? cognitionDevices[0] ?? null
@@ -51,7 +59,7 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
   }, [activeCognitionDeviceId, setError])
 
   useEffect(() => {
-    if (navigationTarget?.sectionId !== 'device') return
+    if (navigationTarget?.sectionId !== sectionId) return
 
     let cancelled = false
     queueMicrotask(() => {
@@ -102,7 +110,7 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
     setCurrentSlide(0)
     setSelectedCabinetItemId(itemId)
     onPageChange?.({
-      sectionId: 'device',
+      sectionId,
       cabinetItemId: itemId,
     })
   }
@@ -111,7 +119,7 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
     setSelectedCognitionDeviceId(deviceId)
     setCurrentSlide(0)
     onPageChange?.({
-      sectionId: 'device',
+      sectionId,
       cabinetItemId: selectedCabinetItem?.id,
       deviceId,
     })
@@ -120,7 +128,7 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
   const handleSlideSelect = (slideIndex) => {
     setCurrentSlide(slideIndex)
     onPageChange?.({
-      sectionId: 'device',
+      sectionId,
       cabinetItemId: selectedCabinetItem?.id,
       deviceId: activeCognitionDeviceId,
       slideIndex,
@@ -161,7 +169,7 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
           </>
         )}
         {!loading && !error && !selectedCabinetItem && (
-          <p className="cabinet-section__paragraph">暂无设备认知条目</p>
+          <p className="cabinet-section__paragraph">{emptyMessage}</p>
         )}
       </div>
 
@@ -184,7 +192,15 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
             ))}
           </div>
         )}
-        {!loading && !error && currentDisplayItem && (
+        {!loading && !error && currentDisplayItem?.mediaType === 'IED_BASELINE_SETTING' && activeCognitionDeviceId && (
+          <IedBaselineSettingContent
+            cognitionDeviceId={activeCognitionDeviceId}
+            item={currentDisplayItem}
+            navigationEvent={navigationEvent}
+            showControls={false}
+          />
+        )}
+        {!loading && !error && currentDisplayItem && currentDisplayItem.mediaType !== 'IED_BASELINE_SETTING' && (
           <>
             <CognitionMediaViewer
               key={currentDisplayItem.id}
@@ -209,12 +225,20 @@ export default function DeviceCognitionContent({ navigationTarget, onPageChange 
           </>
         )}
         {!loading && !error && selectedCabinetItem && !currentDisplayItem && (
-          <p className="cabinet-section__paragraph">暂无设备认知条目</p>
+          <p className="cabinet-section__paragraph">{emptyMessage}</p>
         )}
       </div>
 
       <div className="cabinet-section__text cabinet-section__text--device">
-        {!loading && !error && currentDisplayItem && (
+        {!loading && !error && currentDisplayItem?.mediaType === 'IED_BASELINE_SETTING' && activeCognitionDeviceId && (
+          <IedBaselineSettingContent
+            cognitionDeviceId={activeCognitionDeviceId}
+            item={currentDisplayItem}
+            navigationEvent={navigationEvent}
+            showTable={false}
+          />
+        )}
+        {!loading && !error && currentDisplayItem && currentDisplayItem.mediaType !== 'IED_BASELINE_SETTING' && (
           <div className="cabinet-section__cognition-item">
             {currentDisplayItem.title && (
               <h3 className="cabinet-section__cognition-title">{currentDisplayItem.title}</h3>

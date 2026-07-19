@@ -7,6 +7,8 @@ import com.zeta.business.cognitiondevice.CognitionDeviceResponse;
 import com.zeta.business.cognitiondevice.CognitionDeviceService;
 import com.zeta.business.devicedisplay.DeviceDisplayItemResponse;
 import com.zeta.business.devicedisplay.DeviceDisplayItemService;
+import com.zeta.screen.baseline.IedBaselineSettingResponse;
+import com.zeta.screen.baseline.IedBaselineSettingService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +21,7 @@ public class KnowledgeStructureController {
     private final DeviceDisplayItemService deviceDisplayItemService;
     private final CognitionDeviceService cognitionDeviceService;
     private final CabinetDisplayItemService cabinetDisplayItemService;
+    private final IedBaselineSettingService iedBaselineSettingService;
     private final AuthService authService;
 
     public KnowledgeStructureController(
@@ -26,11 +29,13 @@ public class KnowledgeStructureController {
             DeviceDisplayItemService deviceDisplayItemService,
             CognitionDeviceService cognitionDeviceService,
             CabinetDisplayItemService cabinetDisplayItemService,
+            IedBaselineSettingService iedBaselineSettingService,
             AuthService authService) {
         this.knowledgeStructureService = knowledgeStructureService;
         this.deviceDisplayItemService = deviceDisplayItemService;
         this.cognitionDeviceService = cognitionDeviceService;
         this.cabinetDisplayItemService = cabinetDisplayItemService;
+        this.iedBaselineSettingService = iedBaselineSettingService;
         this.authService = authService;
     }
 
@@ -102,5 +107,13 @@ public class KnowledgeStructureController {
             @PathVariable Long id) {
         authService.requireUser(authorization);
         return deviceDisplayItemService.listEnabledByCognitionDevice(id);
+    }
+
+    @GetMapping("/cognition-devices/{id}/baseline-settings")
+    public List<IedBaselineSettingResponse> listIedBaselineSettings(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable Long id) {
+        authService.requireUser(authorization);
+        return iedBaselineSettingService.listForCognitionDevice(id);
     }
 }

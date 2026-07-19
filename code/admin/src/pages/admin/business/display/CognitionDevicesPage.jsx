@@ -8,7 +8,8 @@ import './CognitionDevicesPage.css'
 import '../../../../components/ImageRegionEditor.css'
 
 const DEVICE_TYPE_OPTIONS = [
-  { value: 'IED', label: 'IED 设备' },
+  { value: 'IED', label: 'IED 设备外观' },
+  { value: 'IED_OPERATION', label: 'IED 设备操作' },
   { value: 'TERMINAL_GROUP', label: '端子组' },
   { value: 'PLATE_GROUP', label: '压板组' },
   { value: 'OTHER_DEVICE', label: '其他设备' },
@@ -140,7 +141,7 @@ export default function CognitionDevicesPage() {
     try {
       const payload = {
         ...createForm,
-        screenDeviceId: createForm.deviceType === 'IED' ? Number(createForm.screenDeviceId) : null,
+        screenDeviceId: isIedCognitionType(createForm.deviceType) ? Number(createForm.screenDeviceId) : null,
         sortOrder: Number(createForm.sortOrder),
       }
       await api.createCognitionDevice(itemIdNum, payload)
@@ -178,7 +179,7 @@ export default function CognitionDevicesPage() {
     try {
       await api.updateCognitionDevice(editingDevice.id, {
         ...editForm,
-        screenDeviceId: editForm.deviceType === 'IED' ? Number(editForm.screenDeviceId) : null,
+        screenDeviceId: isIedCognitionType(editForm.deviceType) ? Number(editForm.screenDeviceId) : null,
         sortOrder: Number(editForm.sortOrder),
       })
       setEditingDevice(null)
@@ -224,7 +225,7 @@ export default function CognitionDevicesPage() {
             {cabinetItem ? `${cabinetItem.title} — 认知子设备` : '认知子设备'}
           </h2>
           <p className="users-page__desc">
-            子设备隶属于本张屏柜学习图，在图上圈选区域；类型可为 IED 设备、其他设备、端子组或压板组。
+            子设备隶属于本张屏柜学习图，在图上圈选区域；类型可为 IED 设备外观、IED 设备操作、其他设备、端子组或压板组。
           </p>
         </div>
         <button type="button" className="users-page__btn users-page__btn--primary" onClick={() => setShowCreate(true)}>
@@ -379,7 +380,7 @@ function DeviceFormDialog({ title, form, setForm, cabinetDevices, onClose, onSub
             ))}
           </select>
         </label>
-        {form.deviceType === 'IED' && (
+        {isIedCognitionType(form.deviceType) && (
           <label>
             关联屏柜库 IED
             <select
@@ -432,4 +433,8 @@ function DeviceFormDialog({ title, form, setForm, cabinetDevices, onClose, onSub
       </form>
     </div>
   )
+}
+
+function isIedCognitionType(deviceType) {
+  return deviceType === 'IED' || deviceType === 'IED_OPERATION'
 }

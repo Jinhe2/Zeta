@@ -1010,6 +1010,67 @@
   transform: scale(0.98);
 }
 
+.ied-baseline-setting {
+  width: 100%;
+  max-width: 760px;
+}
+
+.cabinet-section__media--device .ied-baseline-setting {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  align-self: stretch;
+}
+
+.ied-baseline-setting__table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #eaf4ff;
+  font-size: 15px;
+}
+
+.ied-baseline-setting__table-wrap {
+  width: 100%;
+  margin: 12px 0 18px;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-gutter: stable;
+}
+
+.ied-baseline-setting__table th,
+.ied-baseline-setting__table td {
+  padding: 10px 14px;
+  border: 1px solid rgba(148, 197, 235, 0.28);
+  text-align: left;
+}
+
+.ied-baseline-setting__table th {
+  background: rgba(44, 92, 132, 0.62);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.ied-baseline-setting__complete {
+  min-width: 132px;
+  height: 42px;
+  border: 0;
+  border-radius: 8px;
+  background: #2e9d4d;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ied-baseline-setting__complete:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 /* ── 端子排连线状态 ── */
 
 .terminal-wiring-status {

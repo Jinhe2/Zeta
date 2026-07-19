@@ -9,7 +9,7 @@ import java.time.Instant;
 
 /**
  * 屏柜学习图上的抽象设备 — 隶属于某条 {@code cabinet_display_items}，
- * 在父图上有区域坐标；可关联屏柜库 IED（仅 {@link CognitionDeviceType#IED}）。
+ * 在父图上有区域坐标；IED 外观和 IED 操作类型可关联屏柜库 IED。
  */
 @Entity
 @Table(name = "cognition_devices")
@@ -29,7 +29,7 @@ public class CognitionDevice {
     @Column(name = "device_type", nullable = false, length = 32)
     private CognitionDeviceType deviceType;
 
-    /** IED 类型时可选，引用 ct-screen.ied_device.id */
+    /** IED 外观或 IED 操作类型时引用 ct-screen.ied_device.id */
     @Column(name = "screen_device_id")
     private Long screenDeviceId;
 

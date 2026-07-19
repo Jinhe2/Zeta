@@ -27,7 +27,8 @@ const EMPTY_CREATE = {
 }
 
 const DEVICE_TYPE_LABELS = {
-  IED: 'IED 设备',
+  IED: 'IED 设备外观',
+  IED_OPERATION: 'IED 设备操作',
   OTHER_DEVICE: '其他设备',
   TERMINAL_GROUP: '端子组',
   PLATE_GROUP: '压板组',
@@ -89,6 +90,34 @@ function formToRegion(form) {
     widthPercent: form.widthPercent,
     heightPercent: form.heightPercent,
   })
+}
+
+function BaselineSettingsPreview({ cognitionDeviceId }) {
+  const [state, setState] = useState({ loading: true, items: [], error: '' })
+
+  useEffect(() => {
+    let cancelled = false
+    api.listKnowledgeCognitionDeviceBaselineSettings(cognitionDeviceId)
+      .then((items) => !cancelled && setState({ loading: false, items, error: '' }))
+      .catch((err) => !cancelled && setState({ loading: false, items: [], error: err.message || '加载基准定值失败' }))
+    return () => { cancelled = true }
+  }, [cognitionDeviceId])
+
+  return (
+    <div className="device-display-items__baseline-preview">
+      <span>关联 IED 基准定值（只读）</span>
+      {state.loading && <p>加载中…</p>}
+      {state.error && <p className="users-page__error">{state.error}</p>}
+      {!state.loading && !state.error && (
+        <table className="users-page__table">
+          <thead><tr><th>定值描述</th><th>基准值</th></tr></thead>
+          <tbody>{state.items.length ? state.items.map((item, index) => (
+            <tr key={`${item.description}-${index}`}><td>{item.description || '—'}</td><td>{item.baselineValue}</td></tr>
+          )) : <tr><td colSpan={2}>暂无基准定值</td></tr>}</tbody>
+        </table>
+      )}
+    </div>
+  )
 }
 
 function HighlightRegionField({ form, setForm, previewSrc, disabled }) {
@@ -430,7 +459,9 @@ export default function DeviceDisplayItemsPage() {
                 items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      {item.mediaType === 'TERMINAL_OPERATION' ? (
+                      {item.mediaType === 'IED_BASELINE_SETTING' ? (
+                        <span className="device-display-items__media-badge">定值整定</span>
+                      ) : item.mediaType === 'TERMINAL_OPERATION' ? (
                         <span className="device-display-items__media-badge">端子操作{item.terminalOperation ? ` · ${item.terminalOperation.terminalStripName || ''} · ${item.terminalOperation.terminals.length} 个端子` : ''}</span>
                       ) : item.mediaType === 'VIDEO' ? (
                         <span className="device-display-items__media-badge">视频</span>
@@ -497,9 +528,12 @@ export default function DeviceDisplayItemsPage() {
                 <option value="IMAGE">图片</option>
                 <option value="VIDEO">视频</option>
                 {cognitionDevice?.deviceType === 'TERMINAL_GROUP' && <option value="TERMINAL_OPERATION">端子操作</option>}
+                {cognitionDevice?.deviceType === 'IED_OPERATION' && <option value="IED_BASELINE_SETTING">定值整定</option>}
               </select>
             </label>
-            {createForm.mediaType === 'TERMINAL_OPERATION' ? terminalOperationField(createForm, setCreateForm, creating) : createForm.mediaType === 'IMAGE' ? (
+            {createForm.mediaType === 'IED_BASELINE_SETTING' ? (
+              <BaselineSettingsPreview cognitionDeviceId={cognitionDevice.id} />
+            ) : createForm.mediaType === 'TERMINAL_OPERATION' ? terminalOperationField(createForm, setCreateForm, creating) : createForm.mediaType === 'IMAGE' ? (
               <CabinetImageUploadField
                 imageUrl={createForm.imageUrl}
                 onChange={(url, result) => setCreateForm((current) => ({
@@ -590,9 +624,12 @@ export default function DeviceDisplayItemsPage() {
                 <option value="IMAGE">图片</option>
                 <option value="VIDEO">视频</option>
                 {cognitionDevice?.deviceType === 'TERMINAL_GROUP' && <option value="TERMINAL_OPERATION">端子操作</option>}
+                {cognitionDevice?.deviceType === 'IED_OPERATION' && <option value="IED_BASELINE_SETTING">定值整定</option>}
               </select>
             </label>
-            {editForm.mediaType === 'TERMINAL_OPERATION' ? terminalOperationField(editForm, setEditForm, saving) : editForm.mediaType === 'IMAGE' ? (
+            {editForm.mediaType === 'IED_BASELINE_SETTING' ? (
+              <BaselineSettingsPreview cognitionDeviceId={cognitionDevice.id} />
+            ) : editForm.mediaType === 'TERMINAL_OPERATION' ? terminalOperationField(editForm, setEditForm, saving) : editForm.mediaType === 'IMAGE' ? (
               <CabinetImageUploadField
                 imageUrl={editForm.imageUrl}
                 previewUrl={editingItem && editingItem.mediaType !== 'VIDEO' ? imageUrl('device-display', editingItem.id, imageVersion) : ''}

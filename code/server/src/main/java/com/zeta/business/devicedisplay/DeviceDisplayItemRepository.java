@@ -11,4 +11,8 @@ public interface DeviceDisplayItemRepository extends JpaRepository<DeviceDisplay
     Optional<DeviceDisplayItem> findByCognitionDeviceIdAndTitle(Long cognitionDeviceId, String title);
 
     List<DeviceDisplayItem> findByCognitionDeviceIdOrderBySortOrderAscIdAsc(Long cognitionDeviceId);
+
+    boolean existsByCognitionDeviceIdAndMediaType(Long cognitionDeviceId, com.zeta.business.media.CognitionMediaType mediaType);
+
+    boolean existsByCognitionDeviceIdAndMediaTypeAndIdNot(Long cognitionDeviceId, com.zeta.business.media.CognitionMediaType mediaType, Long id);
 }

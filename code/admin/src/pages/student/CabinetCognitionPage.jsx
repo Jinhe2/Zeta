@@ -20,9 +20,12 @@ const SECTIONS = [
 
 const DEVICE_SECTION_TYPES = {
   device: ['IED', 'OTHER_DEVICE'],
+  apparatus: 'IED_OPERATION',
   plate: 'PLATE_GROUP',
   terminal: 'TERMINAL_GROUP',
 }
+
+const IED_OPERATION_TYPES = ['IED_OPERATION']
 
 function fallbackPage(sectionId) {
   return {
@@ -152,8 +155,9 @@ export default function CabinetCognitionPage() {
           }))
           : [fallbackPage('structure')]
 
-        const [devicePages, platePages, terminalPages] = await Promise.all([
+        const [devicePages, apparatusPages, platePages, terminalPages] = await Promise.all([
           buildDeviceSectionPages('device', cabinetItems),
+          buildDeviceSectionPages('apparatus', cabinetItems),
           buildDeviceSectionPages('plate', cabinetItems),
           buildDeviceSectionPages('terminal', cabinetItems),
         ])
@@ -163,7 +167,7 @@ export default function CabinetCognitionPage() {
           ...devicePages,
           ...platePages,
           ...terminalPages,
-          fallbackPage('apparatus'),
+          ...apparatusPages,
         ]
 
         if (!cancelled) {
@@ -235,6 +239,18 @@ export default function CabinetCognitionPage() {
     }
     if (activeSection === 'device') {
       return <DeviceCognitionContent navigationTarget={currentPage} onPageChange={requestPage} />
+    }
+    if (activeSection === 'apparatus') {
+      return (
+        <DeviceCognitionContent
+          navigationTarget={currentPage}
+          onPageChange={requestPage}
+          sectionId="apparatus"
+          deviceTypes={IED_OPERATION_TYPES}
+          emptyMessage="暂无装置认知条目"
+          navigationEvent={pageNavigationEvent}
+        />
+      )
     }
     if (activeSection === 'plate') {
       return (

@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS device_display_items (
     image_url           VARCHAR(512)     NULL COMMENT '认知图片路径',
     image_data          LONGBLOB         NULL COMMENT '图片二进制数据',
     image_content_type  VARCHAR(100)     NULL COMMENT '图片 MIME 类型',
-    media_type          VARCHAR(32)      NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO / TERMINAL_OPERATION',
+    media_type          VARCHAR(32)      NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO / TERMINAL_OPERATION / IED_BASELINE_SETTING',
     video_path          VARCHAR(512)     NULL COMMENT 'JAR 同级视频相对路径',
     left_percent        DOUBLE           NULL,
     top_percent         DOUBLE           NULL,
@@ -64,13 +64,13 @@ CREATE TABLE IF NOT EXISTS terminal_operation_terminals (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='端子操作目标端子';
 
 -- ============================================================================
--- 屏柜认知图上的抽象设备（IED / 其他设备 / 端子组 / 压板组）
+-- 屏柜认知图上的抽象设备（IED 外观 / IED 操作 / 其他设备 / 端子组 / 压板组）
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS cognition_devices (
     id                      BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
     cabinet_display_item_id BIGINT UNSIGNED  NOT NULL COMMENT '所属屏柜认知条目',
-    device_type             VARCHAR(32)      NOT NULL COMMENT 'IED / OTHER_DEVICE / TERMINAL_GROUP / PLATE_GROUP',
-    screen_device_id        BIGINT UNSIGNED  NULL COMMENT 'IED 类型时引用 ied_device.id',
+    device_type             VARCHAR(32)      NOT NULL COMMENT 'IED（外观）/ IED_OPERATION / OTHER_DEVICE / TERMINAL_GROUP / PLATE_GROUP',
+    screen_device_id        BIGINT UNSIGNED  NULL COMMENT 'IED 外观或 IED 操作类型时引用 ied_device.id',
     title                   VARCHAR(128)     NOT NULL,
     left_percent            DOUBLE           NOT NULL,
     top_percent             DOUBLE           NOT NULL,

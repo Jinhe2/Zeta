@@ -342,6 +342,13 @@ export const api = {
     })
   },
 
+  compareCognitionDeviceBaselineSettings(cognitionDeviceId) {
+    return request('/api/monitor/commands/baseline-settings-compare', {
+      method: 'POST',
+      body: JSON.stringify({ cognitionDeviceId }),
+    })
+  },
+
   listHardPressboards(cabinetId) {
     return request(`/api/hard-pressboards?cabinetId=${cabinetId}`)
   },
@@ -597,6 +604,10 @@ export const api = {
 
   listKnowledgeCognitionDeviceDisplayItems(cognitionDeviceId) {
     return request(`/api/knowledge/cognition-devices/${cognitionDeviceId}/display-items`)
+  },
+
+  listKnowledgeCognitionDeviceBaselineSettings(cognitionDeviceId) {
+    return request(`/api/knowledge/cognition-devices/${cognitionDeviceId}/baseline-settings`)
   },
 
   // ── 设备绑定 ──

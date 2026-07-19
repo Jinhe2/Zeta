@@ -42,4 +42,6 @@ public class CreateDeviceDisplayItemRequest {
     private Integer sortOrder;
 
     private Boolean enabled = true;
+
+    private TerminalOperationRequest terminalOperation;
 }

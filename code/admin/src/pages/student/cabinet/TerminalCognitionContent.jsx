@@ -6,7 +6,6 @@ import { hasRegion, normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
 const POLL_INTERVAL = 5000
-const PRACTICE_TERMINAL_COUNT = 3
 
 function terminalStatusKey(terminalId) {
   return terminalId == null ? null : String(terminalId)
@@ -15,10 +14,6 @@ function terminalStatusKey(terminalId) {
 function terminalNumber(terminalLabel) {
   const matches = String(terminalLabel ?? '').match(/\d+/g)
   return matches?.[matches.length - 1] ?? String(terminalLabel ?? '')
-}
-
-function terminalStripTitle(labelPrefix) {
-  return String(labelPrefix ?? '').replace(/-+$/, '')
 }
 
 function initialPracticeState() {
@@ -54,10 +49,11 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
   const selectedDevice =
     cognitionDevices.find((d) => d.id === selectedDeviceId) ?? cognitionDevices[0] ?? null
   const activeDeviceId = selectedDevice?.id ?? null
-  const terminalStripId = navigationTarget?.terminalStripId ?? null
-  const terminalStripTitleText = terminalStripTitle(navigationTarget?.terminalStripLabelPrefix)
-  const isStatusSlide = navigationTarget?.kind === 'status'
-  const isPracticeStatusTarget = isStatusSlide && navigationTarget?.sectionId === 'terminal'
+  const displayItems = displayItemsState.deviceId === activeDeviceId ? displayItemsState.items : []
+  const currentDisplayItem = displayItems[Math.min(currentSlide, Math.max(displayItems.length - 1, 0))] ?? null
+  const terminalOperation = currentDisplayItem?.mediaType === 'TERMINAL_OPERATION' ? currentDisplayItem.terminalOperation : null
+  const terminalStripId = terminalOperation?.terminalStripId ?? null
+  const isPracticeStatusTarget = Boolean(terminalOperation) && navigationTarget?.sectionId === 'terminal'
   const visiblePracticeDialog =
     isPracticeStatusTarget
     && practiceDialog?.pageKey === navigationTarget?.key
@@ -128,7 +124,7 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
   }, [cabinetId])
 
   useEffect(() => {
-    if (!isStatusSlide || !cabinetId) return undefined
+    if (!isPracticeStatusTarget || !cabinetId) return undefined
 
     const initialTimer = setTimeout(fetchTerminalStatus, 0)
     const timer = setInterval(fetchTerminalStatus, POLL_INTERVAL)
@@ -136,7 +132,7 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
       clearTimeout(initialTimer)
       clearInterval(timer)
     }
-  }, [cabinetId, fetchTerminalStatus, isStatusSlide])
+  }, [cabinetId, fetchTerminalStatus, isPracticeStatusTarget])
 
   useEffect(() => {
     if (isPracticeStatusTarget) return
@@ -180,9 +176,9 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
       return
     }
 
-    const practiceTerminals = terminals.slice(0, PRACTICE_TERMINAL_COUNT)
+    const practiceTerminals = terminalOperation?.terminals ?? []
     const disconnectedTerminals = practiceTerminals.filter(
-      (terminal) => terminalStates[terminalStatusKey(terminal.id)]?.wiring_status !== 'CORRECT',
+      (terminal) => terminalStates[terminalStatusKey(terminal.terminalId)]?.wiring_status !== 'CORRECT',
     )
     if (disconnectedTerminals.length === 0) {
       practiceRef.current = { ...practice, phase: 'completed' }
@@ -193,17 +189,17 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
     setPracticeDialog({
       pageKey: navigationTarget?.key,
       sequence: practice.sequence,
-      message: `请将 ${disconnectedTerminals.map((terminal) => terminal.terminalLabel).join('、')} 接入到测试仪`,
+      message: disconnectedTerminals.map((terminal) => `请将测试仪上的 ${terminal.meaning} 接入 ${terminal.terminalLabel} 端子`).join('\n'),
     })
-  }, [navigationTarget?.key, statusRefreshVersion, terminalStates, terminals])
+  }, [navigationTarget?.key, statusRefreshVersion, terminalStates, terminalOperation])
 
   useEffect(() => {
     const practice = practiceRef.current
     if (practice.phase !== 'watching') return
 
-    const practiceTerminals = terminals.slice(0, PRACTICE_TERMINAL_COUNT)
+    const practiceTerminals = terminalOperation?.terminals ?? []
     const allConnected = practiceTerminals.length > 0 && practiceTerminals.every(
-      (terminal) => terminalStates[terminalStatusKey(terminal.id)]?.wiring_status === 'CORRECT',
+      (terminal) => terminalStates[terminalStatusKey(terminal.terminalId)]?.wiring_status === 'CORRECT',
     )
     if (!allConnected) return
 
@@ -213,7 +209,7 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
       sequence: practice.sequence,
       message: '恭喜你，已正确接入端子连线，请继续学习。',
     })
-  }, [navigationTarget?.key, statusRefreshVersion, terminalStates, terminals])
+  }, [navigationTarget?.key, statusRefreshVersion, terminalStates, terminalOperation])
 
   useEffect(() => {
     if (navigationTarget?.sectionId !== 'terminal') return
@@ -252,14 +248,8 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
     displayItemsState.deviceId,
   ])
 
-  const displayItems = displayItemsState.deviceId === activeDeviceId ? displayItemsState.items : []
-  const hasStatusSlide = Boolean(terminalStripId)
-  const statusSlideIndex = displayItems.length
-  const totalSlides = displayItems.length + (hasStatusSlide ? 1 : 0)
-  const activeSlide = isStatusSlide
-    ? statusSlideIndex
-    : totalSlides > 0 ? Math.min(currentSlide, totalSlides - 1) : 0
-  const currentDisplayItem = isStatusSlide ? null : displayItems[activeSlide] ?? displayItems[0] ?? null
+  const totalSlides = displayItems.length
+  const activeSlide = totalSlides > 0 ? Math.min(currentSlide, totalSlides - 1) : 0
   const itemHighlightRegion = hasRegion(currentDisplayItem) ? normalizeRegion(currentDisplayItem) : null
 
   const highlightRegion =
@@ -296,7 +286,7 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
       cabinetItemId: selectedCabinetItem?.id,
       deviceId: activeDeviceId,
       slideIndex,
-      kind: slideIndex === statusSlideIndex ? 'status' : 'display',
+      kind: 'display',
     })
   }
 
@@ -361,13 +351,29 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
         )}
         {!loading && !error && currentDisplayItem && (
           <>
-            <CognitionMediaViewer
+            {terminalOperation ? <div className="terminal-wiring-status">
+              <div className="terminal-wiring-status__header">
+                <img className="terminal-wiring-status__tag" src={publicUrl('images/terminal/terminal_tag.svg')} alt={`端子排 ${terminalOperation.terminalStripLabelPrefix || terminalOperation.terminalStripName || ''}`} />
+                <span className="terminal-wiring-status__tag-label">{String(terminalOperation.terminalStripLabelPrefix || terminalOperation.terminalStripName || '').replace(/-+$/, '')}</span>
+              </div>
+              {statusError && <p className="terminal-wiring-status__error">{statusError}</p>}
+              {terminals.length === 0 ? <p className="cabinet-section__paragraph">暂无可渲染的端子数据</p> : <div className="terminal-wiring-status__list">
+                {terminals.map((terminal) => {
+                  const connected = terminalStates[terminalStatusKey(terminal.id)]?.wiring_status === 'CORRECT'
+                  return <div key={terminal.id} className="terminal-wiring-status__item">
+                    {connected && <img className="terminal-wiring-status__line" src={publicUrl('images/terminal/line.svg')} alt="已接线" />}
+                    <span className="terminal-wiring-status__terminal-clip"><img className="terminal-wiring-status__terminal" src={publicUrl('images/terminal/terminal_ang.svg')} alt={`端子 ${terminal.terminalLabel}`} /></span>
+                    <span className="terminal-wiring-status__label">{terminalNumber(terminal.terminalLabel)}</span>
+                  </div>
+                })}
+              </div>}
+            </div> : <CognitionMediaViewer
               key={currentDisplayItem.id}
               item={currentDisplayItem}
               imageType="device-display"
               region={itemHighlightRegion}
               alt={currentDisplayItem.title}
-            />
+            />}
             {totalSlides > 1 && (
               <div className="cabinet-section__slide-dots">
                 {Array.from({ length: totalSlides }, (_, i) => (
@@ -376,54 +382,12 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
                     type="button"
                     className={`cabinet-section__slide-dot${i === activeSlide ? ' cabinet-section__slide-dot--active' : ''}`}
                     onClick={() => handleSlideSelect(i)}
-                    aria-label={i === statusSlideIndex ? '端子连线状态' : `第 ${i + 1} 张`}
+                    aria-label={`第 ${i + 1} 张`}
                   />
                 ))}
               </div>
             )}
           </>
-        )}
-        {!loading && !error && isStatusSlide && (
-          <div className="terminal-wiring-status">
-            <div className="terminal-wiring-status__header">
-              <img
-                className="terminal-wiring-status__tag"
-                src={publicUrl('images/terminal/terminal_tag.svg')}
-                alt={`端子排 ${terminalStripTitleText}`}
-              />
-              <span className="terminal-wiring-status__tag-label">{terminalStripTitleText}</span>
-            </div>
-            {statusError && <p className="terminal-wiring-status__error">{statusError}</p>}
-            {terminals.length === 0 ? (
-              <p className="cabinet-section__paragraph">暂无可渲染的端子数据</p>
-            ) : (
-              <div className="terminal-wiring-status__list">
-                {terminals.map((terminal) => {
-                  const state = terminalStates[terminalStatusKey(terminal.id)]
-                  const connected = state?.wiring_status === 'CORRECT'
-                  return (
-                    <div key={terminal.id} className="terminal-wiring-status__item">
-                      {connected && (
-                        <img
-                          className="terminal-wiring-status__line"
-                          src={publicUrl('images/terminal/line.svg')}
-                          alt="已接线"
-                        />
-                      )}
-                      <span className="terminal-wiring-status__terminal-clip">
-                        <img
-                          className="terminal-wiring-status__terminal"
-                          src={publicUrl('images/terminal/terminal_ang.svg')}
-                          alt={`端子 ${terminal.terminalLabel}`}
-                        />
-                      </span>
-                      <span className="terminal-wiring-status__label">{terminalNumber(terminal.terminalLabel)}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
         )}
         {!loading && !error && selectedCabinetItem && totalSlides > 1 && !currentDisplayItem && (
           <div className="cabinet-section__slide-dots">
@@ -433,12 +397,12 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
                 type="button"
                 className={`cabinet-section__slide-dot${i === activeSlide ? ' cabinet-section__slide-dot--active' : ''}`}
                 onClick={() => handleSlideSelect(i)}
-                aria-label={i === statusSlideIndex ? '端子连线状态' : `第 ${i + 1} 张`}
+                aria-label={`第 ${i + 1} 张`}
               />
             ))}
           </div>
         )}
-        {!loading && !error && selectedCabinetItem && !currentDisplayItem && !isStatusSlide && (
+        {!loading && !error && selectedCabinetItem && !currentDisplayItem && (
           <p className="cabinet-section__paragraph">暂无端子排认知条目</p>
         )}
       </div>
@@ -453,21 +417,13 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
             <p className="cabinet-section__paragraph">{currentDisplayItem.content}</p>
           </div>
         )}
-        {!loading && !error && isStatusSlide && (
-          <div className="cabinet-section__cognition-item">
-            <h3 className="cabinet-section__cognition-title">端子排连线状态</h3>
-            <p className="cabinet-section__paragraph">
-              自动读取屏柜端子连接状态；仅连线正确的端子显示接线图元。
-            </p>
-          </div>
-        )}
       </div>
 
       {visiblePracticeDialog && (
         <div className="pressboard-practice-dialog" role="dialog" aria-modal="true" aria-labelledby="terminal-practice-dialog-message">
           <div className="pressboard-practice-dialog__mask" />
           <div className="pressboard-practice-dialog__panel">
-            <p id="terminal-practice-dialog-message" className="pressboard-practice-dialog__message">
+            <p id="terminal-practice-dialog-message" className="pressboard-practice-dialog__message" style={{ whiteSpace: 'pre-line' }}>
               {practiceDialog.message}
             </p>
             <button

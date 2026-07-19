@@ -81,3 +81,73 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+.device-display-items__terminal-operation {
+  margin-bottom: 14px;
+}
+
+.device-display-items__terminal-operation > p {
+  margin: 0 0 8px;
+  color: #b0bec5;
+  font-size: 13px;
+}
+
+.device-display-items__terminal-table-wrap {
+  max-height: 222px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+}
+
+.device-display-items__terminal-table-wrap .users-page__table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.device-display-items__terminal-table-wrap th,
+.device-display-items__terminal-table-wrap td {
+  overflow-wrap: anywhere;
+}
+
+.device-display-items__terminal-table-wrap th:first-child,
+.device-display-items__terminal-table-wrap td:first-child {
+  width: 52px;
+}
+
+.device-display-items__terminal-table-wrap th:nth-child(2),
+.device-display-items__terminal-table-wrap td:nth-child(2) {
+  width: 30%;
+}
+
+.device-display-items__terminal-table-wrap td:last-child input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.device-display-items__terminal-table-wrap th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #1a2332;
+}
+
+/* 原生下拉菜单不会继承半透明控件背景；使用实体深色以保证媒体类型、端子排及选项可读。 */
+.device-display-items__terminal-operation select,
+.users-page__dialog select {
+  background-color: #111b28;
+  color: #f1f5f9;
+  color-scheme: dark;
+}
+
+.users-page__dialog select option {
+  background-color: #111b28;
+  color: #f1f5f9;
+}
+
+.users-page__dialog select:focus {
+  border-color: #64b5f6;
+  outline: 2px solid rgba(100, 181, 246, 0.3);
+  outline-offset: 1px;
+}

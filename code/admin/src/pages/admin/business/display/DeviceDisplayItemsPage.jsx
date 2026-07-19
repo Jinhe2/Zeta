@@ -23,6 +23,7 @@ const EMPTY_CREATE = {
   content: '',
   sortOrder: 0,
   enabled: true,
+  terminalOperation: { terminalStripId: '', terminals: [] },
 }
 
 const DEVICE_TYPE_LABELS = {
@@ -160,8 +161,11 @@ export default function DeviceDisplayItemsPage() {
     topPercent: null,
     widthPercent: null,
     heightPercent: null,
+    terminalOperation: { terminalStripId: '', terminals: [] },
   })
   const [saving, setSaving] = useState(false)
+  const [terminalStrips, setTerminalStrips] = useState([])
+  const [terminals, setTerminals] = useState([])
 
   const loadData = useCallback(async () => {
     if (!cognitionDeviceIdNum) return
@@ -173,12 +177,21 @@ export default function DeviceDisplayItemsPage() {
         api.getCognitionDevice(cognitionDeviceIdNum),
         api.listCognitionDeviceDisplayItems(cognitionDeviceIdNum),
       ])
+      const cabinetItem = await api.getCabinetDisplayItem(deviceData.cabinetDisplayItemId)
+      const [strips, terminalData] = await Promise.all([
+        api.listTerminalStrips(cabinetItem.cabinetId),
+        api.listTerminals(cabinetItem.cabinetId),
+      ])
       setCognitionDevice(deviceData)
       setItems(itemData)
+      setTerminalStrips(strips)
+      setTerminals(terminalData)
     } catch (err) {
       setError(err.message || '加载认知条目失败')
       setCognitionDevice(null)
       setItems([])
+      setTerminalStrips([])
+      setTerminals([])
     } finally {
       setLoading(false)
     }
@@ -207,6 +220,7 @@ export default function DeviceDisplayItemsPage() {
       setError('请上传认知视频')
       return
     }
+    if (!validateTerminalOperation(createForm)) return
     setCreating(true)
     setError('')
     try {
@@ -244,6 +258,9 @@ export default function DeviceDisplayItemsPage() {
       topPercent: item.topPercent ?? null,
       widthPercent: item.widthPercent ?? null,
       heightPercent: item.heightPercent ?? null,
+      terminalOperation: item.terminalOperation
+        ? { terminalStripId: String(item.terminalOperation.terminalStripId), terminals: item.terminalOperation.terminals.map((terminal) => ({ terminalId: terminal.terminalId, meaning: terminal.meaning })) }
+        : { terminalStripId: '', terminals: [] },
     })
   }
 
@@ -258,6 +275,7 @@ export default function DeviceDisplayItemsPage() {
       setError('请上传认知视频')
       return
     }
+    if (!validateTerminalOperation(editForm)) return
     setSaving(true)
     setError('')
     try {
@@ -292,6 +310,45 @@ export default function DeviceDisplayItemsPage() {
 
   const cleanupDraftVideo = (path, savedPath = '') => {
     if (path && path !== savedPath) api.deleteUnreferencedCognitionVideo(path).catch(() => {})
+  }
+
+  const validateTerminalOperation = (form) => {
+    if (form.mediaType !== 'TERMINAL_OPERATION') return true
+    if (!form.terminalOperation?.terminalStripId || !form.terminalOperation.terminals?.length) {
+      setError('请选择端子排和至少一个端子')
+      return false
+    }
+    if (form.terminalOperation.terminals.some((terminal) => !terminal.meaning?.trim())) {
+      setError('需要操作的端子含义不能为空')
+      return false
+    }
+    return true
+  }
+
+  const terminalOperationField = (form, setForm, disabled) => {
+    const operation = form.terminalOperation || { terminalStripId: '', terminals: [] }
+    const selected = new Map(operation.terminals.map((terminal) => [Number(terminal.terminalId), terminal.meaning]))
+    const stripTerminals = terminals.filter((terminal) => Number(terminal.terminalStripId) === Number(operation.terminalStripId))
+    const updateOperation = (next) => setForm((current) => ({ ...current, terminalOperation: next }))
+    return <>
+      <label>端子排<select value={operation.terminalStripId} disabled={disabled} required onChange={(e) => updateOperation({ terminalStripId: e.target.value, terminals: [] })}>
+        <option value="">请选择端子排</option>
+        {terminalStrips.map((strip) => <option key={strip.id} value={strip.id}>{strip.name}（{strip.labelPrefix}）</option>)}
+      </select></label>
+      {operation.terminalStripId && <div className="device-display-items__terminal-operation">
+        <p>勾选需要接线的端子，并填写测试仪端子的表示含义。</p>
+        <div className="device-display-items__terminal-table-wrap"><table className="users-page__table"><thead><tr><th>选择</th><th>端子编号</th><th>端子表示含义</th></tr></thead><tbody>
+          {stripTerminals.map((terminal) => {
+            const checked = selected.has(Number(terminal.id))
+            return <tr key={terminal.id}><td><input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => {
+              const next = operation.terminals.filter((entry) => Number(entry.terminalId) !== Number(terminal.id))
+              if (e.target.checked) next.push({ terminalId: terminal.id, meaning: '' })
+              updateOperation({ ...operation, terminals: next })
+            }} /></td><td>{terminal.terminalLabel}</td><td>{checked && <input value={selected.get(Number(terminal.id)) || ''} disabled={disabled} required onChange={(e) => updateOperation({ ...operation, terminals: operation.terminals.map((entry) => Number(entry.terminalId) === Number(terminal.id) ? { ...entry, meaning: e.target.value } : entry) })} />}</td></tr>
+          })}
+        </tbody></table></div>
+      </div>}
+    </>
   }
 
   const closeCreate = () => {
@@ -373,7 +430,9 @@ export default function DeviceDisplayItemsPage() {
                 items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      {item.mediaType === 'VIDEO' ? (
+                      {item.mediaType === 'TERMINAL_OPERATION' ? (
+                        <span className="device-display-items__media-badge">端子操作{item.terminalOperation ? ` · ${item.terminalOperation.terminalStripName || ''} · ${item.terminalOperation.terminals.length} 个端子` : ''}</span>
+                      ) : item.mediaType === 'VIDEO' ? (
                         <span className="device-display-items__media-badge">视频</span>
                       ) : (
                         <img
@@ -437,9 +496,10 @@ export default function DeviceDisplayItemsPage() {
               >
                 <option value="IMAGE">图片</option>
                 <option value="VIDEO">视频</option>
+                {cognitionDevice?.deviceType === 'TERMINAL_GROUP' && <option value="TERMINAL_OPERATION">端子操作</option>}
               </select>
             </label>
-            {createForm.mediaType === 'IMAGE' ? (
+            {createForm.mediaType === 'TERMINAL_OPERATION' ? terminalOperationField(createForm, setCreateForm, creating) : createForm.mediaType === 'IMAGE' ? (
               <CabinetImageUploadField
                 imageUrl={createForm.imageUrl}
                 onChange={(url, result) => setCreateForm((current) => ({
@@ -529,9 +589,10 @@ export default function DeviceDisplayItemsPage() {
               >
                 <option value="IMAGE">图片</option>
                 <option value="VIDEO">视频</option>
+                {cognitionDevice?.deviceType === 'TERMINAL_GROUP' && <option value="TERMINAL_OPERATION">端子操作</option>}
               </select>
             </label>
-            {editForm.mediaType === 'IMAGE' ? (
+            {editForm.mediaType === 'TERMINAL_OPERATION' ? terminalOperationField(editForm, setEditForm, saving) : editForm.mediaType === 'IMAGE' ? (
               <CabinetImageUploadField
                 imageUrl={editForm.imageUrl}
                 previewUrl={editingItem && editingItem.mediaType !== 'VIDEO' ? imageUrl('device-display', editingItem.id, imageVersion) : ''}

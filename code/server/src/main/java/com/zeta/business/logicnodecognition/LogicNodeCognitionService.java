@@ -206,6 +206,9 @@ public class LogicNodeCognitionService {
 
     private void applyMedia(LogicNodeCognitionItem item, CognitionMediaType mediaType, Long imageId,
                             String imageUrl, String videoPath, boolean removeImage) {
+        if (mediaType == CognitionMediaType.TERMINAL_OPERATION) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子操作条目仅适用于端子组认知");
+        }
         item.setMediaType(mediaType);
         if (mediaType == CognitionMediaType.VIDEO) {
             String normalized = videoStorage.normalizeManagedPath(videoPath);

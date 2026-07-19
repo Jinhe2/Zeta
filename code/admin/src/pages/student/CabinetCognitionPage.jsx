@@ -50,24 +50,7 @@ function withKey(page) {
   }
 }
 
-function selectTerminalStatusStrip(strips) {
-  const candidates = strips
-    .map((strip) => {
-      const name = String(strip.name ?? '').toUpperCase()
-      const priority = name.includes('UD') ? 0 : name.includes('ID') ? 1 : null
-      return priority == null ? null : { strip, priority }
-    })
-    .filter(Boolean)
-
-  candidates.sort((a, b) => (
-    a.priority - b.priority
-    || Number(a.strip.sortOrder ?? 0) - Number(b.strip.sortOrder ?? 0)
-    || Number(a.strip.id) - Number(b.strip.id)
-  ))
-  return candidates[0]?.strip ?? null
-}
-
-async function buildDeviceSectionPages(sectionId, cabinetItems, terminalStatusStrip = null) {
+async function buildDeviceSectionPages(sectionId, cabinetItems) {
   const deviceType = DEVICE_SECTION_TYPES[sectionId]
   const pages = []
 
@@ -125,26 +108,6 @@ async function buildDeviceSectionPages(sectionId, cabinetItems, terminalStatusSt
     }
   }
 
-  if (sectionId === 'terminal' && terminalStatusStrip && pages.length > 0) {
-    const lastPage = pages[pages.length - 1]
-    const statusSlideIndex = lastPage.kind === 'display' ? lastPage.slideIndex + 1 : 0
-    pages.forEach((page) => {
-      page.terminalStripId = terminalStatusStrip.id
-      page.terminalStripName = terminalStatusStrip.name
-      page.terminalStripLabelPrefix = terminalStatusStrip.labelPrefix
-    })
-    pages.push(withKey({
-      sectionId,
-      cabinetItemId: lastPage.cabinetItemId,
-      deviceId: lastPage.deviceId,
-      slideIndex: statusSlideIndex,
-      kind: 'status',
-      terminalStripId: terminalStatusStrip.id,
-      terminalStripName: terminalStatusStrip.name,
-      terminalStripLabelPrefix: terminalStatusStrip.labelPrefix,
-    }))
-  }
-
   return pages.length > 0 ? pages : [fallbackPage(sectionId)]
 }
 
@@ -189,16 +152,11 @@ export default function CabinetCognitionPage() {
           }))
           : [fallbackPage('structure')]
 
-        const [devicePages, platePages, terminalStrips] = await Promise.all([
+        const [devicePages, platePages, terminalPages] = await Promise.all([
           buildDeviceSectionPages('device', cabinetItems),
           buildDeviceSectionPages('plate', cabinetItems),
-          api.listTerminalStrips(cabinetId),
+          buildDeviceSectionPages('terminal', cabinetItems),
         ])
-        const terminalPages = await buildDeviceSectionPages(
-          'terminal',
-          cabinetItems,
-          selectTerminalStatusStrip(terminalStrips),
-        )
 
         const nextPages = [
           ...structurePages,

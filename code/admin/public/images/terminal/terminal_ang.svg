@@ -11,7 +11,7 @@
   <rect id="svg_6" height="6" width="78" y="192.5" x="343" stroke="#000" fill="#444444"/>
   <rect id="svg_7" height="6" width="275" y="192.5" x="244.5" stroke="#000" fill="#999999"/>
   <rect id="svg_8" height="6" width="78" y="192.5" x="343" stroke="#000" fill="#444444"/>
-  <rect id="svg_9" height="27" width="35" y="166.5" x="522" stroke="#000" fill="none"/>
+  <rect id="svg_9" height="27" width="35" y="166.5" x="522" stroke="#000" fill="#ffffff"/>
   <ellipse stroke="#000" ry="13.5" rx="13.5" id="svg_11" cy="178" cx="265.5" fill="#DDDDDD"/>
   <line stroke="#000" id="svg_12" y2="189.5" x2="273" y1="168.5" x1="258" fill="none"/>
   <ellipse stroke="#000" ry="13.5" rx="13.5" id="svg_19" cy="178" cx="499.5" fill="#DDDDDD"/>

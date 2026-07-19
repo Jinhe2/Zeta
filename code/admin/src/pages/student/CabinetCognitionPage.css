@@ -1010,6 +1010,118 @@
   transform: scale(0.98);
 }
 
+/* ── 端子排连线状态 ── */
+
+.terminal-wiring-status {
+  --terminal-graphic-width: clamp(203px, 17.16vw, 250px);
+  --terminal-title-width: var(--terminal-graphic-width);
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.terminal-wiring-status__header {
+  position: relative;
+  display: flex;
+  width: var(--terminal-title-width);
+  aspect-ratio: 8 / 1;
+  height: auto;
+  margin: 0 auto 4px;
+  overflow: hidden;
+}
+
+.terminal-wiring-status__tag {
+  position: absolute;
+  width: 645.161%;
+  height: 952.381%;
+  max-width: none;
+  left: -243.548%;
+  top: -213.492%;
+  pointer-events: none;
+}
+
+.terminal-wiring-status__tag-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: clamp(13px, 1.1vw, 16px);
+  font-weight: 700;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.terminal-wiring-status__error {
+  margin: 0 0 8px;
+  color: #ef5350;
+  font-size: 12px;
+}
+
+.terminal-wiring-status__list {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 8px 8px;
+}
+
+.terminal-wiring-status__item {
+  position: relative;
+  width: var(--terminal-graphic-width);
+  aspect-ratio: 312 / 40;
+  height: auto;
+  margin: 0 auto;
+}
+
+.terminal-wiring-status__terminal {
+  position: absolute;
+  width: 256.41%;
+  height: auto;
+  max-width: none;
+  left: -78.526%;
+  top: -396.25%;
+  pointer-events: none;
+}
+
+.terminal-wiring-status__terminal-clip {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+}
+
+.terminal-wiring-status__line {
+  position: absolute;
+  z-index: 3;
+  width: 64.744%;
+  height: auto;
+  max-width: none;
+  left: -41.66%;
+  top: -0.8%;
+  pointer-events: none;
+}
+
+.terminal-wiring-status__label {
+  position: absolute;
+  z-index: 4;
+  left: 88.782%;
+  top: 20%;
+  width: 11.218%;
+  color: #111;
+  font-size: clamp(11px, 0.9vw, 14px);
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+
 /* ── 端子状态 ── */
 
 .terminal-status {

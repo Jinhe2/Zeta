@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>P31 1n 回路图动态教学</title>
+  <link rel="stylesheet" href="styles.css?v=10">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40"><path d="M7 20h7l4-9 5 18 4-9h6"/><circle cx="7" cy="20" r="2.5"/><circle cx="33" cy="20" r="2.5"/></svg>
+        </span>
+        <div>
+          <p class="eyebrow">110kV 线路光差保护柜 · P31</p>
+          <h1 id="pageHeading">1-1n 操作回路动态教学</h1>
+        </div>
+      </div>
+      <div class="topbar-meta">
+        <span id="entityCount" class="entity-count">1193 个实体</span>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar" aria-label="回路导航">
+        <div class="sidebar-head">
+          <div>
+            <p class="eyebrow">教学目录</p>
+            <h2>功能回路</h2>
+          </div>
+          <span id="loopCount" class="count-pill">16</span>
+        </div>
+
+        <label class="drawing-picker" for="drawingSelect">
+          <span>当前图纸</span>
+          <select id="drawingSelect" aria-label="选择回路图"></select>
+          <small id="drawingNote">1-1n 装置操作回路。</small>
+        </label>
+
+        <div id="filterTabs" class="filter-tabs" role="tablist" aria-label="回路分类"></div>
+
+        <div id="loopList" class="loop-list" role="listbox" aria-label="16 个功能回路"></div>
+      </aside>
+
+      <section class="diagram-panel">
+        <div class="diagram-toolbar">
+          <div class="view-modes" role="group" aria-label="图纸显示模式">
+            <button class="view-mode active" data-mode="teaching">教学</button>
+            <button class="view-mode" data-mode="original">原图</button>
+            <button class="view-mode" data-mode="focus">聚焦</button>
+          </div>
+          <span class="toolbar-divider" aria-hidden="true"></span>
+          <section id="stateCard" class="toolbar-simulation" aria-label="仿真条件">
+            <span class="toolbar-section-label">仿真条件</span>
+            <div id="simulationControls" class="toolbar-dynamic-controls"></div>
+          </section>
+          <span class="toolbar-divider toolbar-divider-right" aria-hidden="true"></span>
+          <div class="zoom-controls" role="group" aria-label="缩放控制">
+            <span class="toolbar-section-label">比例</span>
+            <button id="zoomOut" title="缩小" aria-label="缩小">−</button>
+            <button id="fitView" title="适合窗口">适合</button>
+            <button id="zoomIn" title="放大" aria-label="放大">＋</button>
+            <button id="fullscreen" title="全屏" aria-label="全屏">⛶</button>
+          </div>
+        </div>
+
+        <div id="diagramViewport" class="diagram-viewport">
+          <svg id="diagramSvg" viewBox="0 0 420 297" role="img" aria-labelledby="diagramTitle diagramDesc">
+            <title id="diagramTitle">31-15 1-1n 操作回路图</title>
+            <desc id="diagramDesc">由原始 DWG 对应 PDF 页生成的完整图纸，并叠加可交互电流路径。</desc>
+            <defs>
+              <filter id="flowGlow" x="-60%" y="-60%" width="220%" height="220%">
+                <feGaussianBlur stdDeviation="1.4" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="blockedGlow" x="-60%" y="-60%" width="220%" height="220%">
+                <feGaussianBlur stdDeviation="1" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <image id="drawingImage" href="assets/31-15-circuit.png" x="0" y="0" width="420" height="297" preserveAspectRatio="none"/>
+            <rect id="focusShade" x="0" y="0" width="420" height="297"/>
+            <g id="overlayRoot" transform="translate(0 297) scale(1 -1)"></g>
+            <g id="lampOverlay"></g>
+            <g id="deviceOverlay"></g>
+            <g id="relayOverlay"></g>
+          </svg>
+          <svg id="relayGuide" class="relay-guide" aria-hidden="true" preserveAspectRatio="none">
+            <defs>
+              <marker id="relayGuideArrow" viewBox="0 0 7 7" refX="6.2" refY="3.5" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0 0 L7 3.5 L0 7 Z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <path id="relayGuidePath"/>
+            <path id="relayGuideTail" class="relay-guide-tail" marker-end="url(#relayGuideArrow)"/>
+            <text id="relayGuideLabel" text-anchor="end"></text>
+          </svg>
+          <aside id="relaySidePanel" class="relay-side-panel" aria-live="polite" aria-hidden="true">
+            <div class="relay-side-direction" id="relaySideDirection">图中动作位置</div>
+            <div class="relay-side-head">
+              <div>
+                <span id="relaySideCode" class="relay-side-code">TWJ</span>
+                <h3 id="relaySideName">跳位继电器</h3>
+              </div>
+              <span id="relaySideAction" class="relay-side-action">得电吸合</span>
+            </div>
+            <p id="relaySidePrinciple">继电器功能与动作原理说明。</p>
+          </aside>
+          <div class="diagram-hint"><span>滚轮缩放</span><span>按住拖动画布</span><span>← → 切换回路</span></div>
+        </div>
+
+        <div class="teaching-dock">
+          <div class="dock-main">
+            <div class="loop-index" id="activeIndex">01</div>
+            <div class="loop-copy">
+              <div class="loop-title-line">
+                <h2 id="activeTitle">操作电源</h2>
+                <span id="activeStatus" class="status-pill ready">路径就绪</span>
+              </div>
+              <p id="activeSummary">直流操作电源经 1-4QD 端子送入操作回路，为监视、合闸、跳闸及闭锁支路提供电源。</p>
+              <div id="componentChips" class="component-chips"></div>
+            </div>
+          </div>
+          <div class="dock-actions">
+            <label class="speed-control">速度
+              <select id="speedSelect" aria-label="动画速度">
+                <option value="0.75">0.75×</option>
+                <option value="1" selected>1×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2">2×</option>
+              </select>
+            </label>
+            <button id="playBtn" class="primary-action"><span class="play-icon">▶</span><span class="play-label">自动讲解</span></button>
+            <button id="nextBtn" class="next-action">下一回路 <span>→</span></button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="drawing-pages.js?v=10"></script>
+  <script src="app.js?v=10"></script>
+</body>
+</html>

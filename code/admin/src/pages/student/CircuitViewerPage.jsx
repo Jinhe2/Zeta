@@ -75,6 +75,7 @@ export default function CircuitViewerPage() {
           className="circuit-viewer__iframe"
           title={circuit.name}
           frameBorder="0"
+          allowFullScreen
         />
       </main>
     </div>

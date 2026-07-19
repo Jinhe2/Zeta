@@ -3,6 +3,6 @@ server:
 
 spring:
   application:
-    name: ct-training-server
+    name: zeta
   profiles:
     active: dev

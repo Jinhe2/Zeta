@@ -151,3 +151,14 @@
   outline: 2px solid rgba(100, 181, 246, 0.3);
   outline-offset: 1px;
 }
+.device-display-items__baseline-preview {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.device-display-items__baseline-preview > span {
+  color: #5d7185;
+  font-size: 13px;
+}

@@ -84,7 +84,7 @@ public class DeviceDisplayItemService {
         DeviceDisplayItem item = new DeviceDisplayItem();
         item.setCognitionDeviceId(cognitionDeviceId);
         item.setTitle(request.getTitle().trim());
-        validateTerminalOperationType(cognitionDeviceId, request.getMediaType());
+        validateSpecialMediaType(cognitionDeviceId, request.getMediaType(), null);
         applyMedia(item, request.getMediaType(), request.getImageId(), request.getImageUrl(), request.getVideoPath());
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
                 request.getWidthPercent(), request.getHeightPercent());
@@ -103,7 +103,7 @@ public class DeviceDisplayItemService {
         String previousImageUrl = item.getImageUrl();
         String previousVideoPath = item.getVideoPath();
 
-        validateTerminalOperationType(item.getCognitionDeviceId(), request.getMediaType());
+        validateSpecialMediaType(item.getCognitionDeviceId(), request.getMediaType(), item.getId());
         item.setTitle(request.getTitle().trim());
         applyMedia(item, request.getMediaType(), request.getImageId(), request.getImageUrl(), request.getVideoPath());
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
@@ -143,7 +143,7 @@ public class DeviceDisplayItemService {
         if (mediaType == CognitionMediaType.TEXT) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "设备认知条目不支持纯文字类型");
         }
-        if (mediaType == CognitionMediaType.TERMINAL_OPERATION) {
+        if (mediaType == CognitionMediaType.TERMINAL_OPERATION || mediaType == CognitionMediaType.IED_BASELINE_SETTING) {
             item.setMediaType(mediaType);
             item.setVideoPath(null);
             clearImage(item);
@@ -286,11 +286,22 @@ public class DeviceDisplayItemService {
                 terminalOperationResponse(item));
     }
 
-    private void validateTerminalOperationType(Long cognitionDeviceId, CognitionMediaType mediaType) {
-        if (mediaType != CognitionMediaType.TERMINAL_OPERATION) return;
+    private void validateSpecialMediaType(Long cognitionDeviceId, CognitionMediaType mediaType, Long itemId) {
+        if (mediaType != CognitionMediaType.TERMINAL_OPERATION && mediaType != CognitionMediaType.IED_BASELINE_SETTING) return;
         CognitionDevice device = cognitionDeviceService.requireDevice(cognitionDeviceId);
-        if (device.getDeviceType() != CognitionDeviceType.TERMINAL_GROUP) {
+        if (mediaType == CognitionMediaType.TERMINAL_OPERATION && device.getDeviceType() != CognitionDeviceType.TERMINAL_GROUP) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子操作条目仅适用于端子组");
+        }
+        if (mediaType == CognitionMediaType.IED_BASELINE_SETTING) {
+            if (device.getDeviceType() != CognitionDeviceType.IED_OPERATION || device.getScreenDeviceId() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "定值整定条目仅适用于已关联 IED 的 IED 设备操作类型");
+            }
+            boolean exists = itemId == null
+                    ? displayItemRepository.existsByCognitionDeviceIdAndMediaType(cognitionDeviceId, mediaType)
+                    : displayItemRepository.existsByCognitionDeviceIdAndMediaTypeAndIdNot(cognitionDeviceId, mediaType, itemId);
+            if (exists) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "同一 IED 设备操作仅可配置一个定值整定条目");
+            }
         }
     }
 

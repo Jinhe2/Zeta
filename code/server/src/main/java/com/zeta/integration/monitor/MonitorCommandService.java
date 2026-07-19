@@ -97,6 +97,14 @@ public class MonitorCommandService {
         return sendCommand("summon_ied_comm_status", null, data, "ied-comm:" + cabinetId);
     }
 
+    /** 比对指定 IED 的当前定值与配置库基准定值。 */
+    public CompletableFuture<ScreenQueueMessage> compareIedBaselineSettings(Long iedDeviceId) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("scope", "ied_device");
+        data.put("id", iedDeviceId);
+        return sendCommand("compare_baseline_settings", null, data, null);
+    }
+
     // ── 实验监视 summon_logic_monitor ──────────────────────────────────────
 
     /**
@@ -384,7 +392,8 @@ public class MonitorCommandService {
         }
         if ("summon_pressboard_status".equals(command)
                 || "summon_terminal_status".equals(command)
-                || "summon_ied_comm_status".equals(command)) {
+                || "summon_ied_comm_status".equals(command)
+                || "compare_baseline_settings".equals(command)) {
             Map<String, Object> data = message.getData();
             return data != null && "completed".equals(String.valueOf(data.getOrDefault("phase", "")));
         }

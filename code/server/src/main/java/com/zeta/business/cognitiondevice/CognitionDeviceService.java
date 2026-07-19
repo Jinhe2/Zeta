@@ -90,7 +90,7 @@ public class CognitionDeviceService {
 
     private void applyRequest(CognitionDevice device, CreateCognitionDeviceRequest request) {
         device.setDeviceType(request.getDeviceType());
-        device.setScreenDeviceId(request.getDeviceType() == CognitionDeviceType.IED
+        device.setScreenDeviceId(requiresScreenDevice(request.getDeviceType())
                 ? request.getScreenDeviceId() : null);
         device.setTitle(request.getTitle().trim());
         device.setLeftPercent(request.getLeftPercent());
@@ -103,7 +103,7 @@ public class CognitionDeviceService {
 
     private void applyRequest(CognitionDevice device, UpdateCognitionDeviceRequest request) {
         device.setDeviceType(request.getDeviceType());
-        device.setScreenDeviceId(request.getDeviceType() == CognitionDeviceType.IED
+        device.setScreenDeviceId(requiresScreenDevice(request.getDeviceType())
                 ? request.getScreenDeviceId() : null);
         device.setTitle(request.getTitle().trim());
         device.setLeftPercent(request.getLeftPercent());
@@ -115,16 +115,20 @@ public class CognitionDeviceService {
     }
 
     private void validateDeviceType(CognitionDeviceType type, Long screenDeviceId) {
-        if (type == CognitionDeviceType.IED) {
+        if (requiresScreenDevice(type)) {
             if (screenDeviceId == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "IED 类型须选择屏柜库设备");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "IED 设备外观或操作类型须选择屏柜库设备");
             }
             screenDeviceLookupService.requireDevice(screenDeviceId);
             return;
         }
         if (screenDeviceId != null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "仅 IED 类型可关联屏柜库设备");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "仅 IED 设备外观或操作类型可关联屏柜库设备");
         }
+    }
+
+    private boolean requiresScreenDevice(CognitionDeviceType type) {
+        return type == CognitionDeviceType.IED || type == CognitionDeviceType.IED_OPERATION;
     }
 
     private void validateRegion(Double left, Double top, Double width, Double height) {

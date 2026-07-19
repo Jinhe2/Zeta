@@ -4,5 +4,6 @@ public enum CognitionMediaType {
     IMAGE,
     VIDEO,
     TEXT,
-    TERMINAL_OPERATION
+    TERMINAL_OPERATION,
+    IED_BASELINE_SETTING
 }

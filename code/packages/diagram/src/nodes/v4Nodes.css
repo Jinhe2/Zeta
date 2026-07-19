@@ -73,6 +73,11 @@
   color: #1a1a1a;
 }
 
+.v4-node--output .v4-node__text {
+  overflow: visible;
+  text-overflow: clip;
+}
+
 .v4-node__threshold,
 .v4-node__value,
 .v4-node__ref {

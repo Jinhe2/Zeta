@@ -38,6 +38,30 @@ function adaptiveGateHeight(conn: number): number {
   return Math.max(GATE_SMALL_HEIGHT, CORNER_M * 2 + (conn - 1) * GATE_CONN_SPACING)
 }
 
+function visualTextWidth(text: string): number {
+  let width = 0
+  for (const char of text) {
+    if (/[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]/u.test(char)) {
+      width += 12
+    } else if (/[A-Z]/.test(char)) {
+      width += 8
+    } else if (/[0-9]/.test(char)) {
+      width += 7
+    } else if (/\s/.test(char)) {
+      width += 4
+    } else {
+      width += 7
+    }
+  }
+  return width
+}
+
+function adaptiveOutputWidth(node: GraphNode): number {
+  const channelRef = typeof node.data?.channelRef === 'string' ? node.data.channelRef : '-'
+  const textWidth = visualTextWidth(node.name) + 8 + visualTextWidth(channelRef)
+  return Math.max(OUTPUT_WIDTH, Math.ceil(textWidth + 28))
+}
+
 /** 按 V3 规则计算节点宽高 */
 export function getNodeDimensions(
   node: GraphNode,
@@ -61,7 +85,7 @@ export function getNodeDimensions(
     case 'timer':
       return { width: TIMER_WIDTH, height: TIMER_HEIGHT }
     case 'output':
-      return { width: OUTPUT_WIDTH, height: OUTPUT_HEIGHT }
+      return { width: adaptiveOutputWidth(node), height: OUTPUT_HEIGHT }
     default:
       return { width: INPUT_WIDTH, height: INPUT_HEIGHT }
   }

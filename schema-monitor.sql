@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS device_display_items (
     image_url           VARCHAR(512)     NULL COMMENT '认知图片路径',
     image_data          LONGBLOB         NULL COMMENT '图片二进制数据',
     image_content_type  VARCHAR(100)     NULL COMMENT '图片 MIME 类型',
-    media_type          VARCHAR(16)      NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO',
+    media_type          VARCHAR(32)      NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO / TERMINAL_OPERATION',
     video_path          VARCHAR(512)     NULL COMMENT 'JAR 同级视频相对路径',
     left_percent        DOUBLE           NULL,
     top_percent         DOUBLE           NULL,
@@ -46,6 +46,22 @@ CREATE TABLE IF NOT EXISTS device_display_items (
     PRIMARY KEY (id),
     INDEX idx_ddi_cognition_device (cognition_device_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='认知设备展示条目';
+
+CREATE TABLE IF NOT EXISTS terminal_operation_items (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    device_display_item_id BIGINT UNSIGNED NOT NULL,
+    terminal_strip_id BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY (id), UNIQUE KEY uk_terminal_operation_item (device_display_item_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='端子操作认知条目';
+
+CREATE TABLE IF NOT EXISTS terminal_operation_terminals (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    terminal_operation_id BIGINT UNSIGNED NOT NULL,
+    terminal_id BIGINT UNSIGNED NOT NULL,
+    terminal_meaning VARCHAR(128) NOT NULL,
+    sort_order INT NOT NULL,
+    PRIMARY KEY (id), INDEX idx_terminal_operation_terminal (terminal_operation_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='端子操作目标端子';
 
 -- ============================================================================
 -- 屏柜认知图上的抽象设备（IED / 其他设备 / 端子组 / 压板组）

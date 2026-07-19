@@ -37,6 +37,7 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         migrateDeviceDisplayImageUrl();
         migrateCognitionDevices();
         migrateCognitionMediaFields();
+        createTerminalOperationTables();
         createLearningResourcesTable();
     }
 
@@ -118,14 +119,32 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         if (!tableExists(table)) {
             return;
         }
-        addColumnIfMissing(table, "media_type", "VARCHAR(16) NULL COMMENT 'IMAGE / VIDEO'");
+        addColumnIfMissing(table, "media_type", "VARCHAR(32) NULL COMMENT 'IMAGE / VIDEO / TERMINAL_OPERATION'");
         addColumnIfMissing(table, "video_path", "VARCHAR(512) NULL COMMENT 'JAR 同级视频相对路径'");
         executeRequired("UPDATE `" + table + "` SET `media_type` = 'IMAGE' "
                 + "WHERE `media_type` IS NULL OR TRIM(`media_type`) = '' "
-                + "OR `media_type` NOT IN ('IMAGE', 'VIDEO')");
+                + "OR `media_type` NOT IN ('IMAGE', 'VIDEO', 'TERMINAL_OPERATION')");
         executeRequired("ALTER TABLE `" + table + "` MODIFY COLUMN `media_type` "
-                + "VARCHAR(16) NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO'");
+                + "VARCHAR(32) NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO / TERMINAL_OPERATION'");
         log.info("业务库 {}：认知媒体字段迁移完成", table);
+    }
+
+    private void createTerminalOperationTables() {
+        executeRequired("CREATE TABLE IF NOT EXISTS terminal_operation_items ("
+                + "id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, device_display_item_id BIGINT UNSIGNED NOT NULL, "
+                + "terminal_strip_id BIGINT UNSIGNED NOT NULL, PRIMARY KEY (id), "
+                + "UNIQUE KEY uk_terminal_operation_item (device_display_item_id)) "
+                + "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='端子操作认知条目'");
+        executeRequired("CREATE TABLE IF NOT EXISTS terminal_operation_terminals ("
+                + "id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, terminal_operation_id BIGINT UNSIGNED NOT NULL, "
+                + "terminal_id BIGINT UNSIGNED NOT NULL, terminal_meaning VARCHAR(128) NOT NULL, sort_order INT NOT NULL, "
+                + "PRIMARY KEY (id), INDEX idx_terminal_operation_terminal (terminal_operation_id)) "
+                + "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='端子操作目标端子'");
+        if (tableExists("device_display_items")) {
+            executeRequired("UPDATE device_display_items d "
+                    + "INNER JOIN terminal_operation_items o ON o.device_display_item_id = d.id "
+                    + "SET d.media_type = 'TERMINAL_OPERATION' WHERE d.media_type <> 'TERMINAL_OPERATION'");
+        }
     }
 
     private void migrateLogicNodeMediaFields() {

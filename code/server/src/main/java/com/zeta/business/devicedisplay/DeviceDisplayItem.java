@@ -46,7 +46,7 @@ public class DeviceDisplayItem {
      * 首次由 Hibernate 自动补列时必须允许 NULL；启动迁移会在旧数据回填后收紧为
      * NOT NULL DEFAULT 'IMAGE'，避免 MariaDB 将已有行写成空字符串。
      */
-    @Column(name = "media_type", length = 16)
+    @Column(name = "media_type", length = 32)
     private CognitionMediaType mediaType = CognitionMediaType.IMAGE;
 
     @Column(name = "video_path", length = 512)

@@ -43,4 +43,6 @@ public class UpdateDeviceDisplayItemRequest {
 
     @NotNull(message = "请指定启用状态")
     private Boolean enabled;
+
+    private TerminalOperationRequest terminalOperation;
 }

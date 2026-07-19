@@ -25,4 +25,5 @@ public class DeviceDisplayItemAdminResponse {
     private int sortOrder;
     private boolean enabled;
     private Instant createdAt;
+    private TerminalOperationResponse terminalOperation;
 }

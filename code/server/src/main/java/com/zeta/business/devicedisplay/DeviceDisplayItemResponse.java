@@ -18,4 +18,5 @@ public class DeviceDisplayItemResponse {
     private Double heightPercent;
     private String content;
     private int sortOrder;
+    private TerminalOperationResponse terminalOperation;
 }

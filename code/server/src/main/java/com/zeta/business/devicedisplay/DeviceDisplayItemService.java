@@ -3,7 +3,10 @@ package com.zeta.business.devicedisplay;
 import com.zeta.business.cabinetdisplay.TemporaryImage;
 import com.zeta.business.cabinetdisplay.TemporaryImageRepository;
 import com.zeta.business.cognitiondevice.CognitionDevice;
+import com.zeta.business.cognitiondevice.CognitionDeviceType;
 import com.zeta.business.cognitiondevice.CognitionDeviceService;
+import com.zeta.business.cabinetdisplay.CabinetDisplayItem;
+import com.zeta.business.cabinetdisplay.CabinetDisplayItemRepository;
 import com.zeta.business.media.CognitionMediaType;
 import com.zeta.business.media.CognitionVideoStorage;
 import org.springframework.http.HttpStatus;
@@ -11,6 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
+import com.zeta.screen.terminal.Terminal;
+import com.zeta.screen.terminal.TerminalRepository;
+import com.zeta.screen.terminal.TerminalStrip;
+import com.zeta.screen.terminal.TerminalStripRepository;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,18 +32,33 @@ public class DeviceDisplayItemService {
     private final DeviceDisplayImageStorage imageStorage;
     private final TemporaryImageRepository temporaryImageRepository;
     private final CognitionVideoStorage videoStorage;
+    private final TerminalOperationRepository terminalOperationRepository;
+    private final TerminalOperationTerminalRepository terminalOperationTerminalRepository;
+    private final TerminalStripRepository terminalStripRepository;
+    private final TerminalRepository terminalRepository;
+    private final CabinetDisplayItemRepository cabinetDisplayItemRepository;
 
     public DeviceDisplayItemService(
             CognitionDeviceService cognitionDeviceService,
             DeviceDisplayItemRepository displayItemRepository,
             DeviceDisplayImageStorage imageStorage,
             TemporaryImageRepository temporaryImageRepository,
-            CognitionVideoStorage videoStorage) {
+            CognitionVideoStorage videoStorage,
+            TerminalOperationRepository terminalOperationRepository,
+            TerminalOperationTerminalRepository terminalOperationTerminalRepository,
+            TerminalStripRepository terminalStripRepository,
+            TerminalRepository terminalRepository,
+            CabinetDisplayItemRepository cabinetDisplayItemRepository) {
         this.cognitionDeviceService = cognitionDeviceService;
         this.displayItemRepository = displayItemRepository;
         this.imageStorage = imageStorage;
         this.temporaryImageRepository = temporaryImageRepository;
         this.videoStorage = videoStorage;
+        this.terminalOperationRepository = terminalOperationRepository;
+        this.terminalOperationTerminalRepository = terminalOperationTerminalRepository;
+        this.terminalStripRepository = terminalStripRepository;
+        this.terminalRepository = terminalRepository;
+        this.cabinetDisplayItemRepository = cabinetDisplayItemRepository;
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
@@ -62,6 +84,7 @@ public class DeviceDisplayItemService {
         DeviceDisplayItem item = new DeviceDisplayItem();
         item.setCognitionDeviceId(cognitionDeviceId);
         item.setTitle(request.getTitle().trim());
+        validateTerminalOperationType(cognitionDeviceId, request.getMediaType());
         applyMedia(item, request.getMediaType(), request.getImageId(), request.getImageUrl(), request.getVideoPath());
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
                 request.getWidthPercent(), request.getHeightPercent());
@@ -69,7 +92,9 @@ public class DeviceDisplayItemService {
         item.setSortOrder(request.getSortOrder());
         item.setEnabled(request.getEnabled() == null || request.getEnabled());
         item.setCreatedAt(Instant.now());
-        return toAdminResponse(displayItemRepository.save(item));
+        DeviceDisplayItem saved = displayItemRepository.save(item);
+        replaceTerminalOperation(saved, request.getTerminalOperation());
+        return toAdminResponse(saved);
     }
 
     @Transactional("businessTransactionManager")
@@ -78,6 +103,7 @@ public class DeviceDisplayItemService {
         String previousImageUrl = item.getImageUrl();
         String previousVideoPath = item.getVideoPath();
 
+        validateTerminalOperationType(item.getCognitionDeviceId(), request.getMediaType());
         item.setTitle(request.getTitle().trim());
         applyMedia(item, request.getMediaType(), request.getImageId(), request.getImageUrl(), request.getVideoPath());
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
@@ -87,6 +113,7 @@ public class DeviceDisplayItemService {
         item.setEnabled(request.getEnabled());
 
         DeviceDisplayItem saved = displayItemRepository.save(item);
+        replaceTerminalOperation(saved, request.getTerminalOperation());
         String nextImageUrl = item.getImageUrl();
         if (!Objects.equals(nextImageUrl, previousImageUrl)) {
             imageStorage.deleteIfManaged(previousImageUrl);
@@ -100,6 +127,7 @@ public class DeviceDisplayItemService {
     @Transactional("businessTransactionManager")
     public void delete(Long id) {
         DeviceDisplayItem item = requireItem(id);
+        deleteTerminalOperation(item.getId());
         imageStorage.deleteIfManaged(item.getImageUrl());
         videoStorage.deleteAfterCommit(item.getVideoPath());
         displayItemRepository.delete(item);
@@ -114,6 +142,12 @@ public class DeviceDisplayItemService {
                             String imageUrl, String videoPath) {
         if (mediaType == CognitionMediaType.TEXT) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "设备认知条目不支持纯文字类型");
+        }
+        if (mediaType == CognitionMediaType.TERMINAL_OPERATION) {
+            item.setMediaType(mediaType);
+            item.setVideoPath(null);
+            clearImage(item);
+            return;
         }
         item.setMediaType(mediaType);
         if (mediaType == CognitionMediaType.VIDEO) {
@@ -233,7 +267,8 @@ public class DeviceDisplayItemService {
                 item.getContent(),
                 item.getSortOrder(),
                 item.getEnabled(),
-                item.getCreatedAt());
+                item.getCreatedAt(),
+                terminalOperationResponse(item));
     }
 
     private DeviceDisplayItemResponse toLearnerResponse(DeviceDisplayItem item) {
@@ -247,6 +282,84 @@ public class DeviceDisplayItemService {
                 item.getWidthPercent(),
                 item.getHeightPercent(),
                 item.getContent(),
-                item.getSortOrder());
+                item.getSortOrder(),
+                terminalOperationResponse(item));
+    }
+
+    private void validateTerminalOperationType(Long cognitionDeviceId, CognitionMediaType mediaType) {
+        if (mediaType != CognitionMediaType.TERMINAL_OPERATION) return;
+        CognitionDevice device = cognitionDeviceService.requireDevice(cognitionDeviceId);
+        if (device.getDeviceType() != CognitionDeviceType.TERMINAL_GROUP) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子操作条目仅适用于端子组");
+        }
+    }
+
+    private void replaceTerminalOperation(DeviceDisplayItem item, TerminalOperationRequest request) {
+        if (item.getMediaType() != CognitionMediaType.TERMINAL_OPERATION) {
+            deleteTerminalOperation(item.getId());
+            return;
+        }
+        if (request == null || request.getTerminalStripId() == null || request.getTerminals() == null || request.getTerminals().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子操作须选择端子排和至少一个端子");
+        }
+        CognitionDevice device = cognitionDeviceService.requireDevice(item.getCognitionDeviceId());
+        CabinetDisplayItem cabinetItem = cabinetDisplayItemRepository.findById(device.getCabinetDisplayItemId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "屏柜学习条目不存在"));
+        TerminalStrip strip = terminalStripRepository.findById(request.getTerminalStripId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子排不存在"));
+        if (!Objects.equals(strip.getCabinet().getId(), cabinetItem.getScreenCabinetId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子排不属于当前屏柜");
+        }
+        deleteTerminalOperation(item.getId());
+        TerminalOperation operation = new TerminalOperation();
+        operation.setDeviceDisplayItemId(item.getId());
+        operation.setTerminalStripId(strip.getId());
+        operation = terminalOperationRepository.save(operation);
+        int sortOrder = 0;
+        java.util.HashSet<Long> terminalIds = new java.util.HashSet<>();
+        for (TerminalOperationTerminalRequest selected : request.getTerminals()) {
+            if (selected == null || selected.getTerminalId() == null || !StringUtils.hasText(selected.getMeaning())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子的表示含义不能为空");
+            }
+            if (!terminalIds.add(selected.getTerminalId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子不能重复选择");
+            }
+            Terminal terminal = terminalRepository.findById(selected.getTerminalId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子不存在"));
+            if (terminal.getTerminalStrip() == null || !Objects.equals(terminal.getTerminalStrip().getId(), strip.getId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "所选端子不属于端子排");
+            }
+            TerminalOperationTerminal operationTerminal = new TerminalOperationTerminal();
+            operationTerminal.setTerminalOperationId(operation.getId());
+            operationTerminal.setTerminalId(terminal.getId());
+            operationTerminal.setTerminalMeaning(selected.getMeaning().trim());
+            operationTerminal.setSortOrder(sortOrder++);
+            terminalOperationTerminalRepository.save(operationTerminal);
+        }
+    }
+
+    private void deleteTerminalOperation(Long displayItemId) {
+        terminalOperationRepository.findByDeviceDisplayItemId(displayItemId).ifPresent(operation -> {
+            terminalOperationTerminalRepository.deleteByTerminalOperationId(operation.getId());
+            terminalOperationRepository.delete(operation);
+        });
+    }
+
+    private TerminalOperationResponse terminalOperationResponse(DeviceDisplayItem item) {
+        if (item.getMediaType() != CognitionMediaType.TERMINAL_OPERATION) return null;
+        TerminalOperation operation = terminalOperationRepository.findByDeviceDisplayItemId(item.getId()).orElse(null);
+        if (operation == null) return null;
+        TerminalStrip strip = terminalStripRepository.findById(operation.getTerminalStripId()).orElse(null);
+        List<TerminalOperationTerminalResponse> terminals = terminalOperationTerminalRepository
+                .findByTerminalOperationIdOrderBySortOrderAscIdAsc(operation.getId()).stream()
+                .map(selected -> {
+                    Terminal terminal = terminalRepository.findById(selected.getTerminalId()).orElse(null);
+                    return terminal == null ? null : new TerminalOperationTerminalResponse(
+                            terminal.getId(), terminal.getTerminalLabel(), selected.getTerminalMeaning());
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        return new TerminalOperationResponse(operation.getTerminalStripId(),
+                strip == null ? null : strip.getName(), strip == null ? null : strip.getLabelPrefix(), terminals);
     }
 }

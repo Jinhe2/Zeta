@@ -288,7 +288,13 @@ export default function CabinetCognitionPage() {
       )
     }
     if (activeSection === 'terminal') {
-      return <TerminalCognitionContent navigationTarget={currentPage} onPageChange={requestPage} />
+      return (
+        <TerminalCognitionContent
+          navigationTarget={currentPage}
+          navigationEvent={pageNavigationEvent}
+          onPageChange={requestPage}
+        />
+      )
     }
     return (
       <div className="cabinet-page__content-placeholder">

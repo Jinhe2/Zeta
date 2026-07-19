@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, imageUrl, publicUrl } from '../../../api/client'
 import { ImageRegionViewer } from '../../../components/ImageRegionEditor'
 import CognitionMediaViewer from '../../../components/CognitionMediaViewer'
@@ -6,6 +6,7 @@ import { hasRegion, normalizeRegion } from '../../../utils/imageRegionUtils'
 import useFilteredCabinetCognition from './useFilteredCabinetCognition'
 
 const POLL_INTERVAL = 5000
+const PRACTICE_TERMINAL_COUNT = 3
 
 function terminalStatusKey(terminalId) {
   return terminalId == null ? null : String(terminalId)
@@ -20,7 +21,15 @@ function terminalStripTitle(labelPrefix) {
   return String(labelPrefix ?? '').replace(/-+$/, '')
 }
 
-export default function TerminalCognitionContent({ navigationTarget, onPageChange }) {
+function initialPracticeState() {
+  return {
+    sequence: null,
+    phase: 'idle',
+    startRefreshVersion: 0,
+  }
+}
+
+export default function TerminalCognitionContent({ navigationTarget, navigationEvent, onPageChange }) {
   const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedDeviceId, setSelectedDeviceId] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -37,7 +46,10 @@ export default function TerminalCognitionContent({ navigationTarget, onPageChang
   } = useFilteredCabinetCognition('TERMINAL_GROUP')
   const [terminals, setTerminals] = useState([])
   const [terminalStates, setTerminalStates] = useState({})
+  const [statusRefreshVersion, setStatusRefreshVersion] = useState(0)
   const [statusError, setStatusError] = useState(null)
+  const [practiceDialog, setPracticeDialog] = useState(null)
+  const practiceRef = useRef(initialPracticeState())
 
   const selectedDevice =
     cognitionDevices.find((d) => d.id === selectedDeviceId) ?? cognitionDevices[0] ?? null
@@ -45,6 +57,11 @@ export default function TerminalCognitionContent({ navigationTarget, onPageChang
   const terminalStripId = navigationTarget?.terminalStripId ?? null
   const terminalStripTitleText = terminalStripTitle(navigationTarget?.terminalStripLabelPrefix)
   const isStatusSlide = navigationTarget?.kind === 'status'
+  const isPracticeStatusTarget = isStatusSlide && navigationTarget?.sectionId === 'terminal'
+  const visiblePracticeDialog =
+    isPracticeStatusTarget
+    && practiceDialog?.pageKey === navigationTarget?.key
+    && practiceDialog?.sequence === navigationEvent?.sequence
 
   // 加载认知条目
   useEffect(() => {
@@ -101,9 +118,12 @@ export default function TerminalCognitionContent({ navigationTarget, onPageChang
         if (key) states[key] = terminal
       })
       setTerminalStates(states)
+      setStatusRefreshVersion((version) => version + 1)
+      return states
     } catch (err) {
       setStatusError('端子状态读取失败: ' + err.message)
       console.warn('端子状态读取失败:', err.message)
+      return null
     }
   }, [cabinetId])
 
@@ -117,6 +137,83 @@ export default function TerminalCognitionContent({ navigationTarget, onPageChang
       clearInterval(timer)
     }
   }, [cabinetId, fetchTerminalStatus, isStatusSlide])
+
+  useEffect(() => {
+    if (isPracticeStatusTarget) return
+    practiceRef.current = initialPracticeState()
+  }, [isPracticeStatusTarget, navigationTarget?.key])
+
+  useEffect(() => {
+    if (
+      navigationEvent?.source !== 'next'
+      || navigationEvent.pageKey !== navigationTarget?.key
+      || !isPracticeStatusTarget
+      || practiceRef.current.sequence === navigationEvent.sequence
+    ) {
+      return
+    }
+
+    practiceRef.current = {
+      sequence: navigationEvent.sequence,
+      phase: 'waiting-refresh',
+      startRefreshVersion: statusRefreshVersion,
+    }
+    setPracticeDialog(null)
+    fetchTerminalStatus()
+  }, [
+    fetchTerminalStatus,
+    isPracticeStatusTarget,
+    navigationEvent?.pageKey,
+    navigationEvent?.sequence,
+    navigationEvent?.source,
+    navigationTarget?.key,
+    statusRefreshVersion,
+  ])
+
+  useEffect(() => {
+    const practice = practiceRef.current
+    if (
+      practice.phase !== 'waiting-refresh'
+      || statusRefreshVersion <= practice.startRefreshVersion
+      || terminals.length === 0
+    ) {
+      return
+    }
+
+    const practiceTerminals = terminals.slice(0, PRACTICE_TERMINAL_COUNT)
+    const disconnectedTerminals = practiceTerminals.filter(
+      (terminal) => terminalStates[terminalStatusKey(terminal.id)]?.wiring_status !== 'CORRECT',
+    )
+    if (disconnectedTerminals.length === 0) {
+      practiceRef.current = { ...practice, phase: 'completed' }
+      return
+    }
+
+    practiceRef.current = { ...practice, phase: 'watching' }
+    setPracticeDialog({
+      pageKey: navigationTarget?.key,
+      sequence: practice.sequence,
+      message: `请将 ${disconnectedTerminals.map((terminal) => terminal.terminalLabel).join('、')} 接入到测试仪`,
+    })
+  }, [navigationTarget?.key, statusRefreshVersion, terminalStates, terminals])
+
+  useEffect(() => {
+    const practice = practiceRef.current
+    if (practice.phase !== 'watching') return
+
+    const practiceTerminals = terminals.slice(0, PRACTICE_TERMINAL_COUNT)
+    const allConnected = practiceTerminals.length > 0 && practiceTerminals.every(
+      (terminal) => terminalStates[terminalStatusKey(terminal.id)]?.wiring_status === 'CORRECT',
+    )
+    if (!allConnected) return
+
+    practiceRef.current = { ...practice, phase: 'completed' }
+    setPracticeDialog({
+      pageKey: navigationTarget?.key,
+      sequence: practice.sequence,
+      message: '恭喜你，已正确接入端子连线，请继续学习。',
+    })
+  }, [navigationTarget?.key, statusRefreshVersion, terminalStates, terminals])
 
   useEffect(() => {
     if (navigationTarget?.sectionId !== 'terminal') return
@@ -365,6 +462,24 @@ export default function TerminalCognitionContent({ navigationTarget, onPageChang
           </div>
         )}
       </div>
+
+      {visiblePracticeDialog && (
+        <div className="pressboard-practice-dialog" role="dialog" aria-modal="true" aria-labelledby="terminal-practice-dialog-message">
+          <div className="pressboard-practice-dialog__mask" />
+          <div className="pressboard-practice-dialog__panel">
+            <p id="terminal-practice-dialog-message" className="pressboard-practice-dialog__message">
+              {practiceDialog.message}
+            </p>
+            <button
+              type="button"
+              className="pressboard-practice-dialog__btn"
+              onClick={() => setPracticeDialog(null)}
+            >
+              确定
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

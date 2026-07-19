@@ -230,8 +230,8 @@ export default function UsersPage() {
       )}
 
       {showCreate && (
-        <div className="users-page__overlay" onClick={() => setShowCreate(false)}>
-          <form className="users-page__dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleCreate}>
+        <div className="users-page__overlay">
+          <form className="users-page__dialog" onSubmit={handleCreate}>
             <h3>{config.createLabel}</h3>
             <label>
               用户名
@@ -273,8 +273,8 @@ export default function UsersPage() {
       )}
 
       {editingUser && (
-        <div className="users-page__overlay" onClick={() => setEditingUser(null)}>
-          <form className="users-page__dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleUpdate}>
+        <div className="users-page__overlay">
+          <form className="users-page__dialog" onSubmit={handleUpdate}>
             <h3>编辑 — {editingUser.username}</h3>
             <label>
               显示名称
@@ -298,8 +298,8 @@ export default function UsersPage() {
       )}
 
       {resetUser && (
-        <div className="users-page__overlay" onClick={() => setResetUser(null)}>
-          <form className="users-page__dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleResetPassword}>
+        <div className="users-page__overlay">
+          <form className="users-page__dialog" onSubmit={handleResetPassword}>
             <h3>重置密码 — {resetUser.username}</h3>
             <label>
               新密码

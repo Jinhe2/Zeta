@@ -46,16 +46,8 @@ export default function SnapshotImportModal({ open, onClose, onImport }) {
     }
   }
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget && !submitting) {
-      setJsonText('')
-      setError(null)
-      onClose()
-    }
-  }
-
   return (
-    <div className="import-modal" onClick={handleOverlayClick}>
+    <div className="import-modal">
       <div className="import-modal__panel">
         <header className="import-modal__header">
           <h3 className="import-modal__title">导入断面 JSON</h3>

@@ -325,10 +325,9 @@ export default function LogicNodeItemsPage() {
     }
 
     return (
-      <div className="users-page__overlay" onClick={close}>
+      <div className="users-page__overlay">
         <form
           className="users-page__dialog"
-          onClick={(e) => e.stopPropagation()}
           onSubmit={isCreate ? handleCreate : handleUpdate}
         >
           <h3>{isCreate ? '新增认知条目' : '编辑认知条目'}</h3>

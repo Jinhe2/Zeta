@@ -149,7 +149,7 @@ export default function LearningResourcesPage() {
         </tbody></table></div>
       )}
 
-      {editing && <div className="learning-resources-page__overlay" onClick={() => !saving && setEditing(null)}><form className="learning-resources-page__dialog" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
+      {editing && <div className="learning-resources-page__overlay"><form className="learning-resources-page__dialog" onSubmit={submit}>
         <h3>{editing === 'create' ? '上传学习资料' : '编辑学习资料'}</h3>
         <label>名称<input value={form.name} maxLength="128" required onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
         <label>说明<textarea value={form.description} required rows="4" onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>

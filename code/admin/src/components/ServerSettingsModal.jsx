@@ -108,14 +108,8 @@ export default function ServerSettingsModal({ open, onClose, onSaved }) {
     }
   }
 
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose()
-    }
-  }
-
   return (
-    <div className="server-settings-modal" onClick={handleBackdropClick}>
+    <div className="server-settings-modal">
       <div className="server-settings-modal__card">
         <header className="server-settings-modal__header">
           <h2>服务器设置</h2>

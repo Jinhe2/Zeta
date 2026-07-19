@@ -409,8 +409,8 @@ export default function DeviceDisplayItemsPage() {
       )}
 
       {showCreate && (
-        <div className="users-page__overlay" onClick={closeCreate}>
-          <form className="users-page__dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleCreate}>
+        <div className="users-page__overlay">
+          <form className="users-page__dialog" onSubmit={handleCreate}>
             <h3>新增认知条目</h3>
             <label>
               条目名称
@@ -499,8 +499,8 @@ export default function DeviceDisplayItemsPage() {
       )}
 
       {editingItem && (
-        <div className="users-page__overlay" onClick={closeEdit}>
-          <form className="users-page__dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleUpdate}>
+        <div className="users-page__overlay">
+          <form className="users-page__dialog" onSubmit={handleUpdate}>
             <h3>编辑认知条目</h3>
             <label>
               条目名称

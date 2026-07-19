@@ -362,8 +362,8 @@ export default function CognitionDevicesPage() {
 
 function DeviceFormDialog({ title, form, setForm, cabinetDevices, onClose, onSubmit, submitting }) {
   return (
-    <div className="users-page__overlay" onClick={onClose}>
-      <form className="users-page__dialog" onClick={(e) => e.stopPropagation()} onSubmit={onSubmit}>
+    <div className="users-page__overlay">
+      <form className="users-page__dialog" onSubmit={onSubmit}>
         <h3>{title}</h3>
         <label>
           设备类型

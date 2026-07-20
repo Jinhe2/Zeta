@@ -119,13 +119,20 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         if (!tableExists(table)) {
             return;
         }
-        addColumnIfMissing(table, "media_type", "VARCHAR(32) NULL COMMENT 'IMAGE / VIDEO / TERMINAL_OPERATION'");
+        addColumnIfMissing(table, "media_type", "VARCHAR(32) NULL COMMENT 'IMAGE / VIDEO / TERMINAL_OPERATION / IED_BASELINE_SETTING'");
         addColumnIfMissing(table, "video_path", "VARCHAR(512) NULL COMMENT 'JAR 同级视频相对路径'");
         executeRequired("UPDATE `" + table + "` SET `media_type` = 'IMAGE' "
                 + "WHERE `media_type` IS NULL OR TRIM(`media_type`) = '' "
-                + "OR `media_type` NOT IN ('IMAGE', 'VIDEO', 'TERMINAL_OPERATION')");
+                + "OR `media_type` NOT IN ('IMAGE', 'VIDEO', 'TERMINAL_OPERATION', 'IED_BASELINE_SETTING')");
         executeRequired("ALTER TABLE `" + table + "` MODIFY COLUMN `media_type` "
-                + "VARCHAR(32) NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO / TERMINAL_OPERATION'");
+                + "VARCHAR(32) NOT NULL DEFAULT 'IMAGE' COMMENT 'IMAGE / VIDEO / TERMINAL_OPERATION / IED_BASELINE_SETTING'");
+        // 兼容旧版本启动时把定值整定误回填为 IMAGE 的记录：该类型没有图片或视频，
+        // 且只允许配置在 IED 设备操作子设备下，因此可无歧义地恢复。
+        executeRequired("UPDATE device_display_items d "
+                + "INNER JOIN cognition_devices c ON c.id = d.cognition_device_id "
+                + "SET d.media_type = 'IED_BASELINE_SETTING' "
+                + "WHERE c.device_type = 'IED_OPERATION' AND d.media_type = 'IMAGE' "
+                + "AND d.image_url IS NULL AND d.image_data IS NULL AND d.video_path IS NULL");
         log.info("业务库 {}：认知媒体字段迁移完成", table);
     }
 

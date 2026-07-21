@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>P31 1n 回路图动态教学</title>
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <div class="app-shell">
@@ -19,25 +19,8 @@
           <h1 id="pageHeading">1-1n 操作回路动态教学</h1>
         </div>
       </div>
-      <div class="diagram-toolbar">
-        <div class="view-modes" role="group" aria-label="图纸显示模式">
-          <button class="view-mode active" data-mode="teaching">教学</button>
-          <button class="view-mode" data-mode="original">原图</button>
-          <button class="view-mode" data-mode="focus">聚焦</button>
-        </div>
-        <span class="toolbar-divider" aria-hidden="true"></span>
-        <section id="stateCard" class="toolbar-simulation" aria-label="仿真条件">
-          <span class="toolbar-section-label">仿真条件</span>
-          <div id="simulationControls" class="toolbar-dynamic-controls"></div>
-        </section>
-        <span class="toolbar-divider toolbar-divider-right" aria-hidden="true"></span>
-        <div class="zoom-controls" role="group" aria-label="缩放控制">
-          <span class="toolbar-section-label">比例</span>
-          <button id="zoomOut" title="缩小" aria-label="缩小">−</button>
-          <button id="fitView" title="适合窗口">适合</button>
-          <button id="zoomIn" title="放大" aria-label="放大">＋</button>
-          <button id="fullscreen" title="全屏" aria-label="全屏">⛶</button>
-        </div>
+      <div class="topbar-meta">
+        <span id="entityCount" class="entity-count">1193 个实体</span>
       </div>
     </header>
 
@@ -63,8 +46,28 @@
       </aside>
 
       <section class="diagram-panel">
+        <div class="diagram-toolbar">
+          <div class="view-modes" role="group" aria-label="图纸显示模式">
+            <button class="view-mode active" data-mode="teaching">教学</button>
+            <button class="view-mode" data-mode="original">原图</button>
+            <button class="view-mode" data-mode="focus">聚焦</button>
+          </div>
+          <span class="toolbar-divider" aria-hidden="true"></span>
+          <section id="stateCard" class="toolbar-simulation" aria-label="仿真条件">
+            <span class="toolbar-section-label">仿真条件</span>
+            <div id="simulationControls" class="toolbar-dynamic-controls"></div>
+          </section>
+          <span class="toolbar-divider toolbar-divider-right" aria-hidden="true"></span>
+          <div class="zoom-controls" role="group" aria-label="缩放控制">
+            <span class="toolbar-section-label">比例</span>
+            <button id="zoomOut" title="缩小" aria-label="缩小">−</button>
+            <button id="fitView" title="适合窗口">适合</button>
+            <button id="zoomIn" title="放大" aria-label="放大">＋</button>
+            <button id="fullscreen" title="全屏" aria-label="全屏">⛶</button>
+          </div>
+        </div>
+
         <div id="diagramViewport" class="diagram-viewport">
-          <button id="exitFullscreen" class="exit-fullscreen" type="button" hidden aria-label="退出全屏">退出全屏</button>
           <svg id="diagramSvg" viewBox="0 0 420 297" role="img" aria-labelledby="diagramTitle diagramDesc">
             <title id="diagramTitle">31-15 1-1n 操作回路图</title>
             <desc id="diagramDesc">由原始 DWG 对应 PDF 页生成的完整图纸，并叠加可交互电流路径。</desc>
@@ -138,7 +141,7 @@
     </main>
   </div>
 
-  <script src="drawing-pages.js?v=11"></script>
-  <script src="app.js?v=11"></script>
+  <script src="drawing-pages.js?v=10"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>

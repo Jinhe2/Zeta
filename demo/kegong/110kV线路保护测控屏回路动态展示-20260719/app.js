@@ -188,6 +188,7 @@ const elements = {
   speed: document.getElementById("speedSelect")
 };
 elements.pageHeading = document.getElementById("pageHeading");
+elements.entityCount = document.getElementById("entityCount");
 elements.drawingSelect = document.getElementById("drawingSelect");
 elements.drawingNote = document.getElementById("drawingNote");
 elements.filterTabs = document.getElementById("filterTabs");
@@ -196,7 +197,6 @@ elements.diagramTitle = document.getElementById("diagramTitle");
 elements.diagramDesc = document.getElementById("diagramDesc");
 elements.stateCard = document.getElementById("stateCard");
 elements.simulationControls = document.getElementById("simulationControls");
-elements.exitFullscreen = document.getElementById("exitFullscreen");
 
 function renderFilters() {
   elements.filterTabs.style.gridTemplateColumns = `repeat(${activePage.filters.length + 1}, 1fr)`;
@@ -227,6 +227,7 @@ function selectPage(pageId) {
   elements.svg.setAttribute("viewBox", "0 0 420 297");
   elements.drawingImage.setAttribute("href", `assets/${activePage.id}-circuit.png`);
   elements.pageHeading.textContent = `${activePage.id} ${activePage.shortTitle}动态教学`;
+  elements.entityCount.textContent = `${activePage.entityCount} 个实体`;
   elements.drawingNote.textContent = activePage.note;
   elements.diagramTitle.textContent = `${activePage.id} ${activePage.title}`;
   elements.diagramDesc.textContent = `${activePage.note} 由原始 DWG 对应 PDF 页生成完整图纸，并叠加可交互电流路径。`;
@@ -742,26 +743,10 @@ document.querySelectorAll(".view-mode").forEach(button => button.addEventListene
 document.getElementById("zoomIn").addEventListener("click", () => zoom(.78));
 document.getElementById("zoomOut").addEventListener("click", () => zoom(1.28));
 document.getElementById("fitView").addEventListener("click", () => setViewBox({ x: 0, y: 0, w: 420, h: 297 }));
-const fullscreenElement = () => document.fullscreenElement || document.webkitFullscreenElement;
-const enterFullscreen = () => {
-  const request = elements.viewport.requestFullscreen || elements.viewport.webkitRequestFullscreen;
-  if (request) request.call(elements.viewport);
-};
-const leaveFullscreen = () => {
-  const exit = document.exitFullscreen || document.webkitExitFullscreen;
-  if (exit) exit.call(document);
-};
-const syncFullscreenControls = () => {
-  elements.exitFullscreen.hidden = fullscreenElement() !== elements.viewport;
-};
-
 document.getElementById("fullscreen").addEventListener("click", () => {
-  if (fullscreenElement()) leaveFullscreen();
-  else enterFullscreen();
+  if (!document.fullscreenElement) elements.viewport.requestFullscreen?.();
+  else document.exitFullscreen?.();
 });
-elements.exitFullscreen.addEventListener("click", leaveFullscreen);
-document.addEventListener("fullscreenchange", syncFullscreenControls);
-document.addEventListener("webkitfullscreenchange", syncFullscreenControls);
 
 elements.svg.addEventListener("wheel", event => {
   event.preventDefault();

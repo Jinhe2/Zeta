@@ -103,7 +103,6 @@ const COACH_ENTRIES = [
     Icon: IconDrawing,
     desc: '识读二次回路图纸与接线图',
     route: '/student/modes/coach/drawing',
-    disabled: true,
   },
   {
     id: 'circuit',

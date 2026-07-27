@@ -16,6 +16,7 @@ import CoachModePage from './pages/student/CoachModePage'
 import CircuitLearningPage from './pages/student/CircuitLearningPage'
 import CircuitViewerPage from './pages/student/CircuitViewerPage'
 import CabinetCognitionPage from './pages/student/CabinetCognitionPage'
+import DrawingLearningPage from './pages/student/DrawingLearningPage'
 import TeacherPage from './pages/TeacherPage'
 import AdminLayout from './components/AdminLayout'
 import UsersPage from './pages/admin/business/UsersPage'
@@ -25,6 +26,10 @@ import DisplayCabinetListPage from './pages/admin/business/display/DisplayCabine
 import CabinetDisplayItemsPage from './pages/admin/business/display/CabinetDisplayItemsPage'
 import CognitionDevicesPage from './pages/admin/business/display/CognitionDevicesPage'
 import DeviceDisplayItemsPage from './pages/admin/business/display/DeviceDisplayItemsPage'
+import DrawingCabinetListPage from './pages/admin/business/drawing/DrawingCabinetListPage'
+import DrawingGroupsPage from './pages/admin/business/drawing/DrawingGroupsPage'
+import DrawingPagesPage from './pages/admin/business/drawing/DrawingPagesPage'
+import DrawingCognitionItemsPage from './pages/admin/business/drawing/DrawingCognitionItemsPage'
 import LogicLearningPage from './pages/admin/business/logic/LogicLearningPage'
 import LogicLearningDevicesPage from './pages/admin/business/logic/LogicLearningDevicesPage'
 import LogicLearningLogicsPage from './pages/admin/business/logic/LogicLearningLogicsPage'
@@ -103,7 +108,7 @@ export default function App() {
             <Route path="modes/coach/circuit" element={<CircuitLearningPage />} />
             <Route path="modes/coach/circuit/:category/:name" element={<CircuitViewerPage />} />
             <Route path="modes/coach/sampling" element={<StudentPlaceholderPage title="采样测试" description="对保护装置进行采样值测试与信号校验，功能开发中。" />} />
-            <Route path="modes/coach/drawing" element={<StudentPlaceholderPage title="图纸学习" description="识读二次回路图纸与接线图，功能开发中。" />} />
+            <Route path="modes/coach/drawing" element={<DrawingLearningPage />} />
             <Route path="modes/coach/accident" element={<StudentPlaceholderPage title="事故处理" description="学习事故处理流程与案例分析，功能开发中。" />} />
             <Route path="modes/exam" element={<StudentPlaceholderPage title="测评模式" description="模拟测评考核，功能开发中。" />} />
             <Route path="modes/panorama" element={<PanoramaListPage />} />
@@ -142,6 +147,10 @@ export default function App() {
             <Route path="users/:roleKey" element={<UsersPage />} />
 
             <Route path="display" element={<DisplayCabinetListPage />} />
+            <Route path="drawing-learning" element={<DrawingCabinetListPage />} />
+            <Route path="drawing-learning/cabinets/:cabinetId" element={<DrawingGroupsPage />} />
+            <Route path="drawing-learning/groups/:groupId/pages" element={<DrawingPagesPage />} />
+            <Route path="drawing-learning/pages/:pageId/items" element={<DrawingCognitionItemsPage />} />
             <Route path="logic-learning" element={<LogicLearningPage />} />
             <Route path="learning-resources" element={<LearningResourcesPage />} />
             <Route path="logic-learning/cabinets/:cabinetId/devices" element={<LogicLearningDevicesPage />} />

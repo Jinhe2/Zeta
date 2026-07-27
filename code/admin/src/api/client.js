@@ -475,6 +475,80 @@ export const api = {
     return uploadRequest('/api/admin/cabinet-display-images', formData)
   },
 
+  listDrawingGroups(cabinetId) {
+    return request(`/api/admin/drawing-learning/cabinets/${cabinetId}/groups`)
+  },
+
+  createDrawingGroup(cabinetId, payload) {
+    return request(`/api/admin/drawing-learning/cabinets/${cabinetId}/groups`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  getDrawingGroup(id) {
+    return request(`/api/admin/drawing-learning/groups/${id}`)
+  },
+
+  updateDrawingGroup(id, payload) {
+    return request(`/api/admin/drawing-learning/groups/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteDrawingGroup(id) {
+    return request(`/api/admin/drawing-learning/groups/${id}`, { method: 'DELETE' })
+  },
+
+  listDrawingPages(groupId) {
+    return request(`/api/admin/drawing-learning/groups/${groupId}/pages`)
+  },
+
+  createDrawingPage(groupId, payload) {
+    return request(`/api/admin/drawing-learning/groups/${groupId}/pages`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  getDrawingPage(id) {
+    return request(`/api/admin/drawing-learning/pages/${id}`)
+  },
+
+  updateDrawingPage(id, payload) {
+    return request(`/api/admin/drawing-learning/pages/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteDrawingPage(id) {
+    return request(`/api/admin/drawing-learning/pages/${id}`, { method: 'DELETE' })
+  },
+
+  listDrawingCognitionItems(pageId) {
+    return request(`/api/admin/drawing-learning/pages/${pageId}/items`)
+  },
+
+  createDrawingCognitionItem(pageId, payload) {
+    return request(`/api/admin/drawing-learning/pages/${pageId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  updateDrawingCognitionItem(id, payload) {
+    return request(`/api/admin/drawing-learning/items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteDrawingCognitionItem(id) {
+    return request(`/api/admin/drawing-learning/items/${id}`, { method: 'DELETE' })
+  },
+
   listCognitionDevices(itemId) {
     return request(`/api/cabinet-display-items/${itemId}/cognition-devices`)
   },
@@ -608,6 +682,14 @@ export const api = {
 
   listKnowledgeCognitionDeviceBaselineSettings(cognitionDeviceId) {
     return request(`/api/knowledge/cognition-devices/${cognitionDeviceId}/baseline-settings`)
+  },
+
+  listKnowledgeDrawingGroups(cabinetId) {
+    return request(`/api/knowledge/cabinets/${cabinetId}/drawing-groups`)
+  },
+
+  getKnowledgeDrawingGroup(groupId) {
+    return request(`/api/knowledge/drawing-groups/${groupId}`)
   },
 
   // ── 设备绑定 ──

@@ -4,6 +4,8 @@ import com.zeta.business.cabinetdisplay.CabinetDisplayItem;
 import com.zeta.business.cabinetdisplay.CabinetDisplayItemRepository;
 import com.zeta.business.devicedisplay.DeviceDisplayItem;
 import com.zeta.business.devicedisplay.DeviceDisplayItemRepository;
+import com.zeta.business.drawinglearning.DrawingPage;
+import com.zeta.business.drawinglearning.DrawingPageRepository;
 import com.zeta.business.logicnodecognition.LogicNodeCognitionItem;
 import com.zeta.business.logicnodecognition.LogicNodeCognitionItemRepository;
 import org.springframework.http.CacheControl;
@@ -26,13 +28,16 @@ public class ImageController {
     private final CabinetDisplayItemRepository cabinetRepository;
     private final DeviceDisplayItemRepository deviceRepository;
     private final LogicNodeCognitionItemRepository logicNodeRepository;
+    private final DrawingPageRepository drawingPageRepository;
 
     public ImageController(CabinetDisplayItemRepository cabinetRepository,
                            DeviceDisplayItemRepository deviceRepository,
-                           LogicNodeCognitionItemRepository logicNodeRepository) {
+                           LogicNodeCognitionItemRepository logicNodeRepository,
+                           DrawingPageRepository drawingPageRepository) {
         this.cabinetRepository = cabinetRepository;
         this.deviceRepository = deviceRepository;
         this.logicNodeRepository = logicNodeRepository;
+        this.drawingPageRepository = drawingPageRepository;
     }
 
     @GetMapping("/cabinet-display/{id}")
@@ -108,5 +113,30 @@ public class ImageController {
                 .contentType(MediaType.parseMediaType(contentType))
                 .cacheControl(CacheControl.noStore())
                 .body(item.getImageData());
+    }
+
+    @GetMapping("/drawing-page/{id}")
+    public ResponseEntity<?> getDrawingPageImage(@PathVariable Long id) {
+        DrawingPage page = drawingPageRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "图片不存在"));
+
+        if (page.getImageData() == null || page.getImageData().length == 0) {
+            if (StringUtils.hasText(page.getImageUrl())) {
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create(page.getImageUrl()))
+                        .cacheControl(CacheControl.noStore())
+                        .build();
+            }
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
+        }
+
+        String contentType = page.getImageContentType() != null
+                ? page.getImageContentType()
+                : "image/jpeg";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .cacheControl(CacheControl.noStore())
+                .body(page.getImageData());
     }
 }

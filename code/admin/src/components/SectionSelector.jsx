@@ -146,7 +146,7 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
           onClick={handlePrev}
           aria-label="上一个断面"
         >
-          ‹ 上一页
+          ‹ 上一点
         </button>
 
         <div ref={timelineRef} className="section-selector__timeline" aria-label="断面时间轴">
@@ -193,7 +193,7 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
           onClick={handleNext}
           aria-label="下一个断面"
         >
-          下一页 ›
+          下一点 ›
         </button>
 
         <span className="section-selector__page-pill" aria-label="当前断面页码">

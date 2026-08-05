@@ -29,6 +29,17 @@ function satisfiedCount(states, nodeIds) {
   return { ok: vals.filter(Boolean).length, total: vals.length }
 }
 
+function isNodeOn(states, nodeId) {
+  return states?.[nodeId] === true || states?.[nodeId] === 1
+}
+
+function isActionSection(sections, index, outputNodeIds) {
+  if (!outputNodeIds?.length || index <= 0) return false
+  const previousStates = sections[index - 1]?.states
+  const currentStates = sections[index]?.states
+  return outputNodeIds.some((nodeId) => !isNodeOn(previousStates, nodeId) && isNodeOn(currentStates, nodeId))
+}
+
 function parseTimeMetric(section, index, firstTimestampMs) {
   if (typeof section.time === 'number' && Number.isFinite(section.time)) {
     return section.time * 1000
@@ -96,17 +107,17 @@ function buildTimelineLayout(sections, containerWidth) {
   }
 }
 
-export default function SectionSelector({ sections, selectedId, onSelect, inputNodeIds = [] }) {
-  if (!sections?.length) return null
+export default function SectionSelector({ sections, selectedId, onSelect, inputNodeIds = [], outputNodeIds = [] }) {
   const timelineRef = useRef(null)
   const [timelineWidth, setTimelineWidth] = useState(520)
+  const safeSections = sections ?? []
 
-  const currentIndex = sections.findIndex((s) => s.id === selectedId)
+  const currentIndex = safeSections.findIndex((s) => s.id === selectedId)
   const hasPrev = currentIndex > 0
-  const hasNext = currentIndex >= 0 && currentIndex < sections.length - 1
-  const cur = currentIndex >= 0 ? sections[currentIndex] : null
+  const hasNext = currentIndex >= 0 && currentIndex < safeSections.length - 1
+  const cur = currentIndex >= 0 ? safeSections[currentIndex] : null
   const { ok, total } = satisfiedCount(cur?.states, inputNodeIds)
-  const timeline = buildTimelineLayout(sections, timelineWidth)
+  const timeline = safeSections.length ? buildTimelineLayout(safeSections, timelineWidth) : null
 
   useEffect(() => {
     const node = timelineRef.current
@@ -125,8 +136,10 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
     return () => observer.disconnect()
   }, [])
 
-  const handlePrev = () => { if (hasPrev) onSelect(sections[currentIndex - 1].id) }
-  const handleNext = () => { if (hasNext) onSelect(sections[currentIndex + 1].id) }
+  if (!safeSections.length) return null
+
+  const handlePrev = () => { if (hasPrev) onSelect(safeSections[currentIndex - 1].id) }
+  const handleNext = () => { if (hasNext) onSelect(safeSections[currentIndex + 1].id) }
 
   return (
     <footer className="section-selector">
@@ -156,12 +169,13 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
               aria-hidden="true"
               style={{ left: `${timeline.lineLeft}px`, width: `${timeline.lineWidth}px` }}
             />
-            {sections.map((section, i) => {
+            {safeSections.map((section, i) => {
               const { ok: sOk, total: sTotal } = satisfiedCount(section.states, inputNodeIds)
               const isActive = section.id === selectedId
               const isOk = sTotal > 0 && sOk === sTotal
+              const isAction = isActionSection(safeSections, i, outputNodeIds)
               const ts = formatTimestamp(section.timestamp)
-              const title = `#${String(i + 1).padStart(2, '0')} ${section.label} ${ts} 满足 ${sOk}/${sTotal}`
+              const title = `#${String(i + 1).padStart(2, '0')} ${section.label} ${ts} 满足 ${sOk}/${sTotal}${isAction ? ' 动作' : ''}`
               return (
                 <button
                   key={section.id}
@@ -173,6 +187,7 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
                   aria-current={isActive ? 'step' : undefined}
                   onClick={() => onSelect(section.id)}
                 >
+                  {isAction && <span className="section-selector__action-marker" aria-label="动作">动作</span>}
                   <span className="section-selector__timeline-dot" />
                   <span className="section-selector__timeline-index">
                     {String(i + 1).padStart(2, '0')}
@@ -203,7 +218,7 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
           </span>
           <span className="section-selector__page-sep">/</span>
           <span className="section-selector__page-label">断面总数</span>
-          <span className="section-selector__page-total">{sections.length}</span>
+          <span className="section-selector__page-total">{safeSections.length}</span>
         </span>
       </div>
 

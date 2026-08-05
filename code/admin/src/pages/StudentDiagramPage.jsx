@@ -624,6 +624,11 @@ export default function StudentDiagramPage() {
     [detail?.config?.inputs],
   )
 
+  const outputNodeIds = useMemo(
+    () => (detail?.config?.outputs ?? []).map((output) => output.id).filter(Boolean),
+    [detail?.config?.outputs],
+  )
+
   const configurableNodeMap = useMemo(
     () => buildConfigurableNodeMap(detail?.config),
     [detail?.config],
@@ -796,6 +801,7 @@ export default function StudentDiagramPage() {
               selectedId={selectedSectionId}
               onSelect={setSelectedSectionId}
               inputNodeIds={inputNodeIds}
+              outputNodeIds={outputNodeIds}
             />
           )}
         </div>

@@ -44,14 +44,14 @@
   gap: 8px;
   flex: 1;
   min-width: 0;
-  min-height: 56px;
+  min-height: 76px;
 }
 
 .section-selector__timeline {
   position: relative;
   flex: 1;
   min-width: 0;
-  height: 58px;
+  height: 82px;
   padding: 0;
   overflow: hidden;
   overflow-y: hidden;
@@ -63,14 +63,14 @@
 
 .section-selector__timeline-inner {
   position: relative;
-  height: 58px;
+  height: 82px;
   width: 100%;
   min-width: 0;
 }
 
 .section-selector__timeline-line {
   position: absolute;
-  top: 17px;
+  top: 41px;
   height: 2px;
   border-radius: 2px;
   background: linear-gradient(90deg, rgba(96, 125, 139, 0.35), rgba(129, 199, 132, 0.52), rgba(96, 125, 139, 0.35));
@@ -79,7 +79,7 @@
 
 .section-selector__timeline-point {
   position: absolute;
-  top: 2px;
+  top: 26px;
   z-index: 1;
   width: 56px;
   height: 54px;
@@ -94,6 +94,56 @@
   cursor: pointer;
   font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
   transform: translateX(-50%);
+}
+
+.section-selector__action-marker {
+  position: absolute;
+  left: 50%;
+  top: -25px;
+  z-index: 2;
+  width: 28px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 5px;
+  color: #1b2733;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+  text-orientation: upright;
+  writing-mode: vertical-rl;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.36));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.section-selector__action-marker::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 7px;
+  z-index: -1;
+  border: 1px solid rgba(255, 213, 79, 0.82);
+  border-bottom: 0;
+  border-radius: 4px 4px 1px 1px;
+  background: linear-gradient(180deg, #ffec8b, #ffc947);
+}
+
+.section-selector__action-marker::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: -1;
+  width: 19px;
+  height: 19px;
+  border-right: 1px solid rgba(255, 213, 79, 0.82);
+  border-bottom: 1px solid rgba(255, 213, 79, 0.82);
+  background: #ffc947;
+  transform: translateX(-50%) rotate(45deg);
+  transform-origin: center;
 }
 
 .section-selector__timeline-dot {

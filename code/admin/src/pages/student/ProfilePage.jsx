@@ -11,10 +11,17 @@ const TABS = [
 ]
 
 const MOCK_HISTORY = [
-  { id: 1, title: '教练模式 · 线路保护基础', time: '2026-05-28 14:30', duration: '42 分钟' },
-  { id: 2, title: '测评模式 · 继电保护综合测评', time: '2026-05-26 10:15', duration: '35 分钟' },
-  { id: 3, title: '全景模式 · 过流保护逻辑', time: '2026-05-24 16:08', duration: '28 分钟' },
+  { id: 1, deviceName: '线路保护装置', title: '教练模式 · 线路保护基础', time: '2026-05-28 14:30', duration: '42 分钟' },
+  { id: 2, deviceName: '线路保护装置', title: '测评模式 · 继电保护综合测评', time: '2026-05-26 10:15', duration: '35 分钟' },
+  { id: 3, deviceName: '母线保护装置', title: '全景模式 · 过流保护逻辑', time: '2026-05-24 16:08', duration: '28 分钟' },
 ]
+
+const HISTORY_BY_DEVICE = MOCK_HISTORY.reduce((groups, item) => {
+  const records = groups.get(item.deviceName) || []
+  records.push(item)
+  groups.set(item.deviceName, records)
+  return groups
+}, new Map())
 
 const MOCK_SCORES = [
   { id: 1, name: '线路保护基础测评', score: 86, date: '2026-05-26' },
@@ -65,17 +72,28 @@ function LearningTab() {
 function HistoryTab() {
   return (
     <div className="profile-panel">
-      <ul className="profile-history-list">
-        {MOCK_HISTORY.map((item) => (
-          <li key={item.id} className="profile-history-item">
-            <div className="profile-history-item__main">
-              <span className="profile-history-item__title">{item.title}</span>
-              <span className="profile-history-item__time">{item.time}</span>
-            </div>
-            <span className="profile-history-item__duration">{item.duration}</span>
-          </li>
+      <div className="profile-history-groups">
+        {[...HISTORY_BY_DEVICE.entries()].map(([deviceName, records]) => (
+          <section key={deviceName} className="profile-history-group">
+            <header className="profile-history-group__header">
+              <h3>{deviceName}</h3>
+              <span>{records.length} 条记录</span>
+            </header>
+            <ul className="profile-history-list">
+              {records.map((item) => (
+                <li key={item.id} className="profile-history-item">
+                  <div className="profile-history-item__main">
+                    <span className="profile-history-item__device">学习装置：{item.deviceName}</span>
+                    <span className="profile-history-item__title">{item.title}</span>
+                    <span className="profile-history-item__time">{item.time}</span>
+                  </div>
+                  <span className="profile-history-item__duration">{item.duration}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
     </div>
   )
 }

@@ -67,9 +67,43 @@
 }
 
 /* 历史记录 */
+.profile-history-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.profile-history-group {
+  overflow: hidden;
+  border: 1px solid rgba(94, 179, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(10, 22, 38, 0.36);
+}
+
+.profile-history-group__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(94, 179, 255, 0.16);
+  background: rgba(26, 55, 84, 0.55);
+}
+
+.profile-history-group__header h3 {
+  margin: 0;
+  color: #e8f4ff;
+  font-size: 22.08px;
+}
+
+.profile-history-group__header span {
+  flex-shrink: 0;
+  color: #8ec5f8;
+  font-size: 16.56px;
+}
+
 .profile-history-list {
   margin: 0;
-  padding: 0;
+  padding: 10px;
   list-style: none;
 }
 
@@ -99,6 +133,12 @@
   font-size: 19.32px;
   font-weight: 600;
   color: #e8f0f8;
+}
+
+.profile-history-item__device {
+  color: #8ec5f8;
+  font-size: 16.56px;
+  font-weight: 600;
 }
 
 .profile-history-item__time {
@@ -201,7 +241,13 @@
 }
 
 @media (max-width: 768px) {
-}
   .profile-stats {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .profile-history-group__header,
+  .profile-history-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

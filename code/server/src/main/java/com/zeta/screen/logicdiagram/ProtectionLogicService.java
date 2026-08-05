@@ -2,6 +2,9 @@ package com.zeta.screen.logicdiagram;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zeta.business.entities.cognitiondevice.CognitionDevice;
+import com.zeta.business.entities.cognitiondevice.CognitionDeviceRepository;
+import com.zeta.business.entities.cognitiondevice.CognitionDeviceType;
 import com.zeta.business.service.LogicLearningConfigService;
 import com.zeta.screen.ieddevice.Device;
 import com.zeta.screen.logicdiagram.dto.*;
@@ -28,6 +31,7 @@ public class ProtectionLogicService {
     private final ProtectionLogicRepository repository;
     private final ObjectMapper objectMapper;
     private final LogicLearningConfigService logicLearningConfigService;
+    private final CognitionDeviceRepository cognitionDeviceRepository;
 
     /** v2.3 snapshot data indexed by logicId from the snapshot JSON */
     private final Map<String, Map<String, Object>> snapshotCache = new LinkedHashMap<>();
@@ -35,10 +39,12 @@ public class ProtectionLogicService {
     public ProtectionLogicService(
             ProtectionLogicRepository repository,
             ObjectMapper objectMapper,
-            LogicLearningConfigService logicLearningConfigService) {
+            LogicLearningConfigService logicLearningConfigService,
+            CognitionDeviceRepository cognitionDeviceRepository) {
         this.repository = repository;
         this.objectMapper = objectMapper;
         this.logicLearningConfigService = logicLearningConfigService;
+        this.cognitionDeviceRepository = cognitionDeviceRepository;
     }
 
     @PostConstruct
@@ -198,6 +204,9 @@ public class ProtectionLogicService {
 
     private ProtectionLogicDetailResponse toDetail(ProtectionLogic logic) {
         Device device = logic.getDevice();
+        Long cabinetId = device != null && device.getCabinet() != null ? device.getCabinet().getId() : null;
+        String cabinetName = device != null && device.getCabinet() != null ? device.getCabinet().getName() : null;
+        Long deviceId = device != null ? device.getId() : null;
         return new ProtectionLogicDetailResponse(
                 logic.getId(),
                 logic.getCode(),
@@ -205,8 +214,22 @@ public class ProtectionLogicService {
                 logic.getDescription(),
                 logic.getCategory(),
                 parseConfig(logic.getConfigJson()),
-                device != null ? device.getId() : null,
-                device != null ? device.getIedName() : null);
+                deviceId,
+                device != null ? device.getIedName() : null,
+                cabinetId,
+                cabinetName,
+                resolveIedOperationCognitionDeviceId(deviceId));
+    }
+
+    private Long resolveIedOperationCognitionDeviceId(Long screenDeviceId) {
+        if (screenDeviceId == null) {
+            return null;
+        }
+        return cognitionDeviceRepository.findByScreenDeviceId(screenDeviceId).stream()
+                .filter(device -> device.getDeviceType() == CognitionDeviceType.IED_OPERATION)
+                .map(CognitionDevice::getId)
+                .findFirst()
+                .orElse(null);
     }
 
     private static <T> int sizeOf(List<T> list) {

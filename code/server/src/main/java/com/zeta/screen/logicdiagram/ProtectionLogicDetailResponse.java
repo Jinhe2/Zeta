@@ -16,4 +16,7 @@ public class ProtectionLogicDetailResponse {
     private ConfigDto config;
     private Long deviceId;
     private String iedName;
+    private Long screenCabinetId;
+    private String screenCabinetName;
+    private Long cognitionDeviceId;
 }

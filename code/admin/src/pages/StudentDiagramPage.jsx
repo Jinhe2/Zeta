@@ -14,10 +14,13 @@ import './StudentPages.css'
 
 const HEARTBEAT_INTERVAL = 5000
 const POLL_INTERVAL = 3000
+const EXPERIMENT_REMINDER_INTERVAL = 10 * 60 * 1000
+const EXPERIMENT_AUTO_STOP_GRACE = 60 * 1000
 const APP_TITLE = '继电保护智慧实操教学系统'
 const EXPERIMENT_SUCCESS_MESSAGE = '恭喜成功完成实验'
 const EXPERIMENT_FAILED_MESSAGE = '实验失败了，请结合中间文件分析结果进一步确认原因'
 const EXPERIMENT_DIAGNOSIS_MESSAGE = '实验失败了，请重新学习逻辑框图和相关操作'
+const EXPERIMENT_NO_WAVEFORM_MESSAGE = '未获取到录波，请结合定值和功能压板状态排查'
 
 /** 将 v2.3 snapshot JSON 解析为 sections 数组 */
 function parseSnapshotSections(snapshotJson) {
@@ -111,6 +114,88 @@ function getExperimentDialogMessage(result, task) {
   return ''
 }
 
+function readFirstValue(source, keys) {
+  for (const key of keys) {
+    const value = source?.[key]
+    if (value != null && value !== '') return value
+  }
+  return ''
+}
+
+function hasBinaryData(value) {
+  if (value == null) return false
+  if (typeof value === 'string') return value.trim().length > 0
+  if (Array.isArray(value)) return value.length > 0
+  return true
+}
+
+function isNoWaveformResult(result, task) {
+  const errorText = `${result?.error_code ?? result?.errorCode ?? ''} ${result?.error_message ?? result?.errorMessage ?? task?.errorMessage ?? ''}`.toLowerCase()
+  const noWaveformHint = /无录波|未录波|没有录波|no.?wave|no.?record|record.*not|comtrade/.test(errorText)
+  const hasSnapshot = Boolean(task?.snapshotJson)
+  const hasComtrade = ['comtradeCfg', 'comtradeDat', 'comtradeMid', 'comtradeDes', 'comtradeHdr']
+    .some((key) => hasBinaryData(task?.[key]))
+  const transitionCount = Number(task?.totalTransitions ?? result?.total_transitions ?? result?.totalTransitions ?? 0)
+  return noWaveformHint || (!hasSnapshot && !hasComtrade && transitionCount === 0)
+}
+
+function normalizePressboardStateValue(state) {
+  if (state === true || state === 1) return '投入'
+  if (state === false || state === 0) return '退出'
+  const text = String(state ?? '').trim()
+  const normalized = text.toUpperCase()
+  if (!text) return ''
+  if (['ON', 'CONNECTED', 'CLOSE', 'CLOSED', '1', 'TRUE', 'YES', 'Y', '合闸', '闭合', '合位', '投入', '投'].includes(normalized) || ['合闸', '闭合', '合位', '投入', '投'].includes(text)) return '投入'
+  if (['OFF', 'DISCONNECTED', 'OPEN', 'OPENED', '0', 'FALSE', 'NO', 'N', '分闸', '断开', '分位', '退出', '退'].includes(normalized) || ['分闸', '断开', '分位', '退出', '退'].includes(text)) return '退出'
+  return text
+}
+
+function readPressboardStatusId(pressboardStatus) {
+  return pressboardStatus?.pressboard_id
+    ?? pressboardStatus?.pressboardId
+    ?? pressboardStatus?.id
+}
+
+function readPressboardStatusValue(pressboardStatus) {
+  return pressboardStatus?.state
+    ?? pressboardStatus?.status
+    ?? pressboardStatus?.value
+    ?? pressboardStatus?.position
+    ?? pressboardStatus?.switch_state
+    ?? pressboardStatus?.switchState
+}
+
+function normalizeBaselineItems(result) {
+  const items = result?.items ?? result?.settings ?? result?.results ?? []
+  if (!Array.isArray(items)) return []
+  return items.map((item, index) => ({
+    key: `${readFirstValue(item, ['setting_ref', 'settingRef', 'description', 'name'])}-${index}`,
+    name: readFirstValue(item, ['description', 'name', 'setting_name', 'settingName', 'setting_ref', 'settingRef']) || `定值 ${index + 1}`,
+    baselineValue: readFirstValue(item, ['baselineValue', 'baseline_value', 'expectedValue', 'expected_value', 'referenceValue', 'reference_value']),
+    actualValue: readFirstValue(item, ['actualValue', 'actual_value', 'currentValue', 'current_value', 'realValue', 'real_value']),
+    matched: item.equal ?? item.matched ?? item.pass ?? item.passed,
+  })).filter((item) => item.baselineValue !== '' || item.actualValue !== '')
+}
+
+function buildPressboardRows(pressboards, statusResponse) {
+  const functionPressboards = (Array.isArray(pressboards) ? pressboards : [])
+    .filter((pressboard) => pressboard.pressboardType === 'FUNCTION')
+  const statusItems = Array.isArray(statusResponse?.pressboards) ? statusResponse.pressboards : []
+  const statesById = new Map()
+  const statesByName = new Map()
+  for (const item of statusItems) {
+    const state = normalizePressboardStateValue(readPressboardStatusValue(item))
+    const id = readPressboardStatusId(item)
+    if (id != null) statesById.set(String(id), state)
+    if (item?.name) statesByName.set(String(item.name), state)
+  }
+  return functionPressboards.map((pressboard) => ({
+    id: pressboard.id,
+    name: pressboard.name || `功能压板 ${pressboard.id}`,
+    actualValue: statesById.get(String(pressboard.id)) ?? statesByName.get(String(pressboard.name)) ?? '',
+  })).filter((item) => item.actualValue)
+}
+
 function buildConfigurableNodeMap(config) {
   const map = new Map()
   const addNode = (node, type) => {
@@ -158,7 +243,8 @@ export default function StudentDiagramPage() {
   const [error, setError] = useState(null)
   const [jsonViewer, setJsonViewer] = useState({ open: false, title: '', json: '' })
   const [importOpen, setImportOpen] = useState(false)
-  const [experimentDialog, setExperimentDialog] = useState({ open: false, message: '' })
+  const [experimentDialog, setExperimentDialog] = useState({ open: false, title: '', message: '' })
+  const [timeoutDialog, setTimeoutDialog] = useState({ open: false, autoStopAt: null })
   const [selectedLogicNodeId, setSelectedLogicNodeId] = useState(null)
   const [nodeCognitionItems, setNodeCognitionItems] = useState([])
   const [nodeCognitionIndex, setNodeCognitionIndex] = useState(0)
@@ -171,6 +257,8 @@ export default function StudentDiagramPage() {
   const taskUuidRef = useRef(null)
   const heartbeatRef = useRef(null)
   const pollRef = useRef(null)
+  const reminderRef = useRef(null)
+  const autoStopRef = useRef(null)
 
   // Load detail + existing snapshots
   useEffect(() => {
@@ -203,6 +291,14 @@ export default function StudentDiagramPage() {
     if (pollRef.current) {
       clearInterval(pollRef.current)
       pollRef.current = null
+    }
+    if (reminderRef.current) {
+      clearTimeout(reminderRef.current)
+      reminderRef.current = null
+    }
+    if (autoStopRef.current) {
+      clearTimeout(autoStopRef.current)
+      autoStopRef.current = null
     }
   }, [])
 
@@ -291,6 +387,62 @@ export default function StudentDiagramPage() {
     }
   }, [id, detail])
 
+  const cognitionDeviceId = detail?.cognitionDeviceId
+  const screenCabinetId = detail?.screenCabinetId
+
+  const loadExperimentDiagnostics = useCallback(async () => {
+    const [baselineResult, pressboardResult] = await Promise.allSettled([
+      cognitionDeviceId ? api.compareCognitionDeviceBaselineSettings(cognitionDeviceId) : Promise.resolve(null),
+      screenCabinetId
+        ? Promise.all([
+          api.listHardPressboards(screenCabinetId),
+          api.triggerPressboardStatus(screenCabinetId),
+        ])
+        : Promise.resolve(null),
+    ])
+
+    const baselineItems = baselineResult.status === 'fulfilled'
+      ? normalizeBaselineItems(baselineResult.value)
+      : []
+    const pressboardItems = pressboardResult.status === 'fulfilled' && pressboardResult.value
+      ? buildPressboardRows(pressboardResult.value[0], pressboardResult.value[1])
+      : []
+
+    return {
+      baselineItems,
+      pressboardItems,
+      errors: [
+        baselineResult.status === 'rejected' ? `定值读取失败：${baselineResult.reason?.message || '未知错误'}` : '',
+        pressboardResult.status === 'rejected' ? `功能压板读取失败：${pressboardResult.reason?.message || '未知错误'}` : '',
+      ].filter(Boolean),
+    }
+  }, [cognitionDeviceId, screenCabinetId])
+
+  const showExperimentResultDialog = useCallback(async (result, task, fallbackMessage) => {
+    const noWaveform = isNoWaveformResult(result, task)
+    const diagnostics = await loadExperimentDiagnostics()
+    const snapshotMeta = parseSnapshotMeta(task?.snapshotJson)
+    const message = noWaveform
+      ? EXPERIMENT_NO_WAVEFORM_MESSAGE
+      : fallbackMessage || getExperimentDialogMessage(result, task) || (result?.result === 'failed' ? EXPERIMENT_FAILED_MESSAGE : '实验已结束')
+
+    setExperimentDialog({
+      open: true,
+      title: noWaveform ? '无录波辅助排查' : '实验结果',
+      message,
+      noWaveform,
+      summary: {
+        result: result?.result,
+        resultType: result?.result_type ?? result?.resultType ?? task?.resultType ?? snapshotMeta.resultType,
+        totalTransitions: task?.totalTransitions ?? result?.total_transitions ?? result?.totalTransitions,
+        sectionCount: task?.snapshotJson ? parseSnapshotSections(task.snapshotJson).length : 0,
+      },
+      baselineItems: diagnostics.baselineItems,
+      pressboardItems: diagnostics.pressboardItems,
+      diagnosticErrors: diagnostics.errors,
+    })
+  }, [loadExperimentDiagnostics])
+
   // 轮询任务结果
   const startResultPolling = useCallback((taskUuid) => {
     if (pollRef.current) clearInterval(pollRef.current)
@@ -313,25 +465,57 @@ export default function StudentDiagramPage() {
           setMonitoring(false)
           if (taskUuidRef.current === taskUuid) taskUuidRef.current = null
           const task = snapshotPath ? await loadMonitorTaskResult(snapshotPath) : null
-          const dialogMessage = getExperimentDialogMessage(result, task)
-          if (dialogMessage) {
-            setExperimentDialog({ open: true, message: dialogMessage })
-          }
+          await showExperimentResultDialog(result, task)
         } else if (result.result === 'failed') {
           setMonitorStatus('failed')
           setMonitoring(false)
           if (taskUuidRef.current === taskUuid) taskUuidRef.current = null
-          setError('实验失败: ' + (result.error_message || '未知错误'))
+          await showExperimentResultDialog(result, null, '实验失败: ' + (result.error_message || '未知错误'))
         } else {
           setMonitorStatus('completed')
           setMonitoring(false)
           if (taskUuidRef.current === taskUuid) taskUuidRef.current = null
+          await showExperimentResultDialog(result, null)
         }
       } catch {
         // 404 = 结果尚未返回，继续轮询
       }
     }, POLL_INTERVAL)
-  }, [loadMonitorTaskResult])
+  }, [loadMonitorTaskResult, showExperimentResultDialog])
+
+  const scheduleExperimentReminder = useCallback((taskUuid) => {
+    if (reminderRef.current) clearTimeout(reminderRef.current)
+    if (autoStopRef.current) clearTimeout(autoStopRef.current)
+    reminderRef.current = setTimeout(() => {
+      if (taskUuidRef.current !== taskUuid) return
+      setTimeoutDialog({ open: true, autoStopAt: Date.now() + EXPERIMENT_AUTO_STOP_GRACE })
+      autoStopRef.current = setTimeout(async () => {
+        if (taskUuidRef.current !== taskUuid) return
+        clearMonitorTimers()
+        setTimeoutDialog({ open: false, autoStopAt: null })
+        try {
+          await api.endLogicMonitor(taskUuid)
+          setMonitorStatus('stopping')
+          startResultPolling(taskUuid)
+        } catch (err) {
+          setError('自动停止实验失败: ' + err.message)
+          setMonitoring(false)
+          setMonitorStatus('')
+        }
+        taskUuidRef.current = null
+      }, EXPERIMENT_AUTO_STOP_GRACE)
+    }, EXPERIMENT_REMINDER_INTERVAL)
+  }, [clearMonitorTimers, startResultPolling])
+
+  const handleContinueExperiment = useCallback(() => {
+    const taskUuid = taskUuidRef.current
+    setTimeoutDialog({ open: false, autoStopAt: null })
+    if (autoStopRef.current) {
+      clearTimeout(autoStopRef.current)
+      autoStopRef.current = null
+    }
+    if (taskUuid) scheduleExperimentReminder(taskUuid)
+  }, [scheduleExperimentReminder])
 
   // 开始实验
   const handleStartExperiment = useCallback(async () => {
@@ -347,7 +531,8 @@ export default function StudentDiagramPage() {
     setMonitoring(true)
     setMonitorStatus('starting')
     setError(null)
-    setExperimentDialog({ open: false, message: '' })
+    setExperimentDialog({ open: false, title: '', message: '' })
+    setTimeoutDialog({ open: false, autoStopAt: null })
     setSections([])
     setSelectedSectionId(null)
     setSelectedSnapshotId(null)
@@ -374,12 +559,13 @@ export default function StudentDiagramPage() {
 
       // 启动结果轮询（3s）
       startResultPolling(taskUuid)
+      scheduleExperimentReminder(taskUuid)
     } catch (err) {
       setMonitoring(false)
       setMonitorStatus('')
       setError('启动实验失败: ' + err.message)
     }
-  }, [clearMonitorTimers, detail, startResultPolling])
+  }, [clearMonitorTimers, detail, scheduleExperimentReminder, startResultPolling])
 
   // 停止实验
   const handleStopExperiment = useCallback(async () => {
@@ -387,6 +573,7 @@ export default function StudentDiagramPage() {
     if (!taskUuid) return
 
     clearMonitorTimers()
+    setTimeoutDialog({ open: false, autoStopAt: null })
 
     try {
       await api.endLogicMonitor(taskUuid)
@@ -406,7 +593,8 @@ export default function StudentDiagramPage() {
   const handleReload = useCallback(() => {
     setLoading(true)
     setError(null)
-    setExperimentDialog({ open: false, message: '' })
+    setExperimentDialog({ open: false, title: '', message: '' })
+    setTimeoutDialog({ open: false, autoStopAt: null })
     setSections([])
     setSelectedSectionId(null)
     setSelectedSnapshotId(null)
@@ -701,19 +889,99 @@ export default function StudentDiagramPage() {
             type="button"
             className="experiment-result-dialog__mask"
             aria-label="关闭实验结果提示"
-            onClick={() => setExperimentDialog({ open: false, message: '' })}
+            onClick={() => setExperimentDialog({ open: false, title: '', message: '' })}
           />
           <div className="experiment-result-dialog__panel">
+            {experimentDialog.title && (
+              <h2 className="experiment-result-dialog__title">{experimentDialog.title}</h2>
+            )}
             <p id="experiment-result-dialog-message" className="experiment-result-dialog__message">
               {experimentDialog.message}
             </p>
+            {experimentDialog.summary && (
+              <dl className="experiment-result-dialog__summary">
+                {experimentDialog.summary.totalTransitions != null && (
+                  <div><dt>变位次数</dt><dd>{experimentDialog.summary.totalTransitions}</dd></div>
+                )}
+                {experimentDialog.summary.sectionCount > 0 && (
+                  <div><dt>断面数量</dt><dd>{experimentDialog.summary.sectionCount}</dd></div>
+                )}
+              </dl>
+            )}
+            {experimentDialog.baselineItems?.length > 0 && (
+              <section className="experiment-result-dialog__section">
+                <h3>定值比对</h3>
+                <table className="experiment-result-dialog__table">
+                  <thead><tr><th>名称</th><th>基准值</th><th>实际值</th></tr></thead>
+                  <tbody>
+                    {experimentDialog.baselineItems.map((item) => (
+                      <tr key={item.key}>
+                        <td>{item.name}</td>
+                        <td>{item.baselineValue || '—'}</td>
+                        <td>{item.actualValue || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
+            {experimentDialog.pressboardItems?.length > 0 && (
+              <section className="experiment-result-dialog__section">
+                <h3>功能压板状态</h3>
+                <table className="experiment-result-dialog__table">
+                  <thead><tr><th>名称</th><th>实际状态</th></tr></thead>
+                  <tbody>
+                    {experimentDialog.pressboardItems.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.name}</td>
+                        <td>{item.actualValue}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
+            {experimentDialog.diagnosticErrors?.length > 0 && (
+              <div className="experiment-result-dialog__errors">
+                {experimentDialog.diagnosticErrors.map((item) => <p key={item}>{item}</p>)}
+              </div>
+            )}
             <button
               type="button"
               className="experiment-result-dialog__btn"
-              onClick={() => setExperimentDialog({ open: false, message: '' })}
+              onClick={() => setExperimentDialog({ open: false, title: '', message: '' })}
             >
               确定
             </button>
+          </div>
+        </div>
+      )}
+
+      {timeoutDialog.open && (
+        <div className="experiment-result-dialog" role="dialog" aria-modal="true" aria-labelledby="experiment-timeout-dialog-message">
+          <div className="experiment-result-dialog__mask" />
+          <div className="experiment-result-dialog__panel experiment-result-dialog__panel--timeout">
+            <h2 className="experiment-result-dialog__title">试验超时提醒</h2>
+            <p id="experiment-timeout-dialog-message" className="experiment-result-dialog__message">
+              试验已运行 10 分钟，是否继续？
+            </p>
+            <p className="experiment-result-dialog__hint">若 60 秒内未选择，系统将自动停止试验。</p>
+            <div className="experiment-result-dialog__actions">
+              <button
+                type="button"
+                className="experiment-result-dialog__btn experiment-result-dialog__btn--secondary"
+                onClick={handleStopExperiment}
+              >
+                停止试验
+              </button>
+              <button
+                type="button"
+                className="experiment-result-dialog__btn"
+                onClick={handleContinueExperiment}
+              >
+                继续试验
+              </button>
+            </div>
           </div>
         </div>
       )}

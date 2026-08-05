@@ -51,6 +51,14 @@ public class UserController {
         return userService.createUser(request);
     }
 
+    @PostMapping("/batch-import-students")
+    public BatchImportStudentsResponse batchImportStudents(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @Valid @RequestBody BatchImportStudentsRequest request) {
+        authService.requireRole(authorization, UserRole.ADMIN);
+        return userService.batchImportStudents(request);
+    }
+
     @PutMapping("/{id}")
     public UserSummaryResponse update(
             @RequestHeader(value = "Authorization", required = false) String authorization,

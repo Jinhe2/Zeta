@@ -425,6 +425,13 @@ export const api = {
     })
   },
 
+  batchImportStudents(students) {
+    return request('/api/users/batch-import-students', {
+      method: 'POST',
+      body: JSON.stringify({ students }),
+    })
+  },
+
   updateUser(id, payload) {
     return request(`/api/users/${id}`, {
       method: 'PUT',

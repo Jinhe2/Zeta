@@ -1,6 +1,5 @@
 package com.zeta.business.entities.learningresource;
 
-import com.zeta.business.entities.learningresource.dto.*;
 import java.time.Instant;
 import javax.persistence.*;
 import lombok.Getter;

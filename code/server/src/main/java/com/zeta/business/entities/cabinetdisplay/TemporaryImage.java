@@ -1,6 +1,5 @@
 package com.zeta.business.entities.cabinetdisplay;
 
-import com.zeta.business.entities.cabinetdisplay.dto.*;
 import java.time.Instant;
 import javax.persistence.*;
 import lombok.Getter;

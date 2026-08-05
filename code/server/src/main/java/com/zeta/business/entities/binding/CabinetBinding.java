@@ -1,6 +1,5 @@
 package com.zeta.business.entities.binding;
 
-import com.zeta.business.entities.binding.dto.*;
 import java.time.Instant;
 import javax.persistence.*;
 import lombok.Getter;

@@ -1,6 +1,5 @@
 package com.zeta.business.entities.cognitiondevice;
 
-import com.zeta.business.entities.cognitiondevice.dto.*;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;

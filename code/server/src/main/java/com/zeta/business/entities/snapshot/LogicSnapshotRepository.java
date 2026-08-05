@@ -1,6 +1,5 @@
 package com.zeta.business.entities.snapshot;
 
-import com.zeta.business.entities.snapshot.dto.*;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;

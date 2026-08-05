@@ -1,6 +1,5 @@
 package com.zeta.business.entities.logiclearning;
 
-import com.zeta.business.entities.logiclearning.dto.*;
 import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

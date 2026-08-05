@@ -1,6 +1,5 @@
 package com.zeta.business.entities.logicnodecognition;
 
-import com.zeta.business.entities.logicnodecognition.dto.*;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 

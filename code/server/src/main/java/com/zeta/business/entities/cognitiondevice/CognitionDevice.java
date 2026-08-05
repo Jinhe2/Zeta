@@ -1,6 +1,5 @@
 package com.zeta.business.entities.cognitiondevice;
 
-import com.zeta.business.entities.cognitiondevice.dto.*;
 import java.time.Instant;
 import javax.persistence.*;
 import lombok.Getter;

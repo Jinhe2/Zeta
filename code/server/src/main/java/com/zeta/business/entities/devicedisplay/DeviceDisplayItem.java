@@ -1,6 +1,5 @@
 package com.zeta.business.entities.devicedisplay;
 
-import com.zeta.business.entities.devicedisplay.dto.*;
 import com.zeta.business.media.CognitionMediaType;
 import java.time.Instant;
 import javax.persistence.*;

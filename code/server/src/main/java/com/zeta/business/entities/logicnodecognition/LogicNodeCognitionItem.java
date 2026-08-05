@@ -1,6 +1,5 @@
 package com.zeta.business.entities.logicnodecognition;
 
-import com.zeta.business.entities.logicnodecognition.dto.*;
 import com.zeta.business.media.CognitionMediaType;
 import java.time.Instant;
 import javax.persistence.*;

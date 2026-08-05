@@ -1,6 +1,5 @@
 package com.zeta.business.entities.learningresource;
 
-import com.zeta.business.entities.learningresource.dto.*;
 
 /** 学员资源库中的资料分类。 */
 public enum LearningResourceType {

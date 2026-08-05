@@ -1,6 +1,5 @@
 package com.zeta.business.entities.learningresource;
 
-import com.zeta.business.entities.learningresource.dto.*;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 

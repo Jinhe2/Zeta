@@ -1,6 +1,5 @@
 package com.zeta.business.entities.cognitiondevice;
 
-import com.zeta.business.entities.cognitiondevice.dto.*;
 
 /**
  * 屏柜学习图上的抽象设备类型。

@@ -1,6 +1,5 @@
 package com.zeta.business.entities.user;
 
-import com.zeta.business.entities.user.dto.*;
 import java.time.Instant;
 import javax.persistence.*;
 import lombok.Getter;

@@ -1,6 +1,5 @@
 package com.zeta.business.entities.devicedisplay;
 
-import com.zeta.business.entities.devicedisplay.dto.*;
 import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

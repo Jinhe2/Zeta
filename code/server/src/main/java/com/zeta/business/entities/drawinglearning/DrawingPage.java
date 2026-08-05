@@ -1,6 +1,5 @@
 package com.zeta.business.entities.drawinglearning;
 
-import com.zeta.business.entities.drawinglearning.dto.*;
 import java.time.Instant;
 import javax.persistence.*;
 import lombok.Getter;

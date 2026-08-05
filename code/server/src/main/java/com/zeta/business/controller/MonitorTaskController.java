@@ -1,0 +1,64 @@
+package com.zeta.business.controller;
+
+import com.zeta.business.auth.*;
+import com.zeta.business.auth.AuthService;
+import com.zeta.business.auth.dto.*;
+import com.zeta.business.entities.binding.*;
+import com.zeta.business.entities.binding.dto.*;
+import com.zeta.business.entities.cabinetdisplay.*;
+import com.zeta.business.entities.cabinetdisplay.dto.*;
+import com.zeta.business.entities.cognitiondevice.*;
+import com.zeta.business.entities.cognitiondevice.dto.*;
+import com.zeta.business.entities.devicedisplay.*;
+import com.zeta.business.entities.devicedisplay.dto.*;
+import com.zeta.business.entities.drawinglearning.*;
+import com.zeta.business.entities.drawinglearning.dto.*;
+import com.zeta.business.entities.learningresource.*;
+import com.zeta.business.entities.learningresource.dto.*;
+import com.zeta.business.entities.logiclearning.*;
+import com.zeta.business.entities.logiclearning.dto.*;
+import com.zeta.business.entities.logicnodecognition.*;
+import com.zeta.business.entities.logicnodecognition.dto.*;
+import com.zeta.business.entities.monitor.*;
+import com.zeta.business.entities.snapshot.*;
+import com.zeta.business.entities.snapshot.dto.*;
+import com.zeta.business.entities.user.*;
+import com.zeta.business.entities.user.dto.*;
+import com.zeta.business.media.*;
+import com.zeta.business.service.*;
+import com.zeta.business.storage.*;
+import java.util.List;
+import java.util.Map;
+import org.springframework.web.bind.annotation.*;
+
+/** 实验监视任务查询（底层库只读）。 */
+@RestController
+@RequestMapping("/api/monitor/tasks")
+public class MonitorTaskController {
+
+  private final MonitorTaskService taskService;
+  private final AuthService authService;
+
+  public MonitorTaskController(MonitorTaskService taskService, AuthService authService) {
+    this.taskService = taskService;
+    this.authService = authService;
+  }
+
+  /** 按 ID 查询任务详情（含 snapshot_json） */
+  @GetMapping("/{id}")
+  public Map<String, Object> getTask(
+      @RequestHeader(value = "Authorization", required = false) String authorization,
+      @PathVariable Long id) {
+    authService.requireUser(authorization);
+    return taskService.getTask(id);
+  }
+
+  /** 按逻辑框图 ID 查询任务列表 */
+  @GetMapping(params = "logicDiagramId")
+  public List<Map<String, Object>> listByLogicDiagram(
+      @RequestHeader(value = "Authorization", required = false) String authorization,
+      @RequestParam Long logicDiagramId) {
+    authService.requireUser(authorization);
+    return taskService.listByLogicDiagram(logicDiagramId);
+  }
+}

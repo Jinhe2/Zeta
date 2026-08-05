@@ -1,17 +1,16 @@
 package com.zeta.screen.knowledge;
 
 import com.zeta.business.auth.AuthService;
-import com.zeta.business.cabinetdisplay.CabinetDisplayItemResponse;
-import com.zeta.business.cabinetdisplay.CabinetDisplayItemService;
-import com.zeta.business.cognitiondevice.CognitionDeviceResponse;
-import com.zeta.business.cognitiondevice.CognitionDeviceService;
-import com.zeta.business.devicedisplay.DeviceDisplayItemResponse;
-import com.zeta.business.devicedisplay.DeviceDisplayItemService;
+import com.zeta.business.entities.cabinetdisplay.dto.CabinetDisplayItemResponse;
+import com.zeta.business.entities.cognitiondevice.dto.CognitionDeviceResponse;
+import com.zeta.business.entities.devicedisplay.dto.DeviceDisplayItemResponse;
+import com.zeta.business.service.CabinetDisplayItemService;
+import com.zeta.business.service.CognitionDeviceService;
+import com.zeta.business.service.DeviceDisplayItemService;
 import com.zeta.screen.baseline.IedBaselineSettingResponse;
 import com.zeta.screen.baseline.IedBaselineSettingService;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/knowledge")

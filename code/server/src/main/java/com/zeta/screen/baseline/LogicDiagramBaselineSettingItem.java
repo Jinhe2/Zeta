@@ -1,12 +1,11 @@
 package com.zeta.screen.baseline;
 
 import com.zeta.screen.logicdiagram.ProtectionLogic;
+import java.time.Instant;
+import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import javax.persistence.*;
-import java.time.Instant;
 
 /** 逻辑框图基准定值项，对应 ct-screen.logic_diagram_baseline_setting_item */
 @Entity

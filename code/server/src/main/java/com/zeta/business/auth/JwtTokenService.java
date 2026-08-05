@@ -1,21 +1,21 @@
 package com.zeta.business.auth;
 
+import com.zeta.business.auth.dto.*;
+import com.zeta.business.entities.user.User;
+import com.zeta.business.entities.user.UserRole;
 import com.zeta.config.JwtProperties;
-import com.zeta.business.user.User;
-import com.zeta.business.user.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-
-import javax.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import javax.annotation.PostConstruct;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class JwtTokenService {

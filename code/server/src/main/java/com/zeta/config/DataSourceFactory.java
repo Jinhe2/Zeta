@@ -1,7 +1,6 @@
 package com.zeta.config;
 
 import com.zaxxer.hikari.HikariDataSource;
-
 import javax.sql.DataSource;
 
 final class DataSourceFactory {

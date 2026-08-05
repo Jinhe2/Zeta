@@ -1,10 +1,9 @@
 package com.zeta.screen.hardpressboard;
 
 import com.zeta.business.auth.AuthService;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.*;
 
 /** 硬压板只读查询（底层库数据） */
 @RestController

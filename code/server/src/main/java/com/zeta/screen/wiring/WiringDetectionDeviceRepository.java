@@ -1,8 +1,7 @@
 package com.zeta.screen.wiring;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WiringDetectionDeviceRepository extends JpaRepository<WiringDetectionDevice, Long> {
 

@@ -1,28 +1,27 @@
 package com.zeta.config;
 
-import com.zeta.business.cabinetdisplay.CabinetDisplayItem;
-import com.zeta.business.cabinetdisplay.CabinetDisplayItemRepository;
-import com.zeta.business.cognitiondevice.CognitionDevice;
-import com.zeta.business.cognitiondevice.CognitionDeviceRepository;
-import com.zeta.business.cognitiondevice.CognitionDeviceType;
-import com.zeta.business.devicedisplay.DeviceDisplayItem;
-import com.zeta.business.devicedisplay.DeviceDisplayItemRepository;
-import com.zeta.business.user.User;
-import com.zeta.business.user.UserRepository;
-import com.zeta.business.user.UserRole;
+import com.zeta.business.entities.cabinetdisplay.CabinetDisplayItem;
+import com.zeta.business.entities.cabinetdisplay.CabinetDisplayItemRepository;
+import com.zeta.business.entities.cognitiondevice.CognitionDevice;
+import com.zeta.business.entities.cognitiondevice.CognitionDeviceRepository;
+import com.zeta.business.entities.cognitiondevice.CognitionDeviceType;
+import com.zeta.business.entities.devicedisplay.DeviceDisplayItem;
+import com.zeta.business.entities.devicedisplay.DeviceDisplayItemRepository;
+import com.zeta.business.entities.user.User;
+import com.zeta.business.entities.user.UserRepository;
+import com.zeta.business.entities.user.UserRole;
 import com.zeta.screen.cabinet.Cabinet;
 import com.zeta.screen.cabinet.CabinetRepository;
 import com.zeta.screen.ieddevice.Device;
 import com.zeta.screen.ieddevice.DeviceRepository;
+import java.time.Instant;
+import java.util.Optional;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.time.Instant;
-import java.util.Optional;
 
 /**
  * 业务库 ct-screen-monitor 种子数据：用户、屏柜/设备展示条目等。

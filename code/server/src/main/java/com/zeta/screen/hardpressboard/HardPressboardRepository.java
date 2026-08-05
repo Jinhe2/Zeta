@@ -1,8 +1,7 @@
 package com.zeta.screen.hardpressboard;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface HardPressboardRepository extends JpaRepository<HardPressboard, Long> {
 

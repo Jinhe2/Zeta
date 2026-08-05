@@ -1,16 +1,11 @@
 package com.zeta.screen.logicdiagram;
 
 import com.zeta.business.auth.AuthService;
-import com.zeta.business.snapshot.LogicSnapshotService;
-import com.zeta.business.snapshot.TriggerSnapshotResponse;
-import com.zeta.business.user.User;
-import com.zeta.screen.logicdiagram.ProtectionLogicService;
-import com.zeta.screen.logicdiagram.ProtectionLogicDetailResponse;
-import com.zeta.screen.logicdiagram.ProtectionLogicSummaryResponse;
-import com.zeta.screen.logicdiagram.SectionSnapshotResponse;
-import org.springframework.web.bind.annotation.*;
-
+import com.zeta.business.entities.snapshot.dto.TriggerSnapshotResponse;
+import com.zeta.business.entities.user.User;
+import com.zeta.business.service.LogicSnapshotService;
 import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/protection-logics")
@@ -66,7 +61,7 @@ public class ProtectionLogicController {
     public TriggerSnapshotResponse importSnapshot(
             @RequestHeader("Authorization") String authorization,
             @PathVariable Long id,
-            @RequestBody com.zeta.business.snapshot.ImportSnapshotRequest body) {
+            @RequestBody com.zeta.business.entities.snapshot.dto.ImportSnapshotRequest body) {
         User user = authService.requireUser(authorization);
         return logicSnapshotService.importSnapshot(user, id, body.getSnapshotJson());
     }

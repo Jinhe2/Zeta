@@ -1,12 +1,11 @@
 package com.zeta.screen.terminal;
 
 import com.zeta.screen.cabinet.Cabinet;
+import java.time.Instant;
+import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import javax.persistence.*;
-import java.time.Instant;
 
 /** 公共端组，对应 ct-screen.common_end_group */
 @Entity

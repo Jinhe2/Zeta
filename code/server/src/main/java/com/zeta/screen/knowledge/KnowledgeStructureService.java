@@ -1,22 +1,21 @@
 package com.zeta.screen.knowledge;
 
-import com.zeta.business.logiclearning.LogicLearningConfigService;
+import com.zeta.business.service.LogicLearningConfigService;
 import com.zeta.screen.cabinet.Cabinet;
-import com.zeta.screen.ieddevice.Device;
-import com.zeta.screen.logicdiagram.ProtectionLogic;
 import com.zeta.screen.cabinet.CabinetRepository;
+import com.zeta.screen.ieddevice.Device;
 import com.zeta.screen.ieddevice.DeviceRepository;
+import com.zeta.screen.logicdiagram.ProtectionLogic;
 import com.zeta.screen.logicdiagram.ProtectionLogicRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Transactional(value = "screenTransactionManager", readOnly = true)

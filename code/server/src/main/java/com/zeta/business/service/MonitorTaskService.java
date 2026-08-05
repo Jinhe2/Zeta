@@ -1,0 +1,109 @@
+package com.zeta.business.service;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zeta.business.entities.binding.*;
+import com.zeta.business.entities.binding.dto.*;
+import com.zeta.business.entities.cabinetdisplay.*;
+import com.zeta.business.entities.cabinetdisplay.dto.*;
+import com.zeta.business.entities.cognitiondevice.*;
+import com.zeta.business.entities.cognitiondevice.dto.*;
+import com.zeta.business.entities.devicedisplay.*;
+import com.zeta.business.entities.devicedisplay.dto.*;
+import com.zeta.business.entities.drawinglearning.*;
+import com.zeta.business.entities.drawinglearning.dto.*;
+import com.zeta.business.entities.learningresource.*;
+import com.zeta.business.entities.learningresource.dto.*;
+import com.zeta.business.entities.logiclearning.*;
+import com.zeta.business.entities.logiclearning.dto.*;
+import com.zeta.business.entities.logicnodecognition.*;
+import com.zeta.business.entities.logicnodecognition.dto.*;
+import com.zeta.business.entities.monitor.*;
+import com.zeta.business.entities.snapshot.*;
+import com.zeta.business.entities.snapshot.dto.*;
+import com.zeta.business.entities.user.*;
+import com.zeta.business.entities.user.dto.*;
+import com.zeta.business.media.*;
+import com.zeta.business.storage.*;
+import java.util.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+/**
+ * 查询 monitor_task 表（底层库，只读）。
+ */
+@Service
+@Transactional(value = "businessTransactionManager", readOnly = true)
+public class MonitorTaskService {
+
+    private final MonitorTaskRepository repository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public MonitorTaskService(MonitorTaskRepository repository) {
+        this.repository = repository;
+    }
+
+    public Map<String, Object> getTask(Long id) {
+        MonitorTask task = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "监视任务不存在: " + id));
+        return toResponse(task);
+    }
+
+    public List<Map<String, Object>> listByLogicDiagram(Long logicDiagramId) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (MonitorTask task : repository.findByLogicDiagramIdOrderByCreatedAtDesc(logicDiagramId)) {
+            result.add(toSummary(task));
+        }
+        return result;
+    }
+
+    private Map<String, Object> toResponse(MonitorTask task) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", task.getId());
+        map.put("uuid", task.getUuid());
+        map.put("iedDeviceId", task.getIedDeviceId());
+        map.put("logicDiagramId", task.getLogicDiagramId());
+        map.put("state", task.getState() != null ? task.getState().name() : null);
+        map.put("errorCode", task.getErrorCode());
+        map.put("errorMessage", task.getErrorMessage());
+        map.put("totalTransitions", task.getTotalTransitions());
+        map.put("snapshotJson", task.getSnapshotJson());
+        appendSnapshotResultFields(map, task.getSnapshotJson());
+        map.put("startedAt", task.getStartedAt());
+        map.put("completedAt", task.getCompletedAt());
+        map.put("createdAt", task.getCreatedAt());
+        return map;
+    }
+
+    private Map<String, Object> toSummary(MonitorTask task) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", task.getId());
+        map.put("uuid", task.getUuid());
+        map.put("state", task.getState() != null ? task.getState().name() : null);
+        map.put("totalTransitions", task.getTotalTransitions());
+        map.put("errorCode", task.getErrorCode());
+        map.put("createdAt", task.getCreatedAt());
+        map.put("completedAt", task.getCompletedAt());
+        return map;
+    }
+
+    private void appendSnapshotResultFields(Map<String, Object> map, String snapshotJson) {
+        if (snapshotJson == null || snapshotJson.isEmpty()) {
+            return;
+        }
+        try {
+            Map<String, Object> snapshot = objectMapper.readValue(
+                    snapshotJson, new TypeReference<Map<String, Object>>() {});
+            if (snapshot.containsKey("resultType")) {
+                map.put("resultType", snapshot.get("resultType"));
+            }
+            if (snapshot.containsKey("experimentPassed")) {
+                map.put("experimentPassed", snapshot.get("experimentPassed"));
+            }
+        } catch (Exception ignored) {
+            // snapshot_json is still returned even if result metadata cannot be parsed.
+        }
+    }
+}

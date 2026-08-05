@@ -1,11 +1,10 @@
 package com.zeta.screen.cabinet;
 
+import java.time.Instant;
+import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import javax.persistence.*;
-import java.time.Instant;
 
 /** 屏柜信息，对应 ct-screen.cabinet */
 @Entity

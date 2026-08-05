@@ -1,10 +1,8 @@
 package com.zeta.screen.logicdiagram;
 
-import com.zeta.screen.logicdiagram.ProtectionLogic;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProtectionLogicRepository extends JpaRepository<ProtectionLogic, Long> {
 

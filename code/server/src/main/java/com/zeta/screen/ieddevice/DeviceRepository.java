@@ -1,10 +1,8 @@
 package com.zeta.screen.ieddevice;
 
-import com.zeta.screen.ieddevice.Device;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DeviceRepository extends JpaRepository<Device, Long> {
 

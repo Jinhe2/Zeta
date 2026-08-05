@@ -1,15 +1,14 @@
 package com.zeta.screen.baseline;
 
-import com.zeta.business.cognitiondevice.CognitionDevice;
-import com.zeta.business.cognitiondevice.CognitionDeviceService;
-import com.zeta.business.cognitiondevice.CognitionDeviceType;
+import com.zeta.business.entities.cognitiondevice.CognitionDevice;
+import com.zeta.business.entities.cognitiondevice.CognitionDeviceType;
+import com.zeta.business.service.CognitionDeviceService;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class IedBaselineSettingService {

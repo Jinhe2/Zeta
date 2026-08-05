@@ -1,12 +1,11 @@
 package com.zeta.screen.baseline;
 
 import com.zeta.screen.ieddevice.Device;
+import java.time.Instant;
+import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import javax.persistence.*;
-import java.time.Instant;
 
 /** IED 基准定值项，对应 ct-screen.ied_baseline_setting_item */
 @Entity

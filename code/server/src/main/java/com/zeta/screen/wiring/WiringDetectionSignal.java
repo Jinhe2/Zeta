@@ -1,11 +1,10 @@
 package com.zeta.screen.wiring;
 
+import java.time.Instant;
+import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import javax.persistence.*;
-import java.time.Instant;
 
 /** 连线检测信号，对应 ct-screen.wiring_detection_signal */
 @Entity

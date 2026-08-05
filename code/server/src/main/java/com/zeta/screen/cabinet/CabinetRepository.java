@@ -1,10 +1,8 @@
 package com.zeta.screen.cabinet;
 
-import com.zeta.screen.cabinet.Cabinet;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CabinetRepository extends JpaRepository<Cabinet, Long> {
 

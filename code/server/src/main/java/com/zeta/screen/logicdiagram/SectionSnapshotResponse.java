@@ -1,9 +1,7 @@
 package com.zeta.screen.logicdiagram;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.util.Map;
+import lombok.Getter;
 
 @Getter
 public class SectionSnapshotResponse {

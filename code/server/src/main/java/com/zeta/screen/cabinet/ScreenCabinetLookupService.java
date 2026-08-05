@@ -1,7 +1,5 @@
 package com.zeta.screen.cabinet;
 
-import com.zeta.screen.cabinet.Cabinet;
-import com.zeta.screen.cabinet.CabinetRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

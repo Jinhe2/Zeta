@@ -4,300 +4,299 @@ import com.zeta.business.auth.AuthService;
 import com.zeta.integration.queue.ScreenQueueMessage;
 import com.zeta.integration.queue.ScreenQueueProperties;
 import com.zeta.screen.baseline.IedBaselineSettingService;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
 @RestController
 @RequestMapping("/api/monitor")
 public class MonitorCommandController {
 
-    private final MonitorCommandService commandService;
-    private final AuthService authService;
-    private final StringRedisTemplate redisTemplate;
-    private final ScreenQueueProperties queueProperties;
-    private final IedBaselineSettingService iedBaselineSettingService;
+  private final MonitorCommandService commandService;
+  private final AuthService authService;
+  private final StringRedisTemplate redisTemplate;
+  private final ScreenQueueProperties queueProperties;
+  private final IedBaselineSettingService iedBaselineSettingService;
 
-    public MonitorCommandController(MonitorCommandService commandService,
-                                    AuthService authService,
-                                    StringRedisTemplate redisTemplate,
-                                    ScreenQueueProperties queueProperties,
-                                    IedBaselineSettingService iedBaselineSettingService) {
-        this.commandService = commandService;
-        this.authService = authService;
-        this.redisTemplate = redisTemplate;
-        this.queueProperties = queueProperties;
-        this.iedBaselineSettingService = iedBaselineSettingService;
+  public MonitorCommandController(
+      MonitorCommandService commandService,
+      AuthService authService,
+      StringRedisTemplate redisTemplate,
+      ScreenQueueProperties queueProperties,
+      IedBaselineSettingService iedBaselineSettingService) {
+    this.commandService = commandService;
+    this.authService = authService;
+    this.redisTemplate = redisTemplate;
+    this.queueProperties = queueProperties;
+    this.iedBaselineSettingService = iedBaselineSettingService;
+  }
+
+  /** 触发压板状态读取 */
+  @PostMapping("/commands/pressboard-status")
+  public Map<String, Object> triggerPressboardStatus(
+      @RequestHeader("Authorization") String authorization, @RequestBody Map<String, Object> body) {
+    authService.requireUser(authorization);
+
+    Long cabinetId = extractCabinetId(body);
+    CompletableFuture<ScreenQueueMessage> future =
+        commandService.sendPressboardStatusRequest(cabinetId);
+
+    return awaitResponse(future, "summon_pressboard_status");
+  }
+
+  /** 触发端子状态读取 */
+  @PostMapping("/commands/terminal-status")
+  public Map<String, Object> triggerTerminalStatus(
+      @RequestHeader("Authorization") String authorization, @RequestBody Map<String, Object> body) {
+    authService.requireUser(authorization);
+
+    Long cabinetId = extractCabinetId(body);
+    CompletableFuture<ScreenQueueMessage> future =
+        commandService.sendTerminalStatusRequest(cabinetId);
+
+    return awaitResponse(future, "summon_terminal_status");
+  }
+
+  /** 触发 IED 通讯状态读取。 */
+  @PostMapping("/commands/ied-comm-status")
+  public Map<String, Object> triggerIedCommStatus(
+      @RequestHeader("Authorization") String authorization, @RequestBody Map<String, Object> body) {
+    authService.requireUser(authorization);
+
+    Long cabinetId = extractCabinetId(body);
+    CompletableFuture<ScreenQueueMessage> future =
+        commandService.sendIedCommStatusRequest(cabinetId);
+
+    return awaitIedCommResponse(future);
+  }
+
+  /** 触发 IED 设备操作认知关联装置的基准定值比对。 */
+  @PostMapping("/commands/baseline-settings-compare")
+  public Map<String, Object> compareBaselineSettings(
+      @RequestHeader("Authorization") String authorization, @RequestBody Map<String, Object> body) {
+    authService.requireUser(authorization);
+    Object value = body.get("cognitionDeviceId");
+    if (!(value instanceof Number)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 cognitionDeviceId 参数");
     }
+    Long iedDeviceId = iedBaselineSettingService.requireIedDeviceId(((Number) value).longValue());
+    return awaitResponse(
+        commandService.compareIedBaselineSettings(iedDeviceId), "compare_baseline_settings");
+  }
 
-    /** 触发压板状态读取 */
-    @PostMapping("/commands/pressboard-status")
-    public Map<String, Object> triggerPressboardStatus(
-            @RequestHeader("Authorization") String authorization,
-            @RequestBody Map<String, Object> body) {
-        authService.requireUser(authorization);
+  /** 查询最近一次压板状态 */
+  @GetMapping("/pressboard-status/{cabinetId}")
+  public Map<String, Object> getPressboardStatus(
+      @RequestHeader("Authorization") String authorization, @PathVariable Long cabinetId) {
+    authService.requireUser(authorization);
 
-        Long cabinetId = extractCabinetId(body);
-        CompletableFuture<ScreenQueueMessage> future = commandService.sendPressboardStatusRequest(cabinetId);
-
-        return awaitResponse(future, "summon_pressboard_status");
+    Map<String, Object> cached =
+        commandService.getLatestResponse("summon_pressboard_status", cabinetId);
+    if (cached == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "暂无压板状态数据，请先触发读取");
     }
+    return cached;
+  }
 
-    /** 触发端子状态读取 */
-    @PostMapping("/commands/terminal-status")
-    public Map<String, Object> triggerTerminalStatus(
-            @RequestHeader("Authorization") String authorization,
-            @RequestBody Map<String, Object> body) {
-        authService.requireUser(authorization);
+  /** 查询最近一次端子状态 */
+  @GetMapping("/terminal-status/{cabinetId}")
+  public Map<String, Object> getTerminalStatus(
+      @RequestHeader("Authorization") String authorization, @PathVariable Long cabinetId) {
+    authService.requireUser(authorization);
 
-        Long cabinetId = extractCabinetId(body);
-        CompletableFuture<ScreenQueueMessage> future = commandService.sendTerminalStatusRequest(cabinetId);
-
-        return awaitResponse(future, "summon_terminal_status");
+    Map<String, Object> cached =
+        commandService.getLatestResponse("summon_terminal_status", cabinetId);
+    if (cached == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "暂无端子状态数据，请先触发读取");
     }
+    return cached;
+  }
 
-    /** 触发 IED 通讯状态读取。 */
-    @PostMapping("/commands/ied-comm-status")
-    public Map<String, Object> triggerIedCommStatus(
-            @RequestHeader("Authorization") String authorization,
-            @RequestBody Map<String, Object> body) {
-        authService.requireUser(authorization);
+  // ── 实验监视 summon_logic_monitor ──────────────────────────────────────
 
-        Long cabinetId = extractCabinetId(body);
-        CompletableFuture<ScreenQueueMessage> future = commandService.sendIedCommStatusRequest(cabinetId);
+  /** 启动实验监视任务。返回 accepted 响应中的 req_id 作为 taskUuid。 */
+  @PostMapping("/commands/logic-monitor")
+  public Map<String, Object> logicMonitorAction(
+      @RequestHeader("Authorization") String authorization, @RequestBody Map<String, Object> body) {
+    com.zeta.business.entities.user.User user = authService.requireUser(authorization);
 
-        return awaitIedCommResponse(future);
-    }
+    String action = String.valueOf(body.getOrDefault("action", "start"));
 
-    /** 触发 IED 设备操作认知关联装置的基准定值比对。 */
-    @PostMapping("/commands/baseline-settings-compare")
-    public Map<String, Object> compareBaselineSettings(
-            @RequestHeader("Authorization") String authorization,
-            @RequestBody Map<String, Object> body) {
-        authService.requireUser(authorization);
-        Object value = body.get("cognitionDeviceId");
-        if (!(value instanceof Number)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 cognitionDeviceId 参数");
-        }
-        Long iedDeviceId = iedBaselineSettingService.requireIedDeviceId(((Number) value).longValue());
-        return awaitResponse(commandService.compareIedBaselineSettings(iedDeviceId), "compare_baseline_settings");
-    }
-
-    /** 查询最近一次压板状态 */
-    @GetMapping("/pressboard-status/{cabinetId}")
-    public Map<String, Object> getPressboardStatus(
-            @RequestHeader("Authorization") String authorization,
-            @PathVariable Long cabinetId) {
-        authService.requireUser(authorization);
-
-        Map<String, Object> cached = commandService.getLatestResponse("summon_pressboard_status", cabinetId);
-        if (cached == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "暂无压板状态数据，请先触发读取");
-        }
-        return cached;
-    }
-
-    /** 查询最近一次端子状态 */
-    @GetMapping("/terminal-status/{cabinetId}")
-    public Map<String, Object> getTerminalStatus(
-            @RequestHeader("Authorization") String authorization,
-            @PathVariable Long cabinetId) {
-        authService.requireUser(authorization);
-
-        Map<String, Object> cached = commandService.getLatestResponse("summon_terminal_status", cabinetId);
-        if (cached == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "暂无端子状态数据，请先触发读取");
-        }
-        return cached;
-    }
-
-    // ── 实验监视 summon_logic_monitor ──────────────────────────────────────
-
-    /**
-     * 启动实验监视任务。返回 accepted 响应中的 req_id 作为 taskUuid。
-     */
-    @PostMapping("/commands/logic-monitor")
-    public Map<String, Object> logicMonitorAction(
-            @RequestHeader("Authorization") String authorization,
-            @RequestBody Map<String, Object> body) {
-        com.zeta.business.user.User user = authService.requireUser(authorization);
-
-        String action = String.valueOf(body.getOrDefault("action", "start"));
-
-        switch (action) {
-            case "start": {
-                String iedName = (String) body.get("iedName");
-                String logicId = (String) body.get("logicId");
-                if (iedName == null || logicId == null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 iedName 或 logicId");
-                }
-                CompletableFuture<ScreenQueueMessage> future = commandService.startLogicMonitor(
-                        iedName, logicId, user.getId(), user.getUsername());
-                // start 返回完整信封（含 req_id），而非只返回 data
-                try {
-                    ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);
-                    if (Boolean.FALSE.equals(response.getSuccess())) {
-                        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                                "monitord 返回错误: " + response.getErrorMessage());
-                    }
-                    Map<String, Object> result = new java.util.LinkedHashMap<>();
-                    result.put("req_id", response.getReqId());
-                    result.put("success", response.getSuccess());
-                    if (response.getData() != null) {
-                        result.putAll(response.getData());
-                    }
-                    return result;
-                } catch (java.util.concurrent.TimeoutException e) {
-                    throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
-                } catch (java.util.concurrent.ExecutionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof java.util.concurrent.TimeoutException) {
-                        throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
-                    }
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "命令执行失败: " + (cause != null ? cause.getMessage() : e.getMessage()));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "命令被中断");
-                }
-            }
-            case "heartbeat": {
-                String taskUuid = (String) body.get("taskUuid");
-                if (taskUuid == null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 taskUuid");
-                }
-                commandService.sendLogicMonitorHeartbeat(taskUuid);
-                return java.util.Collections.singletonMap("status", "sent");
-            }
-            case "end": {
-                String taskUuid = (String) body.get("taskUuid");
-                if (taskUuid == null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 taskUuid");
-                }
-                commandService.endLogicMonitor(taskUuid);
-                return java.util.Collections.singletonMap("status", "sent");
-            }
-            case "abort": {
-                String taskUuid = (String) body.get("taskUuid");
-                if (taskUuid == null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 taskUuid");
-                }
-                commandService.abortLogicMonitor(taskUuid);
-                return java.util.Collections.singletonMap("status", "sent");
-            }
-            default:
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不支持的 action: " + action);
-        }
-    }
-
-    /**
-     * 查询实验监视任务的完成结果（从内存缓存中读取）。
-     */
-    @GetMapping("/tasks/{taskUuid}/result")
-    public Map<String, Object> getMonitorTaskResult(
-            @RequestHeader("Authorization") String authorization,
-            @PathVariable String taskUuid) {
-        authService.requireUser(authorization);
-
-        Map<String, Object> result = commandService.getMonitorTaskResult(taskUuid);
-        if (result == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "任务结果尚未返回");
-        }
-        return result;
-    }
-
-    /** 队列状态监控（Redis Pub/Sub 模式） */
-    @GetMapping("/queue/status")
-    public Map<String, Object> getQueueStatus(
-            @RequestHeader(value = "Authorization", required = false) String authorization) {
-        authService.requireUser(authorization);
-
-        Map<String, Object> status = new LinkedHashMap<>();
-        status.put("enabled", commandService.isQueueEnabled());
-        status.put("mode", "pubsub");
-        status.put("publishChannel", queueProperties.getOutboundKey());
-        status.put("subscribeChannel", queueProperties.getInboundKey());
-
-        if (commandService.isQueueEnabled()) {
-            try {
-                String pong = redisTemplate.getConnectionFactory().getConnection().ping();
-                status.put("redisConnected", "PONG".equalsIgnoreCase(pong) || pong != null);
-            } catch (Exception e) {
-                status.put("redisConnected", false);
-                status.put("redisError", e.getClass().getSimpleName() + ": " + e.getMessage());
-            }
-        }
-
-        status.put("pendingRequests", commandService.getPendingRequestCount());
-        status.putAll(commandService.getStats());
-        return status;
-    }
-
-    private Map<String, Object> awaitResponse(CompletableFuture<ScreenQueueMessage> future, String command) {
-        try {
+    switch (action) {
+      case "start":
+        {
+          String iedName = (String) body.get("iedName");
+          String logicId = (String) body.get("logicId");
+          if (iedName == null || logicId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 iedName 或 logicId");
+          }
+          CompletableFuture<ScreenQueueMessage> future =
+              commandService.startLogicMonitor(iedName, logicId, user.getId(), user.getUsername());
+          // start 返回完整信封（含 req_id），而非只返回 data
+          try {
             ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);
             if (Boolean.FALSE.equals(response.getSuccess())) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "monitord 返回错误: " + response.getErrorMessage());
+              throw new ResponseStatusException(
+                  HttpStatus.INTERNAL_SERVER_ERROR, "monitord 返回错误: " + response.getErrorMessage());
             }
-            return response.getData();
-        } catch (java.util.concurrent.TimeoutException e) {
+            Map<String, Object> result = new java.util.LinkedHashMap<>();
+            result.put("req_id", response.getReqId());
+            result.put("success", response.getSuccess());
+            if (response.getData() != null) {
+              result.putAll(response.getData());
+            }
+            return result;
+          } catch (java.util.concurrent.TimeoutException e) {
             throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
-        } catch (java.util.concurrent.ExecutionException e) {
+          } catch (java.util.concurrent.ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof java.util.concurrent.TimeoutException) {
-                throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+              throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
             }
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "命令执行失败: " + (cause != null ? cause.getMessage() : e.getMessage()));
-        } catch (InterruptedException e) {
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "命令执行失败: " + (cause != null ? cause.getMessage() : e.getMessage()));
+          } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "命令被中断");
+          }
         }
+      case "heartbeat":
+        {
+          String taskUuid = (String) body.get("taskUuid");
+          if (taskUuid == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 taskUuid");
+          }
+          commandService.sendLogicMonitorHeartbeat(taskUuid);
+          return java.util.Collections.singletonMap("status", "sent");
+        }
+      case "end":
+        {
+          String taskUuid = (String) body.get("taskUuid");
+          if (taskUuid == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 taskUuid");
+          }
+          commandService.endLogicMonitor(taskUuid);
+          return java.util.Collections.singletonMap("status", "sent");
+        }
+      case "abort":
+        {
+          String taskUuid = (String) body.get("taskUuid");
+          if (taskUuid == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 taskUuid");
+          }
+          commandService.abortLogicMonitor(taskUuid);
+          return java.util.Collections.singletonMap("status", "sent");
+        }
+      default:
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不支持的 action: " + action);
+    }
+  }
+
+  /** 查询实验监视任务的完成结果（从内存缓存中读取）。 */
+  @GetMapping("/tasks/{taskUuid}/result")
+  public Map<String, Object> getMonitorTaskResult(
+      @RequestHeader("Authorization") String authorization, @PathVariable String taskUuid) {
+    authService.requireUser(authorization);
+
+    Map<String, Object> result = commandService.getMonitorTaskResult(taskUuid);
+    if (result == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "任务结果尚未返回");
+    }
+    return result;
+  }
+
+  /** 队列状态监控（Redis Pub/Sub 模式） */
+  @GetMapping("/queue/status")
+  public Map<String, Object> getQueueStatus(
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    authService.requireUser(authorization);
+
+    Map<String, Object> status = new LinkedHashMap<>();
+    status.put("enabled", commandService.isQueueEnabled());
+    status.put("mode", "pubsub");
+    status.put("publishChannel", queueProperties.getOutboundKey());
+    status.put("subscribeChannel", queueProperties.getInboundKey());
+
+    if (commandService.isQueueEnabled()) {
+      try {
+        String pong = redisTemplate.getConnectionFactory().getConnection().ping();
+        status.put("redisConnected", "PONG".equalsIgnoreCase(pong) || pong != null);
+      } catch (Exception e) {
+        status.put("redisConnected", false);
+        status.put("redisError", e.getClass().getSimpleName() + ": " + e.getMessage());
+      }
     }
 
-    /**
-     * 通讯状态即使所有 Redis 状态均不可读，也会携带 completed/devices 数据。
-     * 此时返回该数据供页面展示为中断；只有没有可展示数据的命令失败才返回 HTTP 错误。
-     */
-    private Map<String, Object> awaitIedCommResponse(CompletableFuture<ScreenQueueMessage> future) {
-        try {
-            ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);
-            Map<String, Object> data = response.getData();
-            if (data != null && "completed".equals(String.valueOf(data.getOrDefault("phase", "")))) {
-                return data;
-            }
-            if (Boolean.FALSE.equals(response.getSuccess())) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "monitord 返回错误: " + response.getErrorMessage());
-            }
-            return data;
-        } catch (java.util.concurrent.TimeoutException e) {
-            throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
-        } catch (java.util.concurrent.ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof java.util.concurrent.TimeoutException) {
-                throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
-            }
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "命令执行失败: " + (cause != null ? cause.getMessage() : e.getMessage()));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "命令被中断");
-        }
-    }
+    status.put("pendingRequests", commandService.getPendingRequestCount());
+    status.putAll(commandService.getStats());
+    return status;
+  }
 
-    private Long extractCabinetId(Map<String, Object> body) {
-        Object val = body.get("cabinetId");
-        if (val instanceof Number) {
-            return ((Number) val).longValue();
-        }
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 cabinetId 参数");
+  private Map<String, Object> awaitResponse(
+      CompletableFuture<ScreenQueueMessage> future, String command) {
+    try {
+      ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);
+      if (Boolean.FALSE.equals(response.getSuccess())) {
+        throw new ResponseStatusException(
+            HttpStatus.INTERNAL_SERVER_ERROR, "monitord 返回错误: " + response.getErrorMessage());
+      }
+      return response.getData();
+    } catch (java.util.concurrent.TimeoutException e) {
+      throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+    } catch (java.util.concurrent.ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof java.util.concurrent.TimeoutException) {
+        throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+      }
+      throw new ResponseStatusException(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "命令执行失败: " + (cause != null ? cause.getMessage() : e.getMessage()));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "命令被中断");
     }
+  }
+
+  /** 通讯状态即使所有 Redis 状态均不可读，也会携带 completed/devices 数据。 此时返回该数据供页面展示为中断；只有没有可展示数据的命令失败才返回 HTTP 错误。 */
+  private Map<String, Object> awaitIedCommResponse(CompletableFuture<ScreenQueueMessage> future) {
+    try {
+      ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);
+      Map<String, Object> data = response.getData();
+      if (data != null && "completed".equals(String.valueOf(data.getOrDefault("phase", "")))) {
+        return data;
+      }
+      if (Boolean.FALSE.equals(response.getSuccess())) {
+        throw new ResponseStatusException(
+            HttpStatus.INTERNAL_SERVER_ERROR, "monitord 返回错误: " + response.getErrorMessage());
+      }
+      return data;
+    } catch (java.util.concurrent.TimeoutException e) {
+      throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+    } catch (java.util.concurrent.ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof java.util.concurrent.TimeoutException) {
+        throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+      }
+      throw new ResponseStatusException(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "命令执行失败: " + (cause != null ? cause.getMessage() : e.getMessage()));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "命令被中断");
+    }
+  }
+
+  private Long extractCabinetId(Map<String, Object> body) {
+    Object val = body.get("cabinetId");
+    if (val instanceof Number) {
+      return ((Number) val).longValue();
+    }
+    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 cabinetId 参数");
+  }
 }

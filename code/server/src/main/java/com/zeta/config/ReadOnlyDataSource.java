@@ -1,10 +1,9 @@
 package com.zeta.config;
 
-import org.springframework.jdbc.datasource.DelegatingDataSource;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DelegatingDataSource;
 
 /**
  * 标记屏柜库连接为只读（hint）。生产环境应对 ct-screen 账号仅授予 SELECT。

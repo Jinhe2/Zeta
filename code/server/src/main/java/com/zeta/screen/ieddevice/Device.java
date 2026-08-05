@@ -1,12 +1,11 @@
 package com.zeta.screen.ieddevice;
 
 import com.zeta.screen.cabinet.Cabinet;
+import java.time.Instant;
+import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import javax.persistence.*;
-import java.time.Instant;
 
 /** IED 保护装置，对应 ct-screen.ied_device */
 @Entity

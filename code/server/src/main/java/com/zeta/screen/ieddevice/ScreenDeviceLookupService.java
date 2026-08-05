@@ -1,7 +1,5 @@
 package com.zeta.screen.ieddevice;
 
-import com.zeta.screen.ieddevice.Device;
-import com.zeta.screen.ieddevice.DeviceRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

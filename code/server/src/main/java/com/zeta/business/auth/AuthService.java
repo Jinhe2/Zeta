@@ -1,11 +1,12 @@
 package com.zeta.business.auth;
 
-import com.zeta.business.user.User;
-import com.zeta.business.user.UserRole;
-import com.zeta.business.user.UserRepository;
+import com.zeta.business.auth.dto.*;
+import com.zeta.business.auth.dto.AuthTokenResponse;
+import com.zeta.business.entities.user.User;
+import com.zeta.business.entities.user.UserRepository;
+import com.zeta.business.entities.user.UserRole;
+import com.zeta.business.entities.user.dto.UserProfileResponse;
 import com.zeta.web.AuthHeaderUtils;
-import com.zeta.business.auth.AuthTokenResponse;
-import com.zeta.business.user.UserProfileResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;

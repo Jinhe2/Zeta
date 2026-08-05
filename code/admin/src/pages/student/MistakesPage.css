@@ -8,7 +8,7 @@
 
 .mistakes-page__section-title {
   margin: 0 0 10px;
-  font-size: 15px;
+  font-size: 20.7px;
   font-weight: 600;
   color: #8ec5f8;
   letter-spacing: 0.04em;
@@ -67,7 +67,7 @@
 }
 
 .mistakes-item__topic {
-  font-size: 12px;
+  font-size: 16.56px;
   font-weight: 600;
   color: #ff8a80;
   padding: 2px 8px;
@@ -77,13 +77,13 @@
 
 .mistakes-item__meta {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: 15.18px;
   color: #78909c;
 }
 
 .mistakes-item__question {
   margin: 0 0 6px;
-  font-size: 14px;
+  font-size: 19.32px;
   font-weight: 600;
   line-height: 1.45;
   color: #e8f0f8;
@@ -91,7 +91,7 @@
 
 .mistakes-item__wrong {
   margin: 0;
-  font-size: 13px;
+  font-size: 17.94px;
   line-height: 1.45;
   color: #90a4ae;
 }
@@ -110,7 +110,7 @@
   background: rgba(40, 75, 115, 0.38);
   color: #8ec5f8;
   font: inherit;
-  font-size: 12px;
+  font-size: 16.56px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -167,21 +167,21 @@
 
 .suggestions-item__title {
   margin: 0 0 4px;
-  font-size: 14px;
+  font-size: 19.32px;
   font-weight: 600;
   color: #e8f0f8;
 }
 
 .suggestions-item__desc {
   margin: 0;
-  font-size: 13px;
+  font-size: 17.94px;
   line-height: 1.45;
   color: #90a4ae;
 }
 
 .suggestions-item__action {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: 16.56px;
   font-weight: 600;
   color: #5eb3ff;
   padding: 6px 12px;

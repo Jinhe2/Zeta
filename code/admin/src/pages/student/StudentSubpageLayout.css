@@ -19,7 +19,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-shrink: 0;
-  min-height: 66px;
+  min-height: 76px;
   padding: 14px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(8, 16, 28, 0.88);
@@ -36,7 +36,7 @@
   transform: translateX(-50%);
   overflow: hidden;
   color: #f0f6fc;
-  font-size: 1.3rem;
+  font-size: 1.794rem;
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
@@ -48,16 +48,17 @@
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .student-subpage__user-name {
-  font-size: 15px;
+  font-size: 20.7px;
   font-weight: 600;
   color: #fff;
 }
 
 .student-subpage__user-level {
-  font-size: 13px;
+  font-size: 17.94px;
   color: #8ec5f8;
   padding: 4px 10px;
   border-radius: 6px;
@@ -67,13 +68,14 @@
 
 .student-subpage__back {
   flex-shrink: 0;
-  padding: 8px 14px;
+  min-height: 46px;
+  padding: 9px 16px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
   color: #cfe8ff;
   font: inherit;
-  font-size: 15px;
+  font-size: 20.7px;
   line-height: 1.2;
   cursor: pointer;
   text-decoration: none;
@@ -100,19 +102,24 @@
   padding: 0 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(10, 22, 38, 0.5);
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .student-subpage__tab {
   position: relative;
   min-width: 96px;
-  padding: 12px 18px;
+  min-height: 52px;
+  padding: 13px 20px;
   border: 0;
   background: transparent;
   color: #9fb3c8;
   font: inherit;
-  font-size: 14px;
+  font-size: 19.32px;
   font-weight: 600;
   cursor: pointer;
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
 .student-subpage__tab--active {
@@ -147,7 +154,7 @@
     position: static;
     max-width: none;
     transform: none;
-    font-size: 1.12rem;
+    font-size: 1.546rem;
     text-align: left;
   }
 
@@ -157,7 +164,7 @@
 
   .student-subpage__back {
     padding: 8px 12px;
-    font-size: 14px;
+    font-size: 19.32px;
   }
 
   .student-subpage__tabs {

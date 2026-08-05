@@ -82,6 +82,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
   padding: 12px 20px;
   flex-shrink: 0;
 }
@@ -105,6 +106,7 @@
   filter:
     drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4))
     drop-shadow(0 0 16px rgba(56, 142, 60, 0.25));
+  max-width: calc(100% - 240px);
 }
 
 .coach-mode__title-badge-inner {
@@ -141,11 +143,13 @@
 
 .coach-mode__title {
   margin: 0;
-  font-size: clamp(1.05rem, 2vw, 1.45rem);
+  font-size: clamp(1.449rem, 2vw, 2.001rem);
   font-weight: 700;
   letter-spacing: 0.1em;
   color: #f4fff6;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35), 0 0 18px rgba(129, 199, 132, 0.32);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -162,14 +166,14 @@
 }
 
 .coach-mode__user-name {
-  font-size: 16px;
+  font-size: 22.08px;
   font-weight: 700;
   color: #fff;
   line-height: 1.2;
 }
 
 .coach-mode__user-level {
-  font-size: 11px;
+  font-size: 15.18px;
   color: #a5d6a7;
 }
 
@@ -195,7 +199,7 @@
 }
 
 .coach-mode__progress-text {
-  font-size: 11px;
+  font-size: 15.18px;
   color: #7a9bb8;
   font-variant-numeric: tabular-nums;
 }
@@ -212,7 +216,7 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.06);
   color: #cfe8ff;
-  font-size: 15px;
+  font-size: 20.7px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -236,6 +240,22 @@
   padding: 24px 20px 32px;
   position: relative;
   z-index: 10;  /* 确保在最上层 */
+  overflow: auto;
+}
+
+@media (max-width: 860px) {
+  .coach-mode__title-badge {
+    position: relative;
+    order: -1;
+    left: auto;
+    width: 100%;
+    max-width: 100%;
+    transform: none;
+  }
+
+  .coach-mode__title-badge-inner {
+    text-align: center;
+  }
 }
 
 .coach-mode__floating {
@@ -355,14 +375,14 @@
 
 /* 标签 */
 .coach-mode__card-label {
-  font-size: 19px;
+  font-size: 26.22px;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
 
 /* 描述 */
 .coach-mode__card-desc {
-  font-size: 12px;
+  font-size: 16.56px;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.65);
   max-width: 140px;
@@ -378,7 +398,7 @@
   border: 1px solid rgba(255, 255, 255, 0.34);
   background: rgba(20, 24, 30, 0.92);
   color: #f0f3f6;
-  font-size: 12px;
+  font-size: 16.56px;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -388,7 +408,7 @@
   position: absolute;
   top: 12px;
   right: -22px;
-  font-size: 11px;
+  font-size: 15.18px;
   font-weight: 600;
   padding: 2px 26px;
   background: rgba(0, 0, 0, 0.4);
@@ -485,11 +505,11 @@
   }
 
   .coach-mode__card-label {
-    font-size: 16px;
+    font-size: 22.08px;
   }
 
   .coach-mode__card-desc {
-    font-size: 11px;
+    font-size: 15.18px;
   }
 }
 
@@ -517,11 +537,11 @@
   }
 
   .coach-mode__card-label {
-    font-size: 14px;
+    font-size: 19.32px;
   }
 
   .coach-mode__card-desc {
-    font-size: 10px;
+    font-size: 13.8px;
     max-width: 120px;
   }
 }

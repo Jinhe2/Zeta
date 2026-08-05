@@ -1,7 +1,7 @@
 .tasks-page__empty {
   margin: 60px 0;
   text-align: center;
-  font-size: 14px;
+  font-size: 19.32px;
   color: #78909c;
 }
 
@@ -40,7 +40,7 @@
 
 .tasks-item__title {
   margin: 0 0 6px;
-  font-size: 14px;
+  font-size: 19.32px;
   font-weight: 600;
   color: #e8f0f8;
   line-height: 1.4;
@@ -51,7 +51,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
+  font-size: 16.56px;
 }
 
 .tasks-item__mode {
@@ -71,7 +71,7 @@
 
 .tasks-item__status {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: 16.56px;
   font-weight: 600;
   padding: 5px 12px;
   border-radius: 6px;

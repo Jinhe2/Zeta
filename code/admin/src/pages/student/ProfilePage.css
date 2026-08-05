@@ -5,7 +5,7 @@
 
 .profile-section h3 {
   margin: 0 0 12px;
-  font-size: 15px;
+  font-size: 20.7px;
   font-weight: 600;
   color: #8ec5f8;
 }
@@ -29,14 +29,14 @@
 }
 
 .profile-stat-card__value {
-  font-size: 1.6rem;
+  font-size: 2.208rem;
   font-weight: 700;
   color: #5eb3ff;
   line-height: 1;
 }
 
 .profile-stat-card__label {
-  font-size: 12px;
+  font-size: 16.56px;
   color: #90a4ae;
   text-align: center;
 }
@@ -50,7 +50,7 @@
 .profile-timeline li {
   position: relative;
   padding: 10px 0 10px 18px;
-  font-size: 14px;
+  font-size: 19.32px;
   color: #b0c8de;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -96,19 +96,19 @@
 }
 
 .profile-history-item__title {
-  font-size: 14px;
+  font-size: 19.32px;
   font-weight: 600;
   color: #e8f0f8;
 }
 
 .profile-history-item__time {
-  font-size: 12px;
+  font-size: 16.56px;
   color: #78909c;
 }
 
 .profile-history-item__duration {
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: 17.94px;
   color: #8ec5f8;
 }
 
@@ -116,7 +116,7 @@
 .profile-scores-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 19.32px;
 }
 
 .profile-scores-table th,
@@ -127,7 +127,7 @@
 }
 
 .profile-scores-table th {
-  font-size: 13px;
+  font-size: 17.94px;
   font-weight: 600;
   color: #8ec5f8;
   background: rgba(10, 22, 38, 0.5);
@@ -184,18 +184,18 @@
 }
 
 .profile-honor-card__icon {
-  font-size: 28px;
+  font-size: 38.64px;
   line-height: 1;
 }
 
 .profile-honor-card__title {
-  font-size: 15px;
+  font-size: 20.7px;
   font-weight: 700;
   color: #fff;
 }
 
 .profile-honor-card__desc {
-  font-size: 12px;
+  font-size: 16.56px;
   line-height: 1.4;
   color: #90a4ae;
 }

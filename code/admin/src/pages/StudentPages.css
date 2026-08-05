@@ -5,13 +5,13 @@
 
 .student-intro h2 {
   margin: 0 0 8px;
-  font-size: 1.2rem;
+  font-size: 1.656rem;
   color: #fff;
 }
 
 .student-intro p {
   margin: 0;
-  font-size: 14px;
+  font-size: 19.32px;
   line-height: 1.6;
   color: #90a4ae;
 }
@@ -51,7 +51,7 @@
 }
 
 .protection-card__category {
-  font-size: 11px;
+  font-size: 15.18px;
   font-weight: 600;
   color: #81c784;
   text-transform: uppercase;
@@ -59,14 +59,14 @@
 
 .protection-card__title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.449rem;
   color: #fff;
 }
 
 .protection-card__desc {
   margin: 0;
   flex: 1;
-  font-size: 13px;
+  font-size: 17.94px;
   line-height: 1.5;
   color: #90a4ae;
 }
@@ -78,7 +78,7 @@
 }
 
 .protection-card__stats span {
-  font-size: 11px;
+  font-size: 15.18px;
   padding: 3px 8px;
   border-radius: 4px;
   background: rgba(129, 199, 132, 0.15);
@@ -86,7 +86,7 @@
 }
 
 .protection-card__action {
-  font-size: 13px;
+  font-size: 17.94px;
   font-weight: 600;
   color: #81c784;
 }
@@ -103,7 +103,7 @@
   padding: 10px 16px;
   background: rgba(255, 107, 107, 0.15);
   color: #ff8a80;
-  font-size: 13px;
+  font-size: 17.94px;
 }
 
 .diagram-page__body {
@@ -137,8 +137,9 @@
   align-items: center;
   gap: 12px;
   justify-content: space-between;
+  flex-wrap: wrap;
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: 16.56px;
   color: #b39ddb;
   background: rgba(124, 77, 255, 0.12);
   border-bottom: 1px solid rgba(124, 77, 255, 0.2);
@@ -152,7 +153,7 @@
 }
 
 .diagram-canvas__preview {
-  min-height: 420px;
+  min-height: 260px;
   height: 100%;
 }
 
@@ -162,7 +163,7 @@
 }
 
 .diagram-canvas__preview .v4-flow-pane {
-  min-height: 380px;
+  min-height: 240px;
 }
 
 .diagram-canvas__placeholder {
@@ -173,7 +174,7 @@
   justify-content: center;
   gap: 16px;
   color: #90a4ae;
-  font-size: 14px;
+  font-size: 19.32px;
 }
 
 .diagram-canvas__trigger-btn {
@@ -182,7 +183,7 @@
   border-radius: 8px;
   background: linear-gradient(135deg, #66bb6a, #43a047);
   color: #fff;
-  font-size: 16px;
+  font-size: 22.08px;
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.15s;
@@ -200,7 +201,7 @@
 
 .diagram-canvas__trigger-btn--inline {
   padding: 4px 14px;
-  font-size: 13px;
+  font-size: 17.94px;
   font-weight: 600;
   border-radius: 6px;
   margin-left: auto;
@@ -227,7 +228,7 @@
 /* ── Sidebar: config + history ── */
 
 .diagram-page__sidebar {
-  width: 360px;
+  width: clamp(380px, 31vw, 440px);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -252,7 +253,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 10px 14px;
-  font-size: 13px;
+  font-size: 17.94px;
   font-weight: 600;
   color: #b0bec5;
 }
@@ -270,7 +271,7 @@
   margin: 0;
   padding: 10px 14px 14px;
   color: #78909c;
-  font-size: 12px;
+  font-size: 16.56px;
   line-height: 1.6;
 }
 
@@ -303,20 +304,20 @@
 .diagram-page__node-cognition-item h3 {
   margin: 10px 0 6px;
   color: #e8f5e9;
-  font-size: 14px;
+  font-size: 19.32px;
 }
 
 .diagram-page__node-cognition-item p {
   margin: 0;
   color: #b0bec5;
-  font-size: 12px;
+  font-size: 16.56px;
   line-height: 1.65;
   white-space: pre-wrap;
 }
 
 .logic-node-cognition-dialog {
   position: fixed;
-  inset: 72px 340px 42px 42px;
+  inset: 90px clamp(400px, 33vw, 460px) 28px 28px;
   z-index: 40;
   display: flex;
   align-items: center;
@@ -325,8 +326,8 @@
 }
 
 .logic-node-cognition-dialog__panel {
-  width: min(720px, 78vw);
-  max-height: min(760px, 82vh);
+  width: min(720px, 100%);
+  max-height: 100%;
   display: grid;
   grid-template-rows: auto minmax(220px, 0.9fr) minmax(96px, auto) auto;
   overflow: hidden;
@@ -353,21 +354,21 @@
 
 .logic-node-cognition-dialog__eyebrow {
   color: #81c784;
-  font-size: 12px;
+  font-size: 16.56px;
   font-weight: 700;
 }
 
 .logic-node-cognition-dialog__header h2 {
   margin: 4px 0 0;
   color: #f1f8e9;
-  font-size: 20px;
+  font-size: 27.6px;
   letter-spacing: 0;
 }
 
 .logic-node-cognition-dialog__count {
   flex-shrink: 0;
   color: #c8e6c9;
-  font-size: 13px;
+  font-size: 17.94px;
   font-weight: 700;
 }
 
@@ -392,7 +393,7 @@
   justify-content: center;
   margin: 0;
   color: #b0bec5;
-  font-size: 14px;
+  font-size: 19.32px;
 }
 
 .logic-node-cognition-dialog__error {
@@ -411,24 +412,24 @@
 .logic-node-cognition-dialog__text h3 {
   margin: 0 0 8px;
   color: #e8f5e9;
-  font-size: 17px;
+  font-size: 23.46px;
 }
 
 .logic-node-cognition-dialog__panel--text-only .logic-node-cognition-dialog__text h3 {
   margin-bottom: 14px;
-  font-size: 22px;
+  font-size: 30.36px;
 }
 
 .logic-node-cognition-dialog__text p {
   margin: 0;
   color: #d7e2ea;
-  font-size: 14px;
+  font-size: 19.32px;
   line-height: 1.75;
   white-space: pre-wrap;
 }
 
 .logic-node-cognition-dialog__panel--text-only .logic-node-cognition-dialog__text p {
-  font-size: 16px;
+  font-size: 22.08px;
   line-height: 1.9;
 }
 
@@ -441,12 +442,12 @@
 }
 
 .logic-node-cognition-dialog__actions button {
-  min-height: 38px;
+  min-height: 48px;
   border: 1px solid rgba(129, 199, 132, 0.42);
   border-radius: 7px;
   background: rgba(129, 199, 132, 0.18);
   color: #f1f8e9;
-  font-size: 14px;
+  font-size: 19.32px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -460,9 +461,9 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1180px) {
   .logic-node-cognition-dialog {
-    inset: 68px 18px 28px;
+    inset: 96px 24px 28px;
   }
 
   .logic-node-cognition-dialog__panel {
@@ -489,16 +490,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   padding: 12px 14px;
   border-bottom: 1px solid rgba(142, 197, 248, 0.14);
   background: linear-gradient(180deg, rgba(18, 34, 54, 0.98), rgba(10, 22, 38, 0.96));
-  font-size: 13px;
+  font-size: 17.94px;
   font-weight: 600;
   color: #e8f0f8;
 }
 
 .diagram-page__history-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -508,7 +512,7 @@
   border-radius: 5px;
   background: rgba(124, 77, 255, 0.1);
   color: #b39ddb;
-  font-size: 12px;
+  font-size: 16.56px;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -523,7 +527,7 @@
   border-radius: 5px;
   background: rgba(129, 199, 132, 0.1);
   color: #a5d6a7;
-  font-size: 12px;
+  font-size: 16.56px;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -543,7 +547,7 @@
   border: 1px dashed rgba(142, 197, 248, 0.2);
   border-radius: 8px;
   background: rgba(15, 28, 44, 0.72);
-  font-size: 12px;
+  font-size: 16.56px;
   color: #8fa8bc;
   text-align: center;
 }
@@ -559,13 +563,14 @@
 .diagram-page__history-item {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 8px;
   padding: 10px 10px;
   border: 1px solid rgba(142, 197, 248, 0.12);
   border-radius: 7px;
   background: rgba(15, 28, 44, 0.78);
-  font-size: 12px;
+  font-size: 16.56px;
   color: #b8c8d8;
   cursor: pointer;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
@@ -590,14 +595,14 @@
 .diagram-page__history-time {
   font-family: ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  flex: 1;
+  flex: 1 1 130px;
   min-width: 86px;
   white-space: nowrap;
 }
 
 .diagram-page__history-transitions {
   color: #9fb3c8;
-  font-size: 11px;
+  font-size: 15.18px;
   white-space: nowrap;
 }
 
@@ -607,7 +612,7 @@
   border-radius: 4px;
   background: rgba(124, 77, 255, 0.1);
   color: #b39ddb;
-  font-size: 10px;
+  font-size: 13.8px;
   font-family: ui-monospace, monospace;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -620,7 +625,7 @@
 }
 
 .diagram-page__history-source {
-  font-size: 9px;
+  font-size: 12.42px;
   font-weight: 700;
   padding: 1px 4px;
   border-radius: 3px;
@@ -634,7 +639,7 @@
 
 .diagram-page__history-status {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: 13.8px;
   font-weight: 600;
   padding: 2px 6px;
   border-radius: 3px;
@@ -657,7 +662,7 @@
 }
 
 .diagram-canvas__hint {
-  font-size: 13px;
+  font-size: 17.94px;
   color: #78909c;
 }
 
@@ -668,7 +673,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 6px;
-  font-size: 12px;
+  font-size: 16.56px;
   font-family: ui-monospace, monospace;
 }
 
@@ -712,7 +717,7 @@
 
 .experiment-result-dialog__message {
   margin: 0 0 22px;
-  font-size: 18px;
+  font-size: 24.84px;
   line-height: 1.65;
   font-weight: 700;
 }
@@ -724,11 +729,46 @@
   border-radius: 6px;
   background: linear-gradient(135deg, #66bb6a, #43a047);
   color: #fff;
-  font-size: 14px;
+  font-size: 19.32px;
   font-weight: 700;
   cursor: pointer;
 }
 
 .experiment-result-dialog__btn:hover {
   opacity: 0.9;
+}
+
+@media (max-width: 1180px) {
+  .tablet-shell.diagram-page .diagram-page__body {
+    overflow: auto;
+  }
+
+  .diagram-page__body {
+    flex-direction: column;
+  }
+
+  .diagram-page__workspace {
+    flex: 0 0 auto;
+    min-height: min(720px, calc(100vh - 120px));
+  }
+
+  .diagram-page__sidebar {
+    width: auto;
+    min-height: 420px;
+    flex: 0 0 auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 0;
+    overflow: visible;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 1181px) {
+  .diagram-canvas {
+    margin: 8px;
+  }
+
+  .diagram-canvas__preview,
+  .diagram-canvas__preview .v4-flow-pane {
+    min-height: 180px;
+  }
 }

@@ -10,9 +10,10 @@ function polarPoint(cx, cy, radius, index, total) {
 }
 
 export default function AbilityChart() {
-  const cx = 120
-  const cy = 120
-  const maxR = 88
+  // 放大字号后为六组轴标签预留独立的画布安全边距，避免 SVG 边界裁剪。
+  const cx = 160
+  const cy = 140
+  const maxR = 95
   const levels = [0.25, 0.5, 0.75, 1]
 
   const valuePoints = VALUES.map((v, i) =>
@@ -23,7 +24,7 @@ export default function AbilityChart() {
   return (
     <div className="ability-chart">
       <h3 className="ability-chart__title">能力图</h3>
-      <svg viewBox="0 0 240 240" className="ability-chart__svg" aria-label="学员能力雷达图">
+      <svg viewBox="0 0 320 280" className="ability-chart__svg" aria-label="学员能力雷达图">
         {levels.map((level) => {
           const points = LABELS.map((_, i) => polarPoint(cx, cy, maxR * level, i, LABELS.length))
           const d = points.map((p) => `${p.x},${p.y}`).join(' ')
@@ -40,7 +41,7 @@ export default function AbilityChart() {
 
         {LABELS.map((label, i) => {
           const outer = polarPoint(cx, cy, maxR, i, LABELS.length)
-          const labelPos = polarPoint(cx, cy, maxR + 18, i, LABELS.length)
+          const labelPos = polarPoint(cx, cy, maxR + 34, i, LABELS.length)
           return (
             <g key={label}>
               <line

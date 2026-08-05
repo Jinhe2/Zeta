@@ -914,8 +914,8 @@
 }
 
 .pressboard-grid--full .pressboard-grid__svg {
-  width: min(52%, 34px);
-  height: min(64%, 68px);
+  width: min(64%, 44px);
+  height: min(74%, 84px);
   min-height: 0;
 }
 

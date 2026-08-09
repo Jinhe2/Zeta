@@ -16,6 +16,14 @@ function terminalNumber(terminalLabel) {
   return matches?.[matches.length - 1] ?? String(terminalLabel ?? '')
 }
 
+function terminalLineImagePath(iedSignalRef) {
+  const signalRef = String(iedSignalRef ?? '')
+  if (signalRef.includes('$phsA$')) return 'images/terminal/line_yellow.svg'
+  if (signalRef.includes('$phsB$')) return 'images/terminal/line_green.svg'
+  if (signalRef.includes('$phsC$')) return 'images/terminal/line_red.svg'
+  return 'images/terminal/line_black.svg'
+}
+
 function initialPracticeState() {
   return {
     sequence: null,
@@ -361,7 +369,7 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
                 {terminals.map((terminal) => {
                   const connected = terminalStates[terminalStatusKey(terminal.id)]?.wiring_status === 'CORRECT'
                   return <div key={terminal.id} className="terminal-wiring-status__item">
-                    {connected && <img className="terminal-wiring-status__line" src={publicUrl('images/terminal/line.svg')} alt="已接线" />}
+                    {connected && <img className="terminal-wiring-status__line" src={publicUrl(terminalLineImagePath(terminal.iedSignalRef))} alt="已接线" />}
                     <span className="terminal-wiring-status__terminal-clip"><img className="terminal-wiring-status__terminal" src={publicUrl('images/terminal/terminal_ang.svg')} alt={`端子 ${terminal.terminalLabel}`} /></span>
                     <span className="terminal-wiring-status__label">{terminalNumber(terminal.terminalLabel)}</span>
                   </div>

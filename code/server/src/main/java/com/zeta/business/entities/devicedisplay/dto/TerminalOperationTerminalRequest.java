@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 public class TerminalOperationTerminalRequest {
   private Long terminalId;
-  private String meaning;
+  private String expectedOutputCode;
 }

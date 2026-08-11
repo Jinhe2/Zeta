@@ -9,5 +9,5 @@ import lombok.Getter;
 public class TerminalOperationTerminalResponse {
   private Long terminalId;
   private String terminalLabel;
-  private String meaning;
+  private String expectedOutputCode;
 }

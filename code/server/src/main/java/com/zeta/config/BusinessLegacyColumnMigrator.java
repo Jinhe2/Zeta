@@ -37,6 +37,7 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         migrateCognitionDevices();
         migrateCognitionMediaFields();
         createTerminalOperationTables();
+        migrateTerminalOperationExpectedOutputs();
         createLearningResourcesTable();
         createDrawingLearningTables();
     }
@@ -192,7 +193,8 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
                 + "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='端子操作认知条目'");
         executeRequired("CREATE TABLE IF NOT EXISTS terminal_operation_terminals ("
                 + "id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, terminal_operation_id BIGINT UNSIGNED NOT NULL, "
-                + "terminal_id BIGINT UNSIGNED NOT NULL, terminal_meaning VARCHAR(128) NOT NULL, sort_order INT NOT NULL, "
+                + "terminal_id BIGINT UNSIGNED NOT NULL, terminal_meaning VARCHAR(128) NULL, "
+                + "expected_output_code VARCHAR(8) NULL, sort_order INT NOT NULL, "
                 + "PRIMARY KEY (id), INDEX idx_terminal_operation_terminal (terminal_operation_id)) "
                 + "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='端子操作目标端子'");
         if (tableExists("device_display_items")) {
@@ -200,6 +202,21 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
                     + "INNER JOIN terminal_operation_items o ON o.device_display_item_id = d.id "
                     + "SET d.media_type = 'TERMINAL_OPERATION' WHERE d.media_type <> 'TERMINAL_OPERATION'");
         }
+    }
+
+    /** 将历史自由文本尽可能迁移为规范的试验仪输出代码。 */
+    private void migrateTerminalOperationExpectedOutputs() {
+        String table = "terminal_operation_terminals";
+        if (!tableExists(table)) return;
+        addColumnIfMissing(table, "expected_output_code", "VARCHAR(8) NULL COMMENT '预期试验仪语义输出代码'");
+        if (!columnExists(table, "terminal_meaning")) return;
+        executeRequired("ALTER TABLE `" + table + "` MODIFY COLUMN `terminal_meaning` VARCHAR(128) NULL");
+        executeRequired("UPDATE `" + table + "` SET `expected_output_code` = CASE LOWER(TRIM(`terminal_meaning`)) "
+                + "WHEN 'ua' THEN 'Ua' WHEN 'ub' THEN 'Ub' WHEN 'uc' THEN 'Uc' WHEN 'un' THEN 'Un' "
+                + "WHEN 'ux' THEN 'Ux' WHEN 'uy' THEN 'Uy' WHEN 'uz' THEN 'Uz' WHEN 'un2' THEN 'Un2' "
+                + "WHEN 'ia' THEN 'Ia' WHEN 'ib' THEN 'Ib' WHEN 'ic' THEN 'Ic' WHEN 'in' THEN 'In' "
+                + "WHEN 'ix' THEN 'Ix' WHEN 'iy' THEN 'Iy' WHEN 'iz' THEN 'Iz' WHEN 'in2' THEN 'In2' "
+                + "ELSE NULL END WHERE `expected_output_code` IS NULL");
     }
 
     private void migrateLogicNodeMediaFields() {

@@ -16,12 +16,32 @@ function terminalNumber(terminalLabel) {
   return matches?.[matches.length - 1] ?? String(terminalLabel ?? '')
 }
 
-function terminalLineImagePath(iedSignalRef) {
-  const signalRef = String(iedSignalRef ?? '')
-  if (signalRef.includes('$phsA$')) return 'images/terminal/line_yellow.svg'
-  if (signalRef.includes('$phsB$')) return 'images/terminal/line_green.svg'
-  if (signalRef.includes('$phsC$')) return 'images/terminal/line_red.svg'
+function terminalLineImagePath(phase) {
+  if (phase === 'A') return 'images/terminal/line_yellow.svg'
+  if (phase === 'B') return 'images/terminal/line_green.svg'
+  if (phase === 'C') return 'images/terminal/line_red.svg'
   return 'images/terminal/line_black.svg'
+}
+
+function actualOutputs(state) {
+  return Array.isArray(state?.actual_outputs) ? state.actual_outputs : []
+}
+
+function hasExpectedOutput(terminal) {
+  return Boolean(terminal?.expectedOutputCode?.trim())
+}
+
+function isTerminalCorrect(terminal, state) {
+  if (!hasExpectedOutput(terminal)) return true
+  const outputs = actualOutputs(state)
+  return state?.connection_status === 'CONNECTED'
+    && outputs.length === 1
+    && outputs[0]?.output_code === terminal.expectedOutputCode
+}
+
+function describeActualOutput(output) {
+  const code = output?.output_code || '未知输出'
+  return output?.tester_name ? `${output.tester_name} ${code}` : code
 }
 
 function initialPracticeState() {
@@ -66,6 +86,25 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
     isPracticeStatusTarget
     && practiceDialog?.pageKey === navigationTarget?.key
     && practiceDialog?.sequence === navigationEvent?.sequence
+  const practiceTerminals = terminalOperation?.terminals?.filter(hasExpectedOutput) ?? []
+  const incorrectConnections = practiceTerminals.flatMap((terminal) => {
+    const state = terminalStates[terminalStatusKey(terminal.terminalId)]
+    const outputs = actualOutputs(state)
+    if (state?.connection_status === 'MULTIPLE') {
+      return [{
+        terminal,
+        actual: outputs.length ? outputs.map(describeActualOutput).join('、') : '多路接入',
+      }]
+    }
+    if (state?.connection_status === 'CONNECTED' && !isTerminalCorrect(terminal, state)) {
+      return [{ terminal, actual: outputs.length ? describeActualOutput(outputs[0]) : '未知输出' }]
+    }
+    return []
+  })
+  const hasTerminalReadError = terminals.some((terminal) => {
+    const state = terminalStates[terminalStatusKey(terminal.id)]
+    return state && (state.connection_status === 'ERROR' || state.read_success === false)
+  })
 
   // 加载认知条目
   useEffect(() => {
@@ -184,11 +223,18 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
       return
     }
 
-    const practiceTerminals = terminalOperation?.terminals ?? []
-    const disconnectedTerminals = practiceTerminals.filter(
-      (terminal) => terminalStates[terminalStatusKey(terminal.terminalId)]?.wiring_status !== 'CORRECT',
+    const configuredTerminals = terminalOperation?.terminals?.filter(hasExpectedOutput) ?? []
+    if (configuredTerminals.length === 0) {
+      practiceRef.current = { ...practice, phase: 'completed' }
+      return
+    }
+    const disconnectedTerminals = configuredTerminals.filter(
+      (terminal) => terminalStates[terminalStatusKey(terminal.terminalId)]?.connection_status === 'DISCONNECTED',
     )
-    if (disconnectedTerminals.length === 0) {
+    const allCorrect = configuredTerminals.every(
+      (terminal) => isTerminalCorrect(terminal, terminalStates[terminalStatusKey(terminal.terminalId)]),
+    )
+    if (allCorrect) {
       practiceRef.current = { ...practice, phase: 'completed' }
       return
     }
@@ -197,17 +243,19 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
     setPracticeDialog({
       pageKey: navigationTarget?.key,
       sequence: practice.sequence,
-      message: disconnectedTerminals.map((terminal) => `请将测试仪上的 ${terminal.meaning} 接入 ${terminal.terminalLabel} 端子`).join('\n'),
+      message: disconnectedTerminals.length
+        ? disconnectedTerminals.map((terminal) => `请将测试仪上的 ${terminal.expectedOutputCode} 接入 ${terminal.terminalLabel} 端子`).join('\n')
+        : null,
     })
-  }, [navigationTarget?.key, statusRefreshVersion, terminalStates, terminalOperation])
+  }, [navigationTarget?.key, statusRefreshVersion, terminalStates, terminalOperation, terminals.length])
 
   useEffect(() => {
     const practice = practiceRef.current
     if (practice.phase !== 'watching') return
 
-    const practiceTerminals = terminalOperation?.terminals ?? []
-    const allConnected = practiceTerminals.length > 0 && practiceTerminals.every(
-      (terminal) => terminalStates[terminalStatusKey(terminal.terminalId)]?.wiring_status === 'CORRECT',
+    const configuredTerminals = terminalOperation?.terminals?.filter(hasExpectedOutput) ?? []
+    const allConnected = configuredTerminals.length > 0 && configuredTerminals.every(
+      (terminal) => isTerminalCorrect(terminal, terminalStates[terminalStatusKey(terminal.terminalId)]),
     )
     if (!allConnected) return
 
@@ -365,11 +413,16 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
                 <span className="terminal-wiring-status__tag-label">{String(terminalOperation.terminalStripLabelPrefix || terminalOperation.terminalStripName || '').replace(/-+$/, '')}</span>
               </div>
               {statusError && <p className="terminal-wiring-status__error">{statusError}</p>}
+              {!statusError && hasTerminalReadError && <p className="terminal-wiring-status__error">部分端子状态读取异常</p>}
               {terminals.length === 0 ? <p className="cabinet-section__paragraph">暂无可渲染的端子数据</p> : <div className="terminal-wiring-status__list">
                 {terminals.map((terminal) => {
-                  const connected = terminalStates[terminalStatusKey(terminal.id)]?.wiring_status === 'CORRECT'
+                  const state = terminalStates[terminalStatusKey(terminal.id)]
+                  const outputs = actualOutputs(state)
+                  const multiple = state?.connection_status === 'MULTIPLE'
+                  const output = state?.connection_status === 'CONNECTED' && outputs.length === 1 ? outputs[0] : null
                   return <div key={terminal.id} className="terminal-wiring-status__item">
-                    {connected && <img className="terminal-wiring-status__line" src={publicUrl(terminalLineImagePath(terminal.iedSignalRef))} alt="已接线" />}
+                    {(output || multiple) && <img className="terminal-wiring-status__line" src={publicUrl(multiple ? 'images/terminal/line_gray.svg' : terminalLineImagePath(output.phase))} alt={multiple ? '多路接入' : '已接线'} />}
+                    {(output || multiple) && <span className={`terminal-wiring-status__output${multiple ? ' terminal-wiring-status__output--multiple' : ''}`}>{multiple ? '多路接入' : (output.output_code || '未知输出')}</span>}
                     <span className="terminal-wiring-status__terminal-clip"><img className="terminal-wiring-status__terminal" src={publicUrl('images/terminal/terminal_ang.svg')} alt={`端子 ${terminal.terminalLabel}`} /></span>
                     <span className="terminal-wiring-status__label">{terminalNumber(terminal.terminalLabel)}</span>
                   </div>
@@ -423,11 +476,16 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
               <h3 className="cabinet-section__cognition-title">{currentDisplayItem.title}</h3>
             )}
             <p className="cabinet-section__paragraph">{currentDisplayItem.content}</p>
+            {incorrectConnections.length > 0 && <div className="terminal-wiring-status__validation" role="status">
+              {incorrectConnections.map(({ terminal, actual }) => <p key={terminal.terminalId}>
+                端子 {terminal.terminalLabel}：预期接入 {terminal.expectedOutputCode}，当前实际接入 {actual}
+              </p>)}
+            </div>}
           </div>
         )}
       </div>
 
-      {visiblePracticeDialog && (
+      {visiblePracticeDialog && practiceDialog.message && (
         <div className="pressboard-practice-dialog" role="dialog" aria-modal="true" aria-labelledby="terminal-practice-dialog-message">
           <div className="pressboard-practice-dialog__mask" />
           <div className="pressboard-practice-dialog__panel">

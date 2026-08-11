@@ -21,8 +21,8 @@ public class TerminalOperationTerminal {
   @Column(name = "terminal_id", nullable = false)
   private Long terminalId;
 
-  @Column(name = "terminal_meaning", nullable = false, length = 128)
-  private String terminalMeaning;
+  @Column(name = "expected_output_code", length = 8)
+  private String expectedOutputCode;
 
   @Column(name = "sort_order", nullable = false)
   private Integer sortOrder;

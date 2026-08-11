@@ -350,8 +350,8 @@ public class DeviceDisplayItemService {
         int sortOrder = 0;
         java.util.HashSet<Long> terminalIds = new java.util.HashSet<>();
         for (TerminalOperationTerminalRequest selected : request.getTerminals()) {
-            if (selected == null || selected.getTerminalId() == null || !StringUtils.hasText(selected.getMeaning())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子的表示含义不能为空");
+            if (selected == null || selected.getTerminalId() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子不能为空");
             }
             if (!terminalIds.add(selected.getTerminalId())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子不能重复选择");
@@ -364,7 +364,12 @@ public class DeviceDisplayItemService {
             TerminalOperationTerminal operationTerminal = new TerminalOperationTerminal();
             operationTerminal.setTerminalOperationId(operation.getId());
             operationTerminal.setTerminalId(terminal.getId());
-            operationTerminal.setTerminalMeaning(selected.getMeaning().trim());
+            String requestedOutputCode = selected.getExpectedOutputCode();
+            String expectedOutputCode = TestInstrumentOutputCode.canonicalize(requestedOutputCode);
+            if (StringUtils.hasText(requestedOutputCode) && expectedOutputCode == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "预期试验仪输出不合法");
+            }
+            operationTerminal.setExpectedOutputCode(expectedOutputCode);
             operationTerminal.setSortOrder(sortOrder++);
             terminalOperationTerminalRepository.save(operationTerminal);
         }
@@ -387,7 +392,7 @@ public class DeviceDisplayItemService {
                 .map(selected -> {
                     Terminal terminal = terminalRepository.findById(selected.getTerminalId()).orElse(null);
                     return terminal == null ? null : new TerminalOperationTerminalResponse(
-                            terminal.getId(), terminal.getTerminalLabel(), selected.getTerminalMeaning());
+                            terminal.getId(), terminal.getTerminalLabel(), selected.getExpectedOutputCode());
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

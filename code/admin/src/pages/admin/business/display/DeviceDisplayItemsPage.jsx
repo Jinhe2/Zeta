@@ -34,6 +34,11 @@ const DEVICE_TYPE_LABELS = {
   PLATE_GROUP: '压板组',
 }
 
+const TEST_INSTRUMENT_OUTPUT_CODES = [
+  'Ua', 'Ub', 'Uc', 'Un', 'Ux', 'Uy', 'Uz', 'Un2',
+  'Ia', 'Ib', 'Ic', 'In', 'Ix', 'Iy', 'Iz', 'In2',
+]
+
 function formatDate(iso) {
   if (!iso) return '—'
   return new Date(iso).toLocaleString('zh-CN', {
@@ -288,7 +293,7 @@ export default function DeviceDisplayItemsPage() {
       widthPercent: item.widthPercent ?? null,
       heightPercent: item.heightPercent ?? null,
       terminalOperation: item.terminalOperation
-        ? { terminalStripId: String(item.terminalOperation.terminalStripId), terminals: item.terminalOperation.terminals.map((terminal) => ({ terminalId: terminal.terminalId, meaning: terminal.meaning })) }
+        ? { terminalStripId: String(item.terminalOperation.terminalStripId), terminals: item.terminalOperation.terminals.map((terminal) => ({ terminalId: terminal.terminalId, expectedOutputCode: terminal.expectedOutputCode || '' })) }
         : { terminalStripId: '', terminals: [] },
     })
   }
@@ -347,16 +352,12 @@ export default function DeviceDisplayItemsPage() {
       setError('请选择端子排和至少一个端子')
       return false
     }
-    if (form.terminalOperation.terminals.some((terminal) => !terminal.meaning?.trim())) {
-      setError('需要操作的端子含义不能为空')
-      return false
-    }
     return true
   }
 
   const terminalOperationField = (form, setForm, disabled) => {
     const operation = form.terminalOperation || { terminalStripId: '', terminals: [] }
-    const selected = new Map(operation.terminals.map((terminal) => [Number(terminal.terminalId), terminal.meaning]))
+    const selected = new Map(operation.terminals.map((terminal) => [Number(terminal.terminalId), terminal.expectedOutputCode || '']))
     const stripTerminals = terminals.filter((terminal) => Number(terminal.terminalStripId) === Number(operation.terminalStripId))
     const updateOperation = (next) => setForm((current) => ({ ...current, terminalOperation: next }))
     return <>
@@ -365,15 +366,18 @@ export default function DeviceDisplayItemsPage() {
         {terminalStrips.map((strip) => <option key={strip.id} value={strip.id}>{strip.name}（{strip.labelPrefix}）</option>)}
       </select></label>
       {operation.terminalStripId && <div className="device-display-items__terminal-operation">
-        <p>勾选需要接线的端子，并填写测试仪端子的表示含义。</p>
-        <div className="device-display-items__terminal-table-wrap"><table className="users-page__table"><thead><tr><th>选择</th><th>端子编号</th><th>端子表示含义</th></tr></thead><tbody>
+        <p>勾选需要接线的端子，并按需选择预期接入的试验仪输出。</p>
+        <div className="device-display-items__terminal-table-wrap"><table className="users-page__table"><thead><tr><th>选择</th><th>端子编号</th><th>预期试验仪输出</th></tr></thead><tbody>
           {stripTerminals.map((terminal) => {
             const checked = selected.has(Number(terminal.id))
             return <tr key={terminal.id}><td><input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => {
               const next = operation.terminals.filter((entry) => Number(entry.terminalId) !== Number(terminal.id))
-              if (e.target.checked) next.push({ terminalId: terminal.id, meaning: '' })
+              if (e.target.checked) next.push({ terminalId: terminal.id, expectedOutputCode: '' })
               updateOperation({ ...operation, terminals: next })
-            }} /></td><td>{terminal.terminalLabel}</td><td>{checked && <input value={selected.get(Number(terminal.id)) || ''} disabled={disabled} required onChange={(e) => updateOperation({ ...operation, terminals: operation.terminals.map((entry) => Number(entry.terminalId) === Number(terminal.id) ? { ...entry, meaning: e.target.value } : entry) })} />}</td></tr>
+            }} /></td><td>{terminal.terminalLabel}</td><td>{checked && <select value={selected.get(Number(terminal.id)) || ''} disabled={disabled} onChange={(e) => updateOperation({ ...operation, terminals: operation.terminals.map((entry) => Number(entry.terminalId) === Number(terminal.id) ? { ...entry, expectedOutputCode: e.target.value } : entry) })}>
+              <option value="">未配置</option>
+              {TEST_INSTRUMENT_OUTPUT_CODES.map((code) => <option key={code} value={code}>{code}</option>)}
+            </select>}</td></tr>
           })}
         </tbody></table></div>
       </div>}

@@ -59,7 +59,7 @@ public class MonitorCommandController {
     CompletableFuture<ScreenQueueMessage> future =
         commandService.sendTerminalStatusRequest(cabinetId);
 
-    return awaitResponse(future, "summon_terminal_status");
+    return awaitTerminalResponse(future);
   }
 
   /** 触发 IED 通讯状态读取。 */
@@ -247,6 +247,36 @@ public class MonitorCommandController {
             HttpStatus.INTERNAL_SERVER_ERROR, "monitord 返回错误: " + response.getErrorMessage());
       }
       return response.getData();
+    } catch (java.util.concurrent.TimeoutException e) {
+      throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+    } catch (java.util.concurrent.ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof java.util.concurrent.TimeoutException) {
+        throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+      }
+      throw new ResponseStatusException(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "命令执行失败: " + (cause != null ? cause.getMessage() : e.getMessage()));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "命令被中断");
+    }
+  }
+
+  /** 端子状态部分读取失败时仍会携带可展示的 completed 数据。 */
+  private Map<String, Object> awaitTerminalResponse(
+      CompletableFuture<ScreenQueueMessage> future) {
+    try {
+      ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);
+      Map<String, Object> data = response.getData();
+      if (data != null && "completed".equals(String.valueOf(data.getOrDefault("phase", "")))) {
+        return data;
+      }
+      if (Boolean.FALSE.equals(response.getSuccess())) {
+        throw new ResponseStatusException(
+            HttpStatus.INTERNAL_SERVER_ERROR, "monitord 返回错误: " + response.getErrorMessage());
+      }
+      return data;
     } catch (java.util.concurrent.TimeoutException e) {
       throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
     } catch (java.util.concurrent.ExecutionException e) {

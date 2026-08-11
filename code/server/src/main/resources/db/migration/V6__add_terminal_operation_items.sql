@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS terminal_operation_terminals (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   terminal_operation_id BIGINT UNSIGNED NOT NULL,
   terminal_id BIGINT UNSIGNED NOT NULL,
-  terminal_meaning VARCHAR(128) NOT NULL,
+  terminal_meaning VARCHAR(128) NULL COMMENT '历史端子表示含义，仅用于迁移追溯',
+  expected_output_code VARCHAR(8) NULL COMMENT '预期试验仪语义输出代码',
   sort_order INT NOT NULL,
   PRIMARY KEY (id),
   INDEX idx_terminal_operation_terminal (terminal_operation_id)

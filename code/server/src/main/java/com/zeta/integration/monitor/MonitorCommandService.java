@@ -81,7 +81,7 @@ public class MonitorCommandService {
   public CompletableFuture<ScreenQueueMessage> sendTerminalStatusRequest(Long cabinetId) {
     Map<String, Object> data = new LinkedHashMap<>();
     data.put("cabinet_id", cabinetId);
-    data.put("refresh", true);
+    data.put("refresh", false);
     data.put("terminal_ids", Collections.emptyList());
 
     return sendCommand("summon_terminal_status", null, data, "terminal:" + cabinetId);

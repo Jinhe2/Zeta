@@ -46,7 +46,7 @@ public class MonitorCommandController {
     CompletableFuture<ScreenQueueMessage> future =
         commandService.sendPressboardStatusRequest(cabinetId);
 
-    return awaitResponse(future, "summon_pressboard_status");
+    return awaitStatusResponse(future, "summon_pressboard_status", cabinetId);
   }
 
   /** 触发端子状态读取 */
@@ -59,7 +59,7 @@ public class MonitorCommandController {
     CompletableFuture<ScreenQueueMessage> future =
         commandService.sendTerminalStatusRequest(cabinetId);
 
-    return awaitTerminalResponse(future);
+    return awaitStatusResponse(future, "summon_terminal_status", cabinetId);
   }
 
   /** 触发 IED 通讯状态读取。 */
@@ -263,9 +263,9 @@ public class MonitorCommandController {
     }
   }
 
-  /** 端子状态部分读取失败时仍会携带可展示的 completed 数据。 */
-  private Map<String, Object> awaitTerminalResponse(
-      CompletableFuture<ScreenQueueMessage> future) {
+  /** 压板/端子状态部分读取失败时仍会携带可展示的 completed 数据。 */
+  private Map<String, Object> awaitStatusResponse(
+      CompletableFuture<ScreenQueueMessage> future, String command, Long cabinetId) {
     try {
       ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);
       Map<String, Object> data = response.getData();
@@ -273,15 +273,27 @@ public class MonitorCommandController {
         return data;
       }
       if (Boolean.FALSE.equals(response.getSuccess())) {
+        Map<String, Object> cached = commandService.getLatestResponse(command, cabinetId);
+        if (cached != null) {
+          return cached;
+        }
         throw new ResponseStatusException(
             HttpStatus.INTERNAL_SERVER_ERROR, "monitord 返回错误: " + response.getErrorMessage());
       }
       return data;
     } catch (java.util.concurrent.TimeoutException e) {
+      Map<String, Object> cached = commandService.getLatestResponse(command, cabinetId);
+      if (cached != null) {
+        return cached;
+      }
       throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
     } catch (java.util.concurrent.ExecutionException e) {
       Throwable cause = e.getCause();
       if (cause instanceof java.util.concurrent.TimeoutException) {
+        Map<String, Object> cached = commandService.getLatestResponse(command, cabinetId);
+        if (cached != null) {
+          return cached;
+        }
         throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
       }
       throw new ResponseStatusException(

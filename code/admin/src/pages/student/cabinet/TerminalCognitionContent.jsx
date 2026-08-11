@@ -27,6 +27,16 @@ function actualOutputs(state) {
   return Array.isArray(state?.actual_outputs) ? state.actual_outputs : []
 }
 
+function terminalStatesFromResponse(data) {
+  if (!Array.isArray(data?.terminals)) return null
+  const states = {}
+  data.terminals.forEach((terminal) => {
+    const key = terminalStatusKey(terminal.terminal_id)
+    if (key) states[key] = terminal
+  })
+  return states
+}
+
 function hasExpectedOutput(terminal) {
   return Boolean(terminal?.expectedOutputCode?.trim())
 }
@@ -42,6 +52,14 @@ function isTerminalCorrect(terminal, state) {
 function describeActualOutput(output) {
   const code = output?.output_code || '未知输出'
   return output?.tester_name ? `${output.tester_name} ${code}` : code
+}
+
+function buildWiringRequirementMessage(terminals) {
+  const configuredTerminals = (terminals ?? []).filter(hasExpectedOutput)
+  if (configuredTerminals.length === 0) return null
+  return configuredTerminals
+    .map((terminal) => `请将试验仪上的 ${terminal.expectedOutputCode} 输出接到 ${terminal.terminalLabel} 端子`)
+    .join('\n')
 }
 
 function initialPracticeState() {
@@ -73,6 +91,7 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
   const [statusError, setStatusError] = useState(null)
   const [practiceDialog, setPracticeDialog] = useState(null)
   const practiceRef = useRef(initialPracticeState())
+  const statusRequestRef = useRef(null)
 
   const selectedDevice =
     cognitionDevices.find((d) => d.id === selectedDeviceId) ?? cognitionDevices[0] ?? null
@@ -101,8 +120,14 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
     }
     return []
   })
-  const hasTerminalReadError = terminals.some((terminal) => {
-    const state = terminalStates[terminalStatusKey(terminal.id)]
+  const readErrorTerminalIds = new Set(
+    (terminalOperation?.terminals?.length ? terminalOperation.terminals : terminals)
+      .map((terminal) => terminal.terminalId ?? terminal.id)
+      .filter((terminalId) => terminalId != null)
+      .map(String),
+  )
+  const hasTerminalReadError = Array.from(readErrorTerminalIds).some((terminalId) => {
+    const state = terminalStates[terminalStatusKey(terminalId)]
     return state && (state.connection_status === 'ERROR' || state.read_success === false)
   })
 
@@ -149,24 +174,40 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
 
   const fetchTerminalStatus = useCallback(async () => {
     if (!cabinetId) return
+    if (statusRequestRef.current) return statusRequestRef.current
 
     setStatusError(null)
-    try {
+    const request = (async () => {
       const data = await api.triggerTerminalStatus(cabinetId)
-      if (!Array.isArray(data?.terminals)) return
-
-      const states = {}
-      data.terminals.forEach((terminal) => {
-        const key = terminalStatusKey(terminal.terminal_id)
-        if (key) states[key] = terminal
-      })
+      const states = terminalStatesFromResponse(data)
+      if (!states) return null
       setTerminalStates(states)
       setStatusRefreshVersion((version) => version + 1)
       return states
+    })()
+    statusRequestRef.current = request
+    try {
+      return await request
     } catch (err) {
+      try {
+        const cached = await api.getTerminalStatus(cabinetId)
+        const states = terminalStatesFromResponse(cached)
+        if (states) {
+          setTerminalStates(states)
+          setStatusRefreshVersion((version) => version + 1)
+          setStatusError(null)
+          return states
+        }
+      } catch (fallbackErr) {
+        console.warn('端子状态缓存读取失败:', fallbackErr.message)
+      }
       setStatusError('端子状态读取失败: ' + err.message)
       console.warn('端子状态读取失败:', err.message)
       return null
+    } finally {
+      if (statusRequestRef.current === request) {
+        statusRequestRef.current = null
+      }
     }
   }, [cabinetId])
 
@@ -201,7 +242,11 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
       phase: 'waiting-refresh',
       startRefreshVersion: statusRefreshVersion,
     }
-    setPracticeDialog(null)
+    setPracticeDialog({
+      pageKey: navigationTarget?.key,
+      sequence: navigationEvent.sequence,
+      message: buildWiringRequirementMessage(terminalOperation?.terminals),
+    })
     fetchTerminalStatus()
   }, [
     fetchTerminalStatus,
@@ -211,6 +256,7 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
     navigationEvent?.source,
     navigationTarget?.key,
     statusRefreshVersion,
+    terminalOperation?.terminals,
   ])
 
   useEffect(() => {
@@ -228,9 +274,6 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
       practiceRef.current = { ...practice, phase: 'completed' }
       return
     }
-    const disconnectedTerminals = configuredTerminals.filter(
-      (terminal) => terminalStates[terminalStatusKey(terminal.terminalId)]?.connection_status === 'DISCONNECTED',
-    )
     const allCorrect = configuredTerminals.every(
       (terminal) => isTerminalCorrect(terminal, terminalStates[terminalStatusKey(terminal.terminalId)]),
     )
@@ -243,9 +286,7 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
     setPracticeDialog({
       pageKey: navigationTarget?.key,
       sequence: practice.sequence,
-      message: disconnectedTerminals.length
-        ? disconnectedTerminals.map((terminal) => `请将测试仪上的 ${terminal.expectedOutputCode} 接入 ${terminal.terminalLabel} 端子`).join('\n')
-        : null,
+      message: buildWiringRequirementMessage(configuredTerminals),
     })
   }, [navigationTarget?.key, statusRefreshVersion, terminalStates, terminalOperation, terminals.length])
 

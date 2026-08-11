@@ -1176,8 +1176,9 @@
 .terminal-wiring-status__output {
   position: absolute;
   z-index: 5;
-  left: -39%;
-  top: 52%;
+  left: -36%;
+  top: 382%;
+  transform: translate(-100%, -50%);
   min-width: 42px;
   padding: 1px 5px;
   border-radius: 4px;

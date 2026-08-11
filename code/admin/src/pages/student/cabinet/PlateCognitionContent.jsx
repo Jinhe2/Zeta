@@ -96,6 +96,23 @@ function readPressboardState(pressboard, states) {
   return states[idKey] ?? states[nameKey] ?? ''
 }
 
+function pressboardStatesFromResponse(data) {
+  if (!Array.isArray(data?.pressboards)) return null
+  const states = {}
+  for (const pb of data.pressboards) {
+    const id = readPressboardStatusId(pb)
+    const state = normalizePressboardState(readPressboardStatusValue(pb))
+    if (id != null) {
+      states[pressboardStateKey('id', id)] = state
+    }
+    const nameKey = pressboardStateKey('name', pb.name)
+    if (nameKey) {
+      states[nameKey] = state
+    }
+  }
+  return states
+}
+
 function isClosedPressboardState(state) {
   return ['ON', 'CONNECTED', 'CLOSE', 'CLOSED'].includes(normalizePressboardState(state))
 }
@@ -162,6 +179,7 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
   const [statusError, setStatusError] = useState(null)
   const [practiceDialog, setPracticeDialog] = useState(null)
   const pollRef = useRef(null)
+  const statusRequestRef = useRef(null)
   const practiceRef = useRef(initialPracticeState())
 
   const selectedDevice =
@@ -246,32 +264,42 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
 
   const fetchStatus = useCallback(async () => {
     if (!cabinetId) return null
+    if (statusRequestRef.current) return statusRequestRef.current
     setStatusError(null)
-    try {
+    const request = (async () => {
       const data = await api.triggerPressboardStatus(cabinetId)
-      if (data?.pressboards) {
-        const states = {}
-        for (const pb of data.pressboards) {
-          const id = readPressboardStatusId(pb)
-          const state = normalizePressboardState(readPressboardStatusValue(pb))
-          if (id != null) {
-            states[pressboardStateKey('id', id)] = state
-          }
-          const nameKey = pressboardStateKey('name', pb.name)
-          if (nameKey) {
-            states[nameKey] = state
-          }
-        }
+      const states = pressboardStatesFromResponse(data)
+      if (states) {
         setPressboardStates(states)
         setStatusRefreshVersion((version) => version + 1)
         return states
       }
       setStatusRefreshVersion((version) => version + 1)
       return {}
+    })()
+    statusRequestRef.current = request
+    try {
+      return await request
     } catch (err) {
+      try {
+        const cached = await api.getPressboardStatus(cabinetId)
+        const states = pressboardStatesFromResponse(cached)
+        if (states) {
+          setPressboardStates(states)
+          setStatusRefreshVersion((version) => version + 1)
+          setStatusError(null)
+          return states
+        }
+      } catch (fallbackErr) {
+        console.warn('压板状态缓存读取失败:', fallbackErr.message)
+      }
       setStatusError('压板状态读取失败: ' + err.message)
       console.warn('压板状态读取失败:', err.message)
       return null
+    } finally {
+      if (statusRequestRef.current === request) {
+        statusRequestRef.current = null
+      }
     }
   }, [cabinetId])
 

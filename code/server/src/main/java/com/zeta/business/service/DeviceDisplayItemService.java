@@ -342,11 +342,10 @@ public class DeviceDisplayItemService {
         if (!Objects.equals(strip.getCabinet().getId(), cabinetItem.getScreenCabinetId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "端子排不属于当前屏柜");
         }
-        deleteTerminalOperation(item.getId());
-        TerminalOperation operation = new TerminalOperation();
-        operation.setDeviceDisplayItemId(item.getId());
-        operation.setTerminalStripId(strip.getId());
-        operation = terminalOperationRepository.save(operation);
+        terminalOperationRepository.upsertByDeviceDisplayItemId(item.getId(), strip.getId());
+        TerminalOperation operation = terminalOperationRepository.findByDeviceDisplayItemId(item.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "端子操作保存失败"));
+        terminalOperationTerminalRepository.deleteByTerminalOperationId(operation.getId());
         int sortOrder = 0;
         java.util.HashSet<Long> terminalIds = new java.util.HashSet<>();
         for (TerminalOperationTerminalRequest selected : request.getTerminals()) {

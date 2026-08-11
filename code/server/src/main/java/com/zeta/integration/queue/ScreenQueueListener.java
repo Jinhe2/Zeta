@@ -73,6 +73,9 @@ public class ScreenQueueListener {
                 command.equals("compare_baseline_settings") ||
                 command.equals("summon_logic_monitor"))) {
             monitorCommandService.handleResponse(message);
+        } else if ("summon_wiring_status".equals(command)) {
+            log.info("Received wiring status sub-response req_id={} success={} error={}",
+                    message.getReqId(), message.getSuccess(), message.getError());
         } else {
             log.warn("Unknown monitord command: {}", command);
         }

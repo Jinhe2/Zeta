@@ -1,6 +1,8 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../../../api/client'
+import ConfigCopyDialog from '../../../../components/ConfigCopyDialog'
 import '../UsersPage.css'
 
 /** 屏柜学习 — 屏柜列表（第一级） */
@@ -8,6 +10,8 @@ export default function DisplayCabinetListPage() {
   const [cabinets, setCabinets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [copySource, setCopySource] = useState(null)
+  const [message, setMessage] = useState('')
 
   const loadCabinets = useCallback(async () => {
     setLoading(true)
@@ -35,6 +39,7 @@ export default function DisplayCabinetListPage() {
       </p>
 
       {error && <div className="users-page__error">{error}</div>}
+      {message && <div className="users-page__message">{message}</div>}
       {loading ? (
         <p className="users-page__loading">加载中…</p>
       ) : cabinets.length === 0 ? (
@@ -56,10 +61,13 @@ export default function DisplayCabinetListPage() {
                   <td>{cabinet.name}</td>
                   <td>{cabinet.code}</td>
                   <td>{cabinet.description || '—'}</td>
-                  <td>
+                  <td className="users-page__actions">
                     <Link className="users-page__link" to={`/admin/display/cabinets/${cabinet.id}`}>
                       进入
                     </Link>
+                    <button type="button" className="users-page__link" onClick={() => setCopySource(cabinet)}>
+                      复制配置
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -67,6 +75,13 @@ export default function DisplayCabinetListPage() {
           </table>
         </div>
       )}
+      {copySource && <ConfigCopyDialog
+        scope="CABINET"
+        sourceId={copySource.id}
+        sourceName={`${copySource.name}（${copySource.code}）`}
+        onClose={() => setCopySource(null)}
+        onSuccess={() => setMessage(`已完成“${copySource.name}”的配置复制`)}
+      />}
     </div>
   )
 }

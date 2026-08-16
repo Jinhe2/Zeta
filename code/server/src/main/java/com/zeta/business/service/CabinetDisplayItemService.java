@@ -41,16 +41,19 @@ public class CabinetDisplayItemService {
     private final CabinetDisplayItemRepository displayItemRepository;
     private final CabinetDisplayImageStorage imageStorage;
     private final TemporaryImageRepository temporaryImageRepository;
+    private final SharedMediaCleanupService mediaCleanupService;
 
     public CabinetDisplayItemService(
             ScreenCabinetLookupService screenCabinetLookupService,
             CabinetDisplayItemRepository displayItemRepository,
             CabinetDisplayImageStorage imageStorage,
-            TemporaryImageRepository temporaryImageRepository) {
+            TemporaryImageRepository temporaryImageRepository,
+            SharedMediaCleanupService mediaCleanupService) {
         this.screenCabinetLookupService = screenCabinetLookupService;
         this.displayItemRepository = displayItemRepository;
         this.imageStorage = imageStorage;
         this.temporaryImageRepository = temporaryImageRepository;
+        this.mediaCleanupService = mediaCleanupService;
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
@@ -98,7 +101,7 @@ public class CabinetDisplayItemService {
         CabinetDisplayItem saved = displayItemRepository.save(item);
         String nextImageUrl = item.getImageUrl();
         if (!Objects.equals(nextImageUrl, previousImageUrl)) {
-            imageStorage.deleteIfManaged(previousImageUrl);
+            mediaCleanupService.scheduleCabinetImageDeletion(previousImageUrl);
         }
         return toAdminResponse(saved);
     }
@@ -106,7 +109,7 @@ public class CabinetDisplayItemService {
     @Transactional("businessTransactionManager")
     public void delete(Long id) {
         CabinetDisplayItem item = requireItem(id);
-        imageStorage.deleteIfManaged(item.getImageUrl());
+        mediaCleanupService.scheduleCabinetImageDeletion(item.getImageUrl());
         displayItemRepository.delete(item);
     }
 

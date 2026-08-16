@@ -16,7 +16,7 @@ public interface TerminalRepository extends JpaRepository<Terminal, Long> {
     List<Terminal> findByIedDeviceIdOrderByIdAsc(Long iedDeviceId);
 
     /** 跨业务库组装响应时显式加载屏柜和端子排，避免离开 screen Session 后触发懒加载。 */
-    @EntityGraph(attributePaths = {"cabinet", "terminalStrip"})
+    @EntityGraph(attributePaths = {"cabinet", "terminalStrip", "iedDevice"})
     @Query("select t from Terminal t where t.id in :ids")
     List<Terminal> findAllWithCabinetAndStripByIdIn(@Param("ids") Collection<Long> ids);
 }

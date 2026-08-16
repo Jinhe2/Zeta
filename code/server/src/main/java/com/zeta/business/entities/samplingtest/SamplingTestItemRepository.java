@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SamplingTestItemRepository extends JpaRepository<SamplingTestItem, Long> {
   List<SamplingTestItem> findByScreenCabinetIdOrderBySortOrderAscIdAsc(Long cabinetId);
   boolean existsByVideoPath(String videoPath);
+  void deleteByScreenCabinetId(Long cabinetId);
 }

@@ -1,5 +1,6 @@
 package com.zeta.business.entities.cognitiondevice;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,4 +14,8 @@ public interface CognitionDeviceRepository extends JpaRepository<CognitionDevice
       Long screenDeviceId, Long cabinetDisplayItemId);
 
   List<CognitionDevice> findByScreenDeviceId(Long screenDeviceId);
+
+  List<CognitionDevice> findByCabinetDisplayItemIdIn(Collection<Long> cabinetDisplayItemIds);
+
+  void deleteByCabinetDisplayItemIdIn(Collection<Long> cabinetDisplayItemIds);
 }

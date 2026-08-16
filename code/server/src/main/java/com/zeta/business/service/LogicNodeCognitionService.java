@@ -55,6 +55,7 @@ public class LogicNodeCognitionService {
     private final DeviceDisplayImageStorage imageStorage;
     private final ObjectMapper objectMapper;
     private final CognitionVideoStorage videoStorage;
+    private final SharedMediaCleanupService mediaCleanupService;
 
     public LogicNodeCognitionService(
             ProtectionLogicRepository protectionLogicRepository,
@@ -62,13 +63,15 @@ public class LogicNodeCognitionService {
             TemporaryImageRepository temporaryImageRepository,
             DeviceDisplayImageStorage imageStorage,
             ObjectMapper objectMapper,
-            CognitionVideoStorage videoStorage) {
+            CognitionVideoStorage videoStorage,
+            SharedMediaCleanupService mediaCleanupService) {
         this.protectionLogicRepository = protectionLogicRepository;
         this.itemRepository = itemRepository;
         this.temporaryImageRepository = temporaryImageRepository;
         this.imageStorage = imageStorage;
         this.objectMapper = objectMapper;
         this.videoStorage = videoStorage;
+        this.mediaCleanupService = mediaCleanupService;
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
@@ -147,10 +150,10 @@ public class LogicNodeCognitionService {
         LogicNodeCognitionItem saved = itemRepository.save(item);
         String nextImageUrl = item.getImageUrl();
         if (!Objects.equals(nextImageUrl, previousImageUrl)) {
-            imageStorage.deleteIfManaged(previousImageUrl);
+            mediaCleanupService.scheduleDeviceImageDeletion(previousImageUrl);
         }
         if (!Objects.equals(item.getVideoPath(), previousVideoPath)) {
-            videoStorage.deleteAfterCommit(previousVideoPath);
+            mediaCleanupService.scheduleCognitionVideoDeletion(previousVideoPath);
         }
         return toAdminResponse(saved);
     }
@@ -158,8 +161,8 @@ public class LogicNodeCognitionService {
     @Transactional("businessTransactionManager")
     public void delete(Long id) {
         LogicNodeCognitionItem item = requireItem(id);
-        imageStorage.deleteIfManaged(item.getImageUrl());
-        videoStorage.deleteAfterCommit(item.getVideoPath());
+        mediaCleanupService.scheduleDeviceImageDeletion(item.getImageUrl());
+        mediaCleanupService.scheduleCognitionVideoDeletion(item.getVideoPath());
         itemRepository.delete(item);
     }
 

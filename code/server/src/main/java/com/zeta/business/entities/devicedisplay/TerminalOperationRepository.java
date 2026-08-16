@@ -1,5 +1,7 @@
 package com.zeta.business.entities.devicedisplay;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -8,6 +10,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface TerminalOperationRepository extends JpaRepository<TerminalOperation, Long> {
   Optional<TerminalOperation> findByDeviceDisplayItemId(Long deviceDisplayItemId);
+
+  List<TerminalOperation> findByDeviceDisplayItemIdIn(Collection<Long> deviceDisplayItemIds);
+
+  void deleteByDeviceDisplayItemIdIn(Collection<Long> deviceDisplayItemIds);
 
   void deleteByDeviceDisplayItemId(Long deviceDisplayItemId);
 

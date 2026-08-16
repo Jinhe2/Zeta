@@ -7,4 +7,8 @@ public interface LearningResourceRepository extends JpaRepository<LearningResour
   List<LearningResource> findAllByOrderByUpdatedAtDescIdDesc();
 
   boolean existsByFilePath(String filePath);
+
+  List<LearningResource> findByScreenCabinetId(Long screenCabinetId);
+
+  void deleteByScreenCabinetId(Long screenCabinetId);
 }

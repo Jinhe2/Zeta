@@ -10,4 +10,6 @@ public interface LogicLearningConfigRepository extends JpaRepository<LogicLearni
   Optional<LogicLearningConfig> findByLogicDiagramId(Long logicDiagramId);
 
   List<LogicLearningConfig> findByLogicDiagramIdIn(Collection<Long> logicDiagramIds);
+
+  void deleteByLogicDiagramIdIn(Collection<Long> logicDiagramIds);
 }

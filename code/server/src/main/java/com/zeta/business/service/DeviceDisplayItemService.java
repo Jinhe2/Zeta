@@ -58,6 +58,7 @@ public class DeviceDisplayItemService {
     private final TerminalStripRepository terminalStripRepository;
     private final TerminalRepository terminalRepository;
     private final CabinetDisplayItemRepository cabinetDisplayItemRepository;
+    private final SharedMediaCleanupService mediaCleanupService;
 
     public DeviceDisplayItemService(
             CognitionDeviceService cognitionDeviceService,
@@ -69,7 +70,8 @@ public class DeviceDisplayItemService {
             TerminalOperationTerminalRepository terminalOperationTerminalRepository,
             TerminalStripRepository terminalStripRepository,
             TerminalRepository terminalRepository,
-            CabinetDisplayItemRepository cabinetDisplayItemRepository) {
+            CabinetDisplayItemRepository cabinetDisplayItemRepository,
+            SharedMediaCleanupService mediaCleanupService) {
         this.cognitionDeviceService = cognitionDeviceService;
         this.displayItemRepository = displayItemRepository;
         this.imageStorage = imageStorage;
@@ -80,6 +82,7 @@ public class DeviceDisplayItemService {
         this.terminalStripRepository = terminalStripRepository;
         this.terminalRepository = terminalRepository;
         this.cabinetDisplayItemRepository = cabinetDisplayItemRepository;
+        this.mediaCleanupService = mediaCleanupService;
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
@@ -137,10 +140,10 @@ public class DeviceDisplayItemService {
         replaceTerminalOperation(saved, request.getTerminalOperation());
         String nextImageUrl = item.getImageUrl();
         if (!Objects.equals(nextImageUrl, previousImageUrl)) {
-            imageStorage.deleteIfManaged(previousImageUrl);
+            mediaCleanupService.scheduleDeviceImageDeletion(previousImageUrl);
         }
         if (!Objects.equals(item.getVideoPath(), previousVideoPath)) {
-            videoStorage.deleteAfterCommit(previousVideoPath);
+            mediaCleanupService.scheduleCognitionVideoDeletion(previousVideoPath);
         }
         return toAdminResponse(saved);
     }
@@ -149,8 +152,8 @@ public class DeviceDisplayItemService {
     public void delete(Long id) {
         DeviceDisplayItem item = requireItem(id);
         deleteTerminalOperation(item.getId());
-        imageStorage.deleteIfManaged(item.getImageUrl());
-        videoStorage.deleteAfterCommit(item.getVideoPath());
+        mediaCleanupService.scheduleDeviceImageDeletion(item.getImageUrl());
+        mediaCleanupService.scheduleCognitionVideoDeletion(item.getVideoPath());
         displayItemRepository.delete(item);
     }
 

@@ -56,7 +56,8 @@ class DeviceDisplayItemServiceTest {
             terminalOperationTerminalRepository,
             terminalStripRepository,
             terminalRepository,
-            cabinetDisplayItemRepository);
+            cabinetDisplayItemRepository,
+            mock(SharedMediaCleanupService.class));
 
     DeviceDisplayItem item = new DeviceDisplayItem();
     item.setId(50L);

@@ -42,15 +42,18 @@ public class LearningResourceService {
     private final CabinetRepository cabinetRepository;
     private final CabinetBindingService bindingService;
     private final LearningResourceStorage storage;
+    private final SharedMediaCleanupService mediaCleanupService;
 
     public LearningResourceService(LearningResourceRepository repository,
                                    CabinetRepository cabinetRepository,
                                    CabinetBindingService bindingService,
-                                   LearningResourceStorage storage) {
+                                   LearningResourceStorage storage,
+                                   SharedMediaCleanupService mediaCleanupService) {
         this.repository = repository;
         this.cabinetRepository = cabinetRepository;
         this.bindingService = bindingService;
         this.storage = storage;
+        this.mediaCleanupService = mediaCleanupService;
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
@@ -99,7 +102,9 @@ public class LearningResourceService {
             if (replacement != null) applyStoredFile(item, replacement);
             item.setUpdatedAt(Instant.now());
             LearningResourceResponse response = toResponse(repository.save(item));
-            if (replacement != null && !previousPath.equals(replacement.getPath())) storage.deleteAfterCommit(previousPath);
+            if (replacement != null && !previousPath.equals(replacement.getPath())) {
+                mediaCleanupService.scheduleLearningResourceDeletion(previousPath);
+            }
             return response;
         } catch (RuntimeException ex) {
             if (replacement != null) storage.delete(replacement.getPath());
@@ -112,7 +117,7 @@ public class LearningResourceService {
         LearningResource item = require(id);
         String path = item.getFilePath();
         repository.delete(item);
-        storage.deleteAfterCommit(path);
+        mediaCleanupService.scheduleLearningResourceDeletion(path);
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)

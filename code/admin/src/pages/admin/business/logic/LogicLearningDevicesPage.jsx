@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api } from '../../../../api/client'
+import ConfigCopyDialog from '../../../../components/ConfigCopyDialog'
 import '../UsersPage.css'
 
 export default function LogicLearningDevicesPage() {
@@ -11,6 +12,8 @@ export default function LogicLearningDevicesPage() {
   const [devices, setDevices] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+  const [copySource, setCopySource] = useState(null)
 
   const loadData = useCallback(async () => {
     if (!cabinetIdNum) return
@@ -55,6 +58,7 @@ export default function LogicLearningDevicesPage() {
       </div>
 
       {error && <div className="users-page__error">{error}</div>}
+      {message && <div className="users-page__message">{message}</div>}
       {loading ? (
         <p className="users-page__loading">加载中…</p>
       ) : !cabinet ? (
@@ -85,10 +89,13 @@ export default function LogicLearningDevicesPage() {
                     <td>{device.code}</td>
                     <td>{device.description || '—'}</td>
                     <td>{device.logicCount}</td>
-                    <td>
+                    <td className="users-page__actions">
                       <Link className="users-page__link" to={`/admin/logic-learning/devices/${device.id}/logics`}>
                         逻辑框图
                       </Link>
+                      <button type="button" className="users-page__link" onClick={() => setCopySource(device)}>
+                        复制逻辑配置
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -97,6 +104,13 @@ export default function LogicLearningDevicesPage() {
           </table>
         </div>
       )}
+      {copySource && <ConfigCopyDialog
+        scope="DEVICE"
+        sourceId={copySource.id}
+        sourceName={`${cabinet?.name || ''} / ${copySource.name}（${copySource.code}）`}
+        onClose={() => setCopySource(null)}
+        onSuccess={() => setMessage(`已完成“${copySource.name}”的逻辑配置复制`)}
+      />}
     </div>
   )
 }

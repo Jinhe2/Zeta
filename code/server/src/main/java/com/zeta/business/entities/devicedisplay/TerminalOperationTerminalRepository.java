@@ -1,5 +1,6 @@
 package com.zeta.business.entities.devicedisplay;
 
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,4 +10,6 @@ public interface TerminalOperationTerminalRepository
       Long terminalOperationId);
 
   void deleteByTerminalOperationId(Long terminalOperationId);
+
+  void deleteByTerminalOperationIdIn(Collection<Long> terminalOperationIds);
 }

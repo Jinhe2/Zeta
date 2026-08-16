@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DrawingPageRepository extends JpaRepository<DrawingPage, Long> {
+  boolean existsByImageUrl(String imageUrl);
   List<DrawingPage> findByDrawingGroupIdOrderBySortOrderAscIdAsc(Long drawingGroupId);
 
   List<DrawingPage> findByDrawingGroupIdAndEnabledTrueOrderBySortOrderAscIdAsc(Long drawingGroupId);

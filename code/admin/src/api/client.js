@@ -125,7 +125,10 @@ async function authRequest(path, options = {}) {
   })
   const data = await parseResponse(res)
   if (!res.ok) {
-    throw new Error(data?.message || `请求失败 (${res.status})`)
+    const error = new Error(data?.message || `请求失败 (${res.status})`)
+    error.data = data
+    error.status = res.status
+    throw error
   }
   return data
 }
@@ -171,7 +174,10 @@ async function request(path, options = {}, retried = false) {
   }
 
   if (!res.ok) {
-    throw new Error(data?.message || `请求失败 (${res.status})`)
+    const error = new Error(data?.message || `请求失败 (${res.status})`)
+    error.data = data
+    error.status = res.status
+    throw error
   }
   return data
 }
@@ -266,6 +272,20 @@ export const api = {
     return request(`/api/admin/logic-learning/logics/${logicDiagramId}/sort-order`, {
       method: 'PUT',
       body: JSON.stringify({ sortOrder }),
+    })
+  },
+
+  precheckConfigCopy(payload) {
+    return request('/api/admin/config-copies/precheck', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  executeConfigCopy(payload) {
+    return request('/api/admin/config-copies/execute', {
+      method: 'POST',
+      body: JSON.stringify(payload),
     })
   },
 

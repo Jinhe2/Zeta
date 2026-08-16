@@ -1,0 +1,14 @@
+.config-copy-dialog { max-width: 760px; max-height: 88vh; overflow: auto; }
+.config-copy-dialog__source { margin: -8px 0 18px; color: #90a4ae; font-size: 13px; }
+.config-copy-dialog section { margin-bottom: 18px; }
+.config-copy-dialog h4 { margin: 0 0 10px; color: #e8edf4; font-size: 14px; }
+.config-copy-dialog__choices { max-height: 190px; padding: 10px 12px; overflow: auto; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; }
+.config-copy-dialog__modules { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.config-copy-dialog__target { margin-bottom: 10px; padding: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; color: #b0bec5; font-size: 13px; }
+.config-copy-dialog__target--ready { border-color: rgba(76,175,80,.4); }
+.config-copy-dialog__target--needs_mapping { border-color: rgba(255,183,77,.45); }
+.config-copy-dialog__target--incompatible { border-color: rgba(244,67,54,.45); }
+.config-copy-dialog__target-head { display: flex; justify-content: space-between; gap: 12px; color: #fff; }
+.config-copy-dialog__target p { margin: 8px 0; }
+.config-copy-dialog__target ul { margin: 8px 0; padding-left: 20px; color: #ef9a9a; }
+.config-copy-dialog__target label { margin: 10px 0 0; }

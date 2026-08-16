@@ -46,6 +46,7 @@ public class DrawingLearningService {
     private final DrawingCognitionItemRepository itemRepository;
     private final CabinetDisplayImageStorage imageStorage;
     private final TemporaryImageRepository temporaryImageRepository;
+    private final SharedMediaCleanupService mediaCleanupService;
 
     public DrawingLearningService(
             ScreenCabinetLookupService screenCabinetLookupService,
@@ -53,13 +54,15 @@ public class DrawingLearningService {
             DrawingPageRepository pageRepository,
             DrawingCognitionItemRepository itemRepository,
             CabinetDisplayImageStorage imageStorage,
-            TemporaryImageRepository temporaryImageRepository) {
+            TemporaryImageRepository temporaryImageRepository,
+            SharedMediaCleanupService mediaCleanupService) {
         this.screenCabinetLookupService = screenCabinetLookupService;
         this.groupRepository = groupRepository;
         this.pageRepository = pageRepository;
         this.itemRepository = itemRepository;
         this.imageStorage = imageStorage;
         this.temporaryImageRepository = temporaryImageRepository;
+        this.mediaCleanupService = mediaCleanupService;
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
@@ -106,7 +109,7 @@ public class DrawingLearningService {
         if (!pageIds.isEmpty()) {
             itemRepository.deleteByDrawingPageIdIn(pageIds);
         }
-        pages.forEach(page -> imageStorage.deleteIfManaged(page.getImageUrl()));
+        pages.forEach(page -> mediaCleanupService.scheduleCabinetImageDeletion(page.getImageUrl()));
         pageRepository.deleteByDrawingGroupId(id);
         groupRepository.delete(group);
     }
@@ -147,7 +150,7 @@ public class DrawingLearningService {
         page.setEnabled(request.getEnabled());
         DrawingPage saved = pageRepository.save(page);
         if (!Objects.equals(previousImageUrl, page.getImageUrl())) {
-            imageStorage.deleteIfManaged(previousImageUrl);
+            mediaCleanupService.scheduleCabinetImageDeletion(previousImageUrl);
         }
         return toAdminPageResponse(saved);
     }
@@ -156,7 +159,7 @@ public class DrawingLearningService {
     public void deletePage(Long id) {
         DrawingPage page = requirePage(id);
         itemRepository.deleteByDrawingPageId(page.getId());
-        imageStorage.deleteIfManaged(page.getImageUrl());
+        mediaCleanupService.scheduleCabinetImageDeletion(page.getImageUrl());
         pageRepository.delete(page);
     }
 

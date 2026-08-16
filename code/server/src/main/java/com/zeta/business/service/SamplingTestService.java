@@ -31,6 +31,7 @@ public class SamplingTestService {
   private final CognitionVideoStorage videoStorage;
   private final CabinetRepository cabinetRepository;
   private final TerminalRepository terminalRepository;
+  private final SharedMediaCleanupService mediaCleanupService;
 
   public SamplingTestService(
       SamplingTestItemRepository itemRepository,
@@ -38,13 +39,15 @@ public class SamplingTestService {
       TemporaryImageRepository temporaryImageRepository,
       CognitionVideoStorage videoStorage,
       CabinetRepository cabinetRepository,
-      TerminalRepository terminalRepository) {
+      TerminalRepository terminalRepository,
+      SharedMediaCleanupService mediaCleanupService) {
     this.itemRepository = itemRepository;
     this.channelRepository = channelRepository;
     this.temporaryImageRepository = temporaryImageRepository;
     this.videoStorage = videoStorage;
     this.cabinetRepository = cabinetRepository;
     this.terminalRepository = terminalRepository;
+    this.mediaCleanupService = mediaCleanupService;
   }
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
@@ -84,7 +87,7 @@ public class SamplingTestService {
     SamplingTestItem saved = itemRepository.save(item);
     replaceChannels(saved, request.getChannels());
     if (!Objects.equals(previousVideoPath, saved.getVideoPath())) {
-      videoStorage.deleteAfterCommit(previousVideoPath);
+      mediaCleanupService.scheduleCognitionVideoDeletion(previousVideoPath);
     }
     return toResponse(saved);
   }
@@ -93,7 +96,7 @@ public class SamplingTestService {
   public void delete(Long id) {
     SamplingTestItem item = requireItem(id);
     channelRepository.deleteBySamplingTestItemId(id);
-    videoStorage.deleteAfterCommit(item.getVideoPath());
+    mediaCleanupService.scheduleCognitionVideoDeletion(item.getVideoPath());
     itemRepository.delete(item);
   }
 

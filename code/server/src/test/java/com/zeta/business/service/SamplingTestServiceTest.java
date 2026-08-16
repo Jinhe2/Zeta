@@ -71,7 +71,8 @@ class SamplingTestServiceTest {
 
     service = new SamplingTestService(
         itemRepository, channelRepository, mock(TemporaryImageRepository.class),
-        mock(CognitionVideoStorage.class), cabinetRepository, terminalRepository);
+        mock(CognitionVideoStorage.class), cabinetRepository, terminalRepository,
+        mock(SharedMediaCleanupService.class));
   }
 
   @Test

@@ -324,10 +324,13 @@ export const api = {
     return request(`/api/monitor/pressboard-status/${cabinetId}`)
   },
 
-  triggerTerminalStatus(cabinetId) {
+  triggerTerminalStatus(cabinetId, options = {}) {
     return request('/api/monitor/commands/terminal-status', {
       method: 'POST',
-      body: JSON.stringify({ cabinetId }),
+      body: JSON.stringify({
+        cabinetId,
+        ...(Array.isArray(options.terminalIds) ? { terminalIds: options.terminalIds } : {}),
+      }),
     })
   },
 
@@ -619,6 +622,32 @@ export const api = {
   deleteUnreferencedCognitionVideo(path) {
     if (!path) return Promise.resolve()
     return request(`/api/admin/cognition-videos?path=${encodeURIComponent(path)}`, { method: 'DELETE' })
+  },
+
+  listSamplingTestItems(cabinetId) {
+    return request(`/api/admin/sampling-tests/cabinets/${cabinetId}/items`)
+  },
+
+  createSamplingTestItem(cabinetId, payload) {
+    return request(`/api/admin/sampling-tests/cabinets/${cabinetId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  updateSamplingTestItem(id, payload) {
+    return request(`/api/admin/sampling-tests/items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteSamplingTestItem(id) {
+    return request(`/api/admin/sampling-tests/items/${id}`, { method: 'DELETE' })
+  },
+
+  listKnowledgeSamplingTestItems(cabinetId) {
+    return request(`/api/knowledge/cabinets/${cabinetId}/sampling-test-items`)
   },
 
   listLearningResources(type, cabinetId) {

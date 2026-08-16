@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:electron": "vite build --mode electron",
     "lint": "eslint .",
+    "test:sampling": "node --test src/utils/samplingValidation.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -40,6 +40,9 @@ import CabinetCatalogListPage from './pages/admin/screen/catalog/CabinetCatalogL
 import CabinetCatalogDetailPage from './pages/admin/screen/catalog/CabinetCatalogDetailPage'
 import CatalogDeviceDetailPage from './pages/admin/screen/catalog/CatalogDeviceDetailPage'
 import StudentResourcesPage from './pages/student/StudentResourcesPage'
+import SamplingCabinetListPage from './pages/admin/business/sampling/SamplingCabinetListPage'
+import SamplingItemsPage from './pages/admin/business/sampling/SamplingItemsPage'
+import SamplingTestPage from './pages/student/SamplingTestPage'
 
 function LegacyDiagramRedirect() {
   const { id } = useParams()
@@ -107,7 +110,7 @@ export default function App() {
             <Route path="modes/coach/cabinet" element={<CabinetCognitionPage />} />
             <Route path="modes/coach/circuit" element={<CircuitLearningPage />} />
             <Route path="modes/coach/circuit/:category/:name" element={<CircuitViewerPage />} />
-            <Route path="modes/coach/sampling" element={<StudentPlaceholderPage title="采样测试" description="对保护装置进行采样值测试与信号校验，功能开发中。" />} />
+            <Route path="modes/coach/sampling" element={<SamplingTestPage />} />
             <Route path="modes/coach/drawing" element={<DrawingLearningPage />} />
             <Route path="modes/coach/accident" element={<StudentPlaceholderPage title="事故处理" description="学习事故处理流程与案例分析，功能开发中。" />} />
             <Route path="modes/exam" element={<StudentPlaceholderPage title="测评模式" description="模拟测评考核，功能开发中。" />} />
@@ -153,6 +156,8 @@ export default function App() {
             <Route path="drawing-learning/pages/:pageId/items" element={<DrawingCognitionItemsPage />} />
             <Route path="logic-learning" element={<LogicLearningPage />} />
             <Route path="learning-resources" element={<LearningResourcesPage />} />
+            <Route path="sampling-tests" element={<SamplingCabinetListPage />} />
+            <Route path="sampling-tests/cabinets/:cabinetId" element={<SamplingItemsPage />} />
             <Route path="logic-learning/cabinets/:cabinetId/devices" element={<LogicLearningDevicesPage />} />
             <Route path="logic-learning/devices/:deviceId/logics" element={<LogicLearningLogicsPage />} />
             <Route path="logic-learning/logics/:logicDiagramId/nodes" element={<LogicLearningNodesPage />} />

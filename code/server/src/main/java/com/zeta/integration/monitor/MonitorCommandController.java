@@ -56,10 +56,26 @@ public class MonitorCommandController {
     authService.requireUser(authorization);
 
     Long cabinetId = extractCabinetId(body);
+    java.util.List<Long> terminalIds = extractTerminalIds(body.get("terminalIds"));
     CompletableFuture<ScreenQueueMessage> future =
-        commandService.sendTerminalStatusRequest(cabinetId);
+        commandService.sendTerminalStatusRequest(cabinetId, terminalIds);
 
     return awaitStatusResponse(future, "summon_terminal_status", cabinetId);
+  }
+
+  private java.util.List<Long> extractTerminalIds(Object value) {
+    if (value == null) return java.util.Collections.emptyList();
+    if (!(value instanceof java.util.List)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "terminalIds 必须为数组");
+    }
+    java.util.LinkedHashSet<Long> ids = new java.util.LinkedHashSet<>();
+    for (Object entry : (java.util.List<?>) value) {
+      if (!(entry instanceof Number) || ((Number) entry).longValue() <= 0) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "terminalIds 包含非法端子 ID");
+      }
+      ids.add(((Number) entry).longValue());
+    }
+    return new java.util.ArrayList<>(ids);
   }
 
   /** 触发 IED 通讯状态读取。 */

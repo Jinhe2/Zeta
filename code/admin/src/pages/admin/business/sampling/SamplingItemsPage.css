@@ -1,0 +1,10 @@
+.sampling-items__channel-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.sampling-items__channel-table th, .sampling-items__channel-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,.1); text-align: left; }
+.sampling-items__channel-table th:first-child { width: 8%; }
+.sampling-items__channel-table th:nth-child(2) { width: 24%; }
+.sampling-items__channel-table th:nth-child(3) { width: 28%; }
+.sampling-items__channel-table th:nth-child(4), .sampling-items__channel-table th:nth-child(5) { width: 20%; }
+.sampling-items__channel-table select, .sampling-items__channel-table input { min-width: 0; width: 100%; box-sizing: border-box; }
+.sampling-items__channel-code { font-weight: 700; color: #8ec5f8; }
+.sampling-items__dialog { box-sizing: border-box; width: min(960px, 100%); max-width: 960px; max-height: calc(100vh - 48px); overflow-x: hidden; overflow-y: auto; }
+.sampling-items__badge { display: inline-flex; padding: 4px 8px; border-radius: 999px; background: rgba(94,179,255,.18); color: #b9ddff; }

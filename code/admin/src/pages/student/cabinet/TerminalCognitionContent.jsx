@@ -118,6 +118,9 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
     if (state?.connection_status === 'CONNECTED' && !isTerminalCorrect(terminal, state)) {
       return [{ terminal, actual: outputs.length ? describeActualOutput(outputs[0]) : '未知输出' }]
     }
+    if (state && state.connection_status !== 'CONNECTED') {
+      return [{ terminal, actual: '未接线' }]
+    }
     return []
   })
   const readErrorTerminalIds = new Set(

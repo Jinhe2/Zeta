@@ -30,6 +30,8 @@ import com.zeta.business.entities.logicnodecognition.dto.*;
 import com.zeta.business.entities.monitor.*;
 import com.zeta.business.entities.snapshot.*;
 import com.zeta.business.entities.snapshot.dto.*;
+import com.zeta.business.entities.samplingtest.SamplingTestItem;
+import com.zeta.business.entities.samplingtest.SamplingTestItemRepository;
 import com.zeta.business.entities.user.*;
 import com.zeta.business.entities.user.UserRole;
 import com.zeta.business.entities.user.dto.*;
@@ -60,6 +62,7 @@ public class CognitionVideoController {
   private final DeviceDisplayItemRepository deviceRepository;
   private final LogicNodeCognitionItemRepository logicRepository;
   private final LearningResourceRepository learningResourceRepository;
+  private final SamplingTestItemRepository samplingTestItemRepository;
   private final AuthService authService;
 
   public CognitionVideoController(
@@ -67,11 +70,13 @@ public class CognitionVideoController {
       DeviceDisplayItemRepository deviceRepository,
       LogicNodeCognitionItemRepository logicRepository,
       LearningResourceRepository learningResourceRepository,
+      SamplingTestItemRepository samplingTestItemRepository,
       AuthService authService) {
     this.videoStorage = videoStorage;
     this.deviceRepository = deviceRepository;
     this.logicRepository = logicRepository;
     this.learningResourceRepository = learningResourceRepository;
+    this.samplingTestItemRepository = samplingTestItemRepository;
     this.authService = authService;
   }
 
@@ -91,6 +96,7 @@ public class CognitionVideoController {
     String normalized = videoStorage.normalizeManagedPath(path);
     if (deviceRepository.existsByVideoPath(normalized)
         || logicRepository.existsByVideoPath(normalized)
+        || samplingTestItemRepository.existsByVideoPath(normalized)
         || learningResourceRepository.existsByFilePath(normalized)) {
       throw new ResponseStatusException(CONFLICT, "视频正在被认知条目使用");
     }
@@ -112,6 +118,13 @@ public class CognitionVideoController {
         logicRepository
             .findById(id)
             .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "视频不存在"));
+    return videoResponse(item.getVideoPath());
+  }
+
+  @GetMapping("/api/videos/sampling-test/{id}")
+  public ResponseEntity<Resource> getSamplingTestVideo(@PathVariable Long id) {
+    SamplingTestItem item = samplingTestItemRepository.findById(id)
+        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "视频不存在"));
     return videoResponse(item.getVideoPath());
   }
 

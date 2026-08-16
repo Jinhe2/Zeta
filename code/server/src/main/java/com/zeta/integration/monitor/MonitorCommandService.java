@@ -79,10 +79,15 @@ public class MonitorCommandService {
 
   /** 发送端子状态读取命令。 */
   public CompletableFuture<ScreenQueueMessage> sendTerminalStatusRequest(Long cabinetId) {
+    return sendTerminalStatusRequest(cabinetId, Collections.emptyList());
+  }
+
+  /** 发送端子状态读取命令，可限定端子。 */
+  public CompletableFuture<ScreenQueueMessage> sendTerminalStatusRequest(
+      Long cabinetId, List<Long> terminalIds) {
     Map<String, Object> data = new LinkedHashMap<>();
     data.put("cabinet_id", cabinetId);
-    data.put("refresh", false);
-    data.put("terminal_ids", Collections.emptyList());
+    data.put("terminal_ids", terminalIds == null ? Collections.emptyList() : terminalIds);
 
     return sendCommand("summon_terminal_status", null, data, "terminal:" + cabinetId);
   }

@@ -12,6 +12,7 @@ import com.zeta.business.entities.devicedisplay.DeviceDisplayItem;
 import com.zeta.business.entities.devicedisplay.DeviceDisplayItemRepository;
 import com.zeta.business.entities.learningresource.LearningResourceRepository;
 import com.zeta.business.entities.logicnodecognition.LogicNodeCognitionItemRepository;
+import com.zeta.business.entities.samplingtest.SamplingTestItemRepository;
 import com.zeta.business.storage.CognitionVideoStorage;
 import com.zeta.config.UploadProperties;
 import java.nio.file.Files;
@@ -49,6 +50,7 @@ class CognitionVideoControllerTest {
             deviceRepository,
             mock(LogicNodeCognitionItemRepository.class),
             mock(LearningResourceRepository.class),
+            mock(SamplingTestItemRepository.class),
             mock(AuthService.class));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
   }

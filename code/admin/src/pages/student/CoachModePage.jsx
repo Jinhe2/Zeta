@@ -95,7 +95,6 @@ const COACH_ENTRIES = [
     Icon: IconOperation,
     desc: '对保护装置进行采样值测试与信号校验',
     route: '/student/modes/coach/sampling',
-    disabled: true,
   },
   {
     id: 'drawing',

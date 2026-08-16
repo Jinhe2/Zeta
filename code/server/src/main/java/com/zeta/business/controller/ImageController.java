@@ -29,6 +29,8 @@ import com.zeta.business.entities.logicnodecognition.dto.*;
 import com.zeta.business.entities.monitor.*;
 import com.zeta.business.entities.snapshot.*;
 import com.zeta.business.entities.snapshot.dto.*;
+import com.zeta.business.entities.samplingtest.SamplingTestItem;
+import com.zeta.business.entities.samplingtest.SamplingTestItemRepository;
 import com.zeta.business.entities.user.*;
 import com.zeta.business.entities.user.dto.*;
 import com.zeta.business.media.*;
@@ -52,16 +54,19 @@ public class ImageController {
   private final DeviceDisplayItemRepository deviceRepository;
   private final LogicNodeCognitionItemRepository logicNodeRepository;
   private final DrawingPageRepository drawingPageRepository;
+  private final SamplingTestItemRepository samplingTestItemRepository;
 
   public ImageController(
       CabinetDisplayItemRepository cabinetRepository,
       DeviceDisplayItemRepository deviceRepository,
       LogicNodeCognitionItemRepository logicNodeRepository,
-      DrawingPageRepository drawingPageRepository) {
+      DrawingPageRepository drawingPageRepository,
+      SamplingTestItemRepository samplingTestItemRepository) {
     this.cabinetRepository = cabinetRepository;
     this.deviceRepository = deviceRepository;
     this.logicNodeRepository = logicNodeRepository;
     this.drawingPageRepository = drawingPageRepository;
+    this.samplingTestItemRepository = samplingTestItemRepository;
   }
 
   @GetMapping("/cabinet-display/{id}")
@@ -166,5 +171,21 @@ public class ImageController {
         .contentType(MediaType.parseMediaType(contentType))
         .cacheControl(CacheControl.noStore())
         .body(page.getImageData());
+  }
+
+  @GetMapping("/sampling-test/{id}")
+  public ResponseEntity<?> getSamplingTestImage(@PathVariable Long id) {
+    SamplingTestItem item = samplingTestItemRepository.findById(id)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "图片不存在"));
+    if (item.getImageData() == null || item.getImageData().length == 0) {
+      if (StringUtils.hasText(item.getImageUrl())) {
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(item.getImageUrl()))
+            .cacheControl(CacheControl.noStore()).build();
+      }
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
+    }
+    String contentType = item.getImageContentType() != null ? item.getImageContentType() : "image/jpeg";
+    return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
+        .cacheControl(CacheControl.noStore()).body(item.getImageData());
   }
 }

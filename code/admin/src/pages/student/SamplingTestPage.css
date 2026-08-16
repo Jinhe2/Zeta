@@ -1,0 +1,39 @@
+.sampling-page__main { min-height: 0; padding: 24px; }
+.sampling-page__layout { height: 100%; display: grid; grid-template-columns: minmax(310px, .85fr) minmax(0, 1.15fr); grid-template-rows: minmax(0, 1fr) minmax(220px, .7fr); gap: 20px; }
+.sampling-page__panel { min-height: 0; border: 1px solid rgba(142,197,248,.2); border-radius: 16px; background: rgba(10,24,42,.78); box-shadow: 0 18px 45px rgba(0,0,0,.28); }
+.sampling-page__terminals-panel { grid-column: 1; grid-row: 1 / 3; overflow: auto; padding: 20px; }
+.sampling-page__content-panel { grid-column: 2; grid-row: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.sampling-page__text-panel { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; overflow: hidden; padding: 22px 24px; }
+.sampling-page__panel-title { margin: 0 0 16px; color: #fff; font-size: 18px; font-weight: 600; }
+.sampling-page__empty { color: #91a6ba; line-height: 1.7; }
+.sampling-page__media { display: block; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; }
+.sampling-page__strips { width: 100%; display: flex; flex-direction: column; gap: 18px; }
+.sampling-page__strip { padding: 16px; border: 1px solid rgba(142,197,248,.25); border-radius: 12px; background: rgba(7,16,29,.78); }
+.sampling-page__strip.terminal-wiring-status { flex: 0 0 auto; min-height: auto; overflow: visible; }
+.sampling-page__strip .terminal-wiring-status__list { flex: none; height: auto; overflow: visible; }
+.sampling-page__text-panel h2 { margin: 0 0 12px; color: #fff; }
+.sampling-page__description { margin: 0; color: #c7d5e3; white-space: pre-wrap; line-height: 1.75; }
+.sampling-page__actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: auto; padding-top: 18px; }
+.sampling-page__actions button { min-width: 110px; padding: 11px 18px; border: 1px solid rgba(142,197,248,.35); border-radius: 8px; background: rgba(94,179,255,.13); color: #e8f4ff; font: inherit; cursor: pointer; }
+.sampling-page__actions button:disabled { opacity: .42; cursor: not-allowed; }
+.sampling-page__actions button:last-child { background: #287fc2; }
+.sampling-page__table-wrap { width: 100%; max-height: 100%; overflow: auto; border: 1px solid rgba(142,197,248,.25); border-radius: 10px; }
+.sampling-page__status-table { width: 100%; border-collapse: collapse; color: #dceafa; font-size: 15px; }
+.sampling-page__status-table th, .sampling-page__status-table td { padding: 12px 14px; border-bottom: 1px solid rgba(142,197,248,.16); text-align: left; white-space: nowrap; }
+.sampling-page__status-table th { position: sticky; top: 0; z-index: 1; background: #17304b; color: #fff; font-weight: 600; }
+.sampling-page__status-table tbody tr:last-child td { border-bottom: 0; }
+.sampling-page__status-table td:first-child { color: #fff; font-weight: 700; }
+.sampling-page__row--passed td:nth-child(3) { color: #72e3a6; }
+.sampling-page__row--failed td:nth-child(3) { color: #ffb5b5; }
+.sampling-page__overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(0,0,0,.64); }
+.sampling-page__dialog { width: min(620px, calc(100vw - 40px)); max-height: calc(100vh - 60px); overflow: auto; padding: 28px; border: 1px solid rgba(142,197,248,.35); border-radius: 16px; background: #11243a; color: #e8f0f8; box-shadow: 0 28px 80px rgba(0,0,0,.55); }
+.sampling-page__dialog h2 { margin-top: 0; }
+.sampling-page__requirements { padding-left: 22px; line-height: 1.7; }
+.sampling-page__dialog button { float: right; min-width: 100px; padding: 10px 18px; border: 0; border-radius: 8px; background: #2e8bcf; color: white; font: inherit; cursor: pointer; }
+@media (max-width: 900px) {
+  .sampling-page__layout { height: auto; grid-template-columns: 1fr; grid-template-rows: auto; }
+  .sampling-page__terminals-panel, .sampling-page__content-panel, .sampling-page__text-panel { grid-column: 1; grid-row: auto; }
+  .sampling-page__terminals-panel { max-height: 55vh; }
+  .sampling-page__content-panel { min-height: 300px; }
+  .sampling-page__text-panel { min-height: 260px; }
+}

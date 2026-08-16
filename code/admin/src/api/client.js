@@ -233,8 +233,9 @@ export const api = {
     })
   },
 
-  listProtectionLogics() {
-    return request('/api/protection-logics')
+  listProtectionLogics(cabinetId) {
+    const query = cabinetId ? `?cabinetId=${encodeURIComponent(cabinetId)}` : ''
+    return request(`/api/protection-logics${query}`)
   },
 
   getKnowledgeTree() {

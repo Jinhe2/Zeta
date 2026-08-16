@@ -1,49 +1,95 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../api/client'
+import { getDeviceBindId } from '../../api/deviceBinding'
 import { useAuth } from '../../auth/AuthContext'
+import { useStudentCabinetId } from './studentCabinet'
 import './TabletShell.css'
 import './PanoramaListPage.css'
 
 export default function PanoramaListPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { logout } = useAuth()
-  const [list, setList] = useState([])
+  const { logout, session } = useAuth()
+  const selectedCabinetId = useStudentCabinetId()
+  const [cabinet, setCabinet] = useState(null)
+  const [devices, setDevices] = useState([])
+  const [selectedDeviceId, setSelectedDeviceId] = useState(location.state?.deviceId ?? null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   const fromCoach = location.state?.from === 'coach'
   const backTo = fromCoach ? '/student/modes/coach' : '/student'
   const pageTitle = fromCoach ? '逻辑原理 · 保护逻辑' : '全景模式 · 保护逻辑'
-  const introText = fromCoach
-    ? '选择保护逻辑，学习逻辑框图与动作原理。'
-    : '选择保护逻辑，进入逻辑框图全景浏览。'
-  const diagramState = fromCoach ? { from: 'coach', section: 'logic' } : undefined
+  const hasDeviceSelection = devices.length > 1
+  const activeDevice = devices.find((device) => device.id === selectedDeviceId)
+    ?? (devices.length === 1 ? devices[0] : null)
+  const list = activeDevice?.protectionLogics ?? []
+  const introText = hasDeviceSelection && !activeDevice
+    ? `当前屏柜${cabinet?.name ? `「${cabinet.name}」` : ''}有多个装置配置了逻辑图，请先选择装置。`
+    : fromCoach
+      ? '选择保护逻辑，学习逻辑框图与动作原理。'
+      : '选择保护逻辑，进入逻辑框图全景浏览。'
+  const diagramState = {
+    ...(fromCoach ? { from: 'coach', section: 'logic' } : {}),
+    ...(activeDevice ? { deviceId: activeDevice.id } : {}),
+  }
 
   useEffect(() => {
     let cancelled = false
-    api
-      .listProtectionLogics()
-      .then((data) => {
-        if (!cancelled) setList(data)
-      })
-      .catch((err) => {
+    async function load() {
+      try {
+        const tree = await api.getKnowledgeTree()
+        const cabinetId = session?.role === 'ADMIN'
+          ? selectedCabinetId
+          : (await api.checkBinding(getDeviceBindId())).cabinetId
+        if (!cabinetId) throw new Error('未找到当前评估屏柜')
+        const currentCabinet = tree?.cabinets?.find((item) => item.id === cabinetId)
+        if (!currentCabinet) throw new Error('未找到当前评估屏柜')
+
+        const summaries = await api.listProtectionLogics(cabinetId)
+        const summaryById = new Map(summaries.map((logic) => [logic.id, logic]))
+        const availableDevices = (currentCabinet.devices ?? [])
+          .map((device) => ({
+            ...device,
+            protectionLogics: (device.protectionLogics ?? [])
+              .map((logic) => ({ ...logic, ...summaryById.get(logic.id) }))
+              .filter((logic) => summaryById.has(logic.id)),
+          }))
+          .filter((device) => device.protectionLogics.length > 0)
+
+        if (!cancelled) {
+          setCabinet(currentCabinet)
+          setDevices(availableDevices)
+          setSelectedDeviceId((current) => (
+            availableDevices.some((device) => device.id === current) ? current : null
+          ))
+        }
+      } catch (err) {
         if (!cancelled) setError(err.message)
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false)
-      })
+      }
+    }
+    load()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [selectedCabinetId, session?.role])
+
+  const goBack = () => {
+    if (hasDeviceSelection && activeDevice) {
+      setSelectedDeviceId(null)
+      return
+    }
+    navigate(backTo)
+  }
 
   return (
     <div className="tablet-shell panorama-list-shell">
       <header className="tablet-shell__header">
         <div className="tablet-shell__header-left">
-          <button type="button" className="tablet-shell__back" onClick={() => navigate(backTo)}>
+          <button type="button" className="tablet-shell__back" onClick={goBack}>
             ← 返回上级
           </button>
           {fromCoach && (
@@ -73,8 +119,26 @@ export default function PanoramaListPage() {
         {error && <p className="panorama-list__status panorama-list__status--error">{error}</p>}
         {!loading && !error && (
           <div className="panorama-list__grid">
-            {list.length === 0 ? (
-              <p className="panorama-list__empty">暂无保护逻辑配置</p>
+            {hasDeviceSelection && !activeDevice ? (
+              devices.map((device) => (
+                <button
+                  key={device.id}
+                  type="button"
+                  className="panorama-list__card panorama-list__device-card"
+                  onClick={() => setSelectedDeviceId(device.id)}
+                >
+                  <div className="panorama-list__device-icon" aria-hidden="true">▣</div>
+                  <div>
+                    <h3>{device.name}</h3>
+                    <p>{device.description || device.code || '保护装置'}</p>
+                    <span className="panorama-list__device-count">
+                      {device.protectionLogics.length} 张逻辑图
+                    </span>
+                  </div>
+                </button>
+              ))
+            ) : list.length === 0 ? (
+              <p className="panorama-list__empty">当前屏柜暂无保护逻辑配置</p>
             ) : (
               list.map((item) => (
                 <Link

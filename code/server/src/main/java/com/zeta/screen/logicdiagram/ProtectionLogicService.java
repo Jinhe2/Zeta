@@ -73,7 +73,14 @@ public class ProtectionLogicService {
     }
 
     public List<ProtectionLogicSummaryResponse> listSummaries() {
-        List<ProtectionLogic> logics = repository.findAllByOrderByIdAsc();
+        return toSummaries(repository.findAllByOrderByIdAsc());
+    }
+
+    public List<ProtectionLogicSummaryResponse> listSummariesByCabinet(Long cabinetId) {
+        return toSummaries(repository.findByDeviceCabinetIdOrderByIdAsc(cabinetId));
+    }
+
+    private List<ProtectionLogicSummaryResponse> toSummaries(List<ProtectionLogic> logics) {
         Map<Long, Integer> sortOrders = logicLearningConfigService.getSortOrders(
                 logics.stream().map(ProtectionLogic::getId).collect(Collectors.toList()));
         return logics.stream()

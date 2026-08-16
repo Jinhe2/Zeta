@@ -701,7 +701,10 @@ export default function StudentDiagramPage() {
     failed: '实验失败',
   }
   const fromCoach = location.state?.from === 'coach'
-  const listState = fromCoach ? { from: 'coach', section: 'logic' } : undefined
+  const listState = {
+    ...(fromCoach ? { from: 'coach', section: 'logic' } : {}),
+    ...(location.state?.deviceId ? { deviceId: location.state.deviceId } : {}),
+  }
 
   return (
     <div className="tablet-shell diagram-page">

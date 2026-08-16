@@ -10,6 +10,8 @@ public interface ProtectionLogicRepository extends JpaRepository<ProtectionLogic
 
     List<ProtectionLogic> findByDeviceIdOrderByIdAsc(Long deviceId);
 
+    List<ProtectionLogic> findByDeviceCabinetIdOrderByIdAsc(Long cabinetId);
+
     Optional<ProtectionLogic> findByDeviceIdAndLogicId(Long deviceId, String logicId);
 
     boolean existsByDeviceIdAndLogicId(Long deviceId, String logicId);

@@ -26,9 +26,12 @@ public class ProtectionLogicController {
 
     @GetMapping
     public List<ProtectionLogicSummaryResponse> list(
-            @RequestHeader(value = "Authorization", required = false) String authorization) {
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(required = false) Long cabinetId) {
         authService.requireUser(authorization);
-        return protectionLogicService.listSummaries();
+        return cabinetId == null
+                ? protectionLogicService.listSummaries()
+                : protectionLogicService.listSummariesByCabinet(cabinetId);
     }
 
     @GetMapping("/{id}")

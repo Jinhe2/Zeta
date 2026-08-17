@@ -33,6 +33,21 @@ public class SettingComparisonService {
 
   public SettingCheckResponse checkForLogic(Long logicDiagramId) {
     ResolvedSettingList resolved = settingListService.resolveForLogic(logicDiagramId);
+    if (!hasEnabledItems(resolved)) {
+      return skipped(resolved);
+    }
+    SummonResult summon = mmsSettingClient.summon(resolved.getTarget().getIedName());
+    return compareResolved(resolved, summon.getValues());
+  }
+
+  public boolean hasEnabledItems(ResolvedSettingList resolved) {
+    for (SettingListItem item : resolved.getItems()) {
+      if (!Boolean.FALSE.equals(item.getCompareEnabled())) return true;
+    }
+    return false;
+  }
+
+  public SettingCheckResponse skipped(ResolvedSettingList resolved) {
     if (resolved.getItems().isEmpty()) {
       return new SettingCheckResponse("SKIPPED", null, null, 0, 0, 0, 0, Collections.emptyList());
     }
@@ -51,13 +66,22 @@ public class SettingComparisonService {
           0,
           Collections.emptyList());
     }
-    SummonResult summon = mmsSettingClient.summon(resolved.getTarget().getIedName());
+    return new SettingCheckResponse("SKIPPED", null, null, 0, 0, 0, 0, Collections.emptyList());
+  }
+
+  public SettingCheckResponse compareResolved(
+      ResolvedSettingList resolved, Map<String, Double> actualValues) {
+    List<SettingListItem> comparedItems = new ArrayList<>();
+    for (SettingListItem item : resolved.getItems()) {
+      if (!Boolean.FALSE.equals(item.getCompareEnabled())) comparedItems.add(item);
+    }
+    if (comparedItems.isEmpty()) return skipped(resolved);
     List<SettingCheckItemResponse> rows = new ArrayList<>();
     int equal = 0;
     int mismatch = 0;
     int missing = 0;
     for (SettingListItem item : comparedItems) {
-      Double rawActual = findActual(resolved.getTarget().getIedName(), item.getSettingRef(), summon.getValues());
+      Double rawActual = findActual(resolved.getTarget().getIedName(), item.getSettingRef(), actualValues);
       boolean isTime = item.getSettingRef().contains("Tmms");
       Double actual = rawActual == null ? null : normalizeActual(rawActual, isTime);
       double baseline = normalizeBaseline(Double.parseDouble(item.getBaselineValue()), isTime);

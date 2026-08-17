@@ -425,6 +425,42 @@ export const api = {
     })
   },
 
+  getSoftPressboardList(scopeType, scopeId) {
+    return request(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}`)
+  },
+
+  saveSoftPressboardList(scopeType, scopeId, items) {
+    return request(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ items }),
+    })
+  },
+
+  clearSoftPressboardList(scopeType, scopeId) {
+    return request(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}`, { method: 'DELETE' })
+  },
+
+  summonSoftPressboardList(scopeType, scopeId) {
+    return request(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}/summon`, { method: 'POST' })
+  },
+
+  importSoftPressboardList(scopeType, scopeId, file) {
+    const form = new FormData()
+    form.append('file', file)
+    return uploadRequest(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}/import`, form)
+  },
+
+  downloadSoftPressboardList(scopeType, scopeId) {
+    return downloadRequest(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}/export`)
+  },
+
+  checkExperimentPreconditions(logicDiagramId) {
+    return request('/api/experiment-prechecks', {
+      method: 'POST',
+      body: JSON.stringify({ logicDiagramId }),
+    })
+  },
+
   listHardPressboards(cabinetId) {
     return request(`/api/hard-pressboards?cabinetId=${cabinetId}`)
   },

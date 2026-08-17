@@ -96,6 +96,9 @@ export default function LogicLearningDevicesPage() {
                       <Link className="users-page__link" to={`/admin/logic-learning/devices/${device.id}/settings`}>
                         装置定值清单
                       </Link>
+                      <Link className="users-page__link" to={`/admin/logic-learning/devices/${device.id}/soft-pressboards`}>
+                        装置软压板基准清单
+                      </Link>
                       <button type="button" className="users-page__link" onClick={() => setCopySource(device)}>
                         复制逻辑配置
                       </button>

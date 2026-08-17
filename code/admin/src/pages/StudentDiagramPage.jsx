@@ -9,7 +9,11 @@ import JsonViewerModal from '../components/JsonViewerModal'
 import SnapshotImportModal from '../components/SnapshotImportModal'
 import CognitionMediaViewer from '../components/CognitionMediaViewer'
 import { useAuth } from '../auth/AuthContext'
-import { buildSettingMismatchDialog, canStartAfterSettingCheck } from '../utils/settingCheck'
+import {
+  buildExperimentPrecheckMismatchDialog,
+  buildExperimentStartConfirmDialog,
+  canStartAfterExperimentPrecheck,
+} from '../utils/settingCheck'
 import './student/TabletShell.css'
 import './StudentPages.css'
 
@@ -260,6 +264,8 @@ export default function StudentDiagramPage() {
   const pollRef = useRef(null)
   const reminderRef = useRef(null)
   const autoStopRef = useRef(null)
+  const pendingPreviousTaskUuidRef = useRef(null)
+  const startConfirmationInFlightRef = useRef(false)
 
   // Load detail + existing snapshots
   useEffect(() => {
@@ -518,40 +524,24 @@ export default function StudentDiagramPage() {
     if (taskUuid) scheduleExperimentReminder(taskUuid)
   }, [scheduleExperimentReminder])
 
-  // 开始实验
-  const handleStartExperiment = useCallback(async () => {
-    if (!detail?.iedName || !detail?.code) {
-      setError('缺少装置信息（iedName / logicId）')
-      return
-    }
-
-    const previousTaskUuid = taskUuidRef.current
-    clearMonitorTimers()
+  const startExperimentAfterConfirmation = useCallback(async () => {
+    if (startConfirmationInFlightRef.current) return
+    startConfirmationInFlightRef.current = true
+    const previousTaskUuid = pendingPreviousTaskUuidRef.current
+    pendingPreviousTaskUuidRef.current = null
     taskUuidRef.current = null
-
-    setMonitoring(true)
-    setMonitorStatus('checking')
-    setError(null)
     setExperimentDialog({ open: false, title: '', message: '' })
+    setMonitoring(true)
+    setMonitorStatus('starting')
+    setError(null)
     setTimeoutDialog({ open: false, autoStopAt: null })
     setSections([])
     setSelectedSectionId(null)
     setSelectedSnapshotId(null)
-
     try {
-      const settingCheck = await api.checkLogicSettingList(Number(id))
-      if (!canStartAfterSettingCheck(settingCheck)) {
-        setMonitoring(false)
-        setMonitorStatus('')
-        setExperimentDialog(buildSettingMismatchDialog(settingCheck))
-        return
-      }
-
       if (previousTaskUuid) {
         await api.endLogicMonitor(previousTaskUuid).catch(() => {})
       }
-
-      setMonitorStatus('starting')
       const response = await api.startLogicMonitor(detail.iedName, detail.code)
       // req_id 就是 taskUuid
       const taskUuid = response.req_id || response.reqId
@@ -571,11 +561,44 @@ export default function StudentDiagramPage() {
       startResultPolling(taskUuid)
       scheduleExperimentReminder(taskUuid)
     } catch (err) {
+      startConfirmationInFlightRef.current = false
       setMonitoring(false)
       setMonitorStatus('')
-      setError('定值校核或启动实验失败: ' + err.message)
+      setError('启动实验失败: ' + err.message)
     }
-  }, [clearMonitorTimers, detail, id, scheduleExperimentReminder, startResultPolling])
+  }, [detail, scheduleExperimentReminder, startResultPolling])
+
+  // 开始实验前先联合校验定值和软压板，校验通过后等待人工确认。
+  const handleStartExperiment = useCallback(async () => {
+    if (!detail?.iedName || !detail?.code) {
+      setError('缺少装置信息（iedName / logicId）')
+      return
+    }
+    pendingPreviousTaskUuidRef.current = taskUuidRef.current
+    startConfirmationInFlightRef.current = false
+    clearMonitorTimers()
+    setMonitoring(true)
+    setMonitorStatus('checking')
+    setError(null)
+    setExperimentDialog({ open: false, title: '', message: '' })
+    setTimeoutDialog({ open: false, autoStopAt: null })
+    try {
+      const precheck = await api.checkExperimentPreconditions(Number(id))
+      setMonitoring(false)
+      setMonitorStatus('')
+      if (!canStartAfterExperimentPrecheck(precheck)) {
+        pendingPreviousTaskUuidRef.current = null
+        setExperimentDialog(buildExperimentPrecheckMismatchDialog(precheck))
+        return
+      }
+      setExperimentDialog(buildExperimentStartConfirmDialog())
+    } catch (err) {
+      pendingPreviousTaskUuidRef.current = null
+      setMonitoring(false)
+      setMonitorStatus('')
+      setError('实验前基准校核失败: ' + err.message)
+    }
+  }, [clearMonitorTimers, detail, id])
 
   // 停止实验
   const handleStopExperiment = useCallback(async () => {
@@ -911,7 +934,7 @@ export default function StudentDiagramPage() {
             type="button"
             className="experiment-result-dialog__mask"
             aria-label="关闭实验结果提示"
-            onClick={() => setExperimentDialog({ open: false, title: '', message: '' })}
+            onClick={() => { pendingPreviousTaskUuidRef.current = null; startConfirmationInFlightRef.current = false; setExperimentDialog({ open: false, title: '', message: '' }) }}
           />
           <div className="experiment-result-dialog__panel">
             {experimentDialog.title && (
@@ -963,18 +986,32 @@ export default function StudentDiagramPage() {
                 </table>
               </section>
             )}
+            {experimentDialog.softPressboardItems?.length > 0 && (
+              <section className="experiment-result-dialog__section">
+                <h3>软压板比对</h3>
+                <table className="experiment-result-dialog__table">
+                  <thead><tr><th>名称</th><th>基准状态</th><th>实际状态</th></tr></thead>
+                  <tbody>
+                    {experimentDialog.softPressboardItems.map((item) => (
+                      <tr key={item.key}><td>{item.name}</td><td>{item.baselineValue}</td><td>{item.actualValue}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
             {experimentDialog.diagnosticErrors?.length > 0 && (
               <div className="experiment-result-dialog__errors">
                 {experimentDialog.diagnosticErrors.map((item) => <p key={item}>{item}</p>)}
               </div>
             )}
-            <button
-              type="button"
-              className="experiment-result-dialog__btn"
-              onClick={() => setExperimentDialog({ open: false, title: '', message: '' })}
-            >
-              确定
-            </button>
+            {experimentDialog.kind === 'start-confirm' ? (
+              <div className="experiment-result-dialog__actions">
+                <button type="button" className="experiment-result-dialog__btn experiment-result-dialog__btn--secondary" onClick={() => { pendingPreviousTaskUuidRef.current = null; startConfirmationInFlightRef.current = false; setExperimentDialog({ open: false, title: '', message: '' }) }}>取消</button>
+                <button type="button" className="experiment-result-dialog__btn" onClick={startExperimentAfterConfirmation}>确认并开始实验</button>
+              </div>
+            ) : (
+              <button type="button" className="experiment-result-dialog__btn" onClick={() => setExperimentDialog({ open: false, title: '', message: '' })}>确定</button>
+            )}
           </div>
         </div>
       )}

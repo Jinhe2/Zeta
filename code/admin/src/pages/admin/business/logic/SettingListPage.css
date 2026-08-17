@@ -21,6 +21,7 @@
 .setting-list-page__active { margin-bottom: 16px; padding: 12px 14px; border-radius: 8px; background: #ecfdf5; color: #047857; }
 .setting-list-page__ref { max-width: 460px; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 .setting-list-page__table input { width: 130px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 7px 9px; }
+.setting-list-page__table select { min-width: 96px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 7px 9px; background: #fff; }
 .setting-list-page__compare { text-align: center; }
 .setting-list-page__compare input { width: 18px; height: 18px; padding: 0; border: 0; accent-color: #2563eb; }
 .setting-list-page__sort { white-space: nowrap; }

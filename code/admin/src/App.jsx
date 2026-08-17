@@ -36,6 +36,7 @@ import LogicLearningLogicsPage from './pages/admin/business/logic/LogicLearningL
 import LogicLearningNodesPage from './pages/admin/business/logic/LogicLearningNodesPage'
 import LogicNodeItemsPage from './pages/admin/business/logic/LogicNodeItemsPage'
 import SettingListPage from './pages/admin/business/logic/SettingListPage'
+import SoftPressboardListPage from './pages/admin/business/logic/SoftPressboardListPage'
 import CabinetBindingPage from './pages/admin/binding/CabinetBindingPage'
 import CabinetCatalogListPage from './pages/admin/screen/catalog/CabinetCatalogListPage'
 import CabinetCatalogDetailPage from './pages/admin/screen/catalog/CabinetCatalogDetailPage'
@@ -163,6 +164,8 @@ export default function App() {
             <Route path="logic-learning/devices/:deviceId/logics" element={<LogicLearningLogicsPage />} />
             <Route path="logic-learning/devices/:deviceId/settings" element={<SettingListPage scopeType="IED_DEVICE" />} />
             <Route path="logic-learning/logics/:logicDiagramId/settings" element={<SettingListPage scopeType="LOGIC_DIAGRAM" />} />
+            <Route path="logic-learning/devices/:deviceId/soft-pressboards" element={<SoftPressboardListPage scopeType="IED_DEVICE" />} />
+            <Route path="logic-learning/logics/:logicDiagramId/soft-pressboards" element={<SoftPressboardListPage scopeType="LOGIC_DIAGRAM" />} />
             <Route path="logic-learning/logics/:logicDiagramId/nodes" element={<LogicLearningNodesPage />} />
             <Route
               path="logic-learning/logics/:logicDiagramId/nodes/:nodeId/items"

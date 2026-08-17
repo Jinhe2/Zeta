@@ -22,6 +22,7 @@ import org.springframework.transaction.PlatformTransactionManager;
                 "com.zeta.screen.hardpressboard",
                 "com.zeta.screen.baseline",
                 "com.zeta.screen.iedsetting",
+                "com.zeta.screen.softpressboard",
                 "com.zeta.screen.wiring"
         },
         entityManagerFactoryRef = "screenEntityManagerFactory",
@@ -56,6 +57,7 @@ public class ScreenJpaConfig {
                         "com.zeta.screen.hardpressboard",
                         "com.zeta.screen.baseline",
                         "com.zeta.screen.iedsetting",
+                        "com.zeta.screen.softpressboard",
                         "com.zeta.screen.wiring")
                 .persistenceUnit(PERSISTENCE_UNIT)
                 .properties(jpaProps)

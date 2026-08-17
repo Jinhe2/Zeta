@@ -212,6 +212,22 @@ CREATE TABLE logic_diagram_baseline_setting_item (
     INDEX idx_ldbs_logic (logic_diagram_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='逻辑框图基准定值项表';
 
+-- ============================================================================
+-- 10.5 IED 全量软压板状态目录（由屏柜配置工具维护）
+-- ============================================================================
+CREATE TABLE ied_soft_pressboard_item (
+    id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '软压板项目唯一标识',
+    ied_device_id     BIGINT UNSIGNED NOT NULL COMMENT '所属 IED 装置 ID',
+    pressboard_name   VARCHAR(256) NOT NULL COMMENT '软压板名称',
+    pressboard_ref    VARCHAR(512) NOT NULL COMMENT '软压板状态 MMS 引用',
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (id),
+    UNIQUE INDEX uk_ispi_ied_ref (ied_device_id, pressboard_ref),
+    INDEX idx_ispi_ied (ied_device_id),
+    CONSTRAINT fk_ispi_ied FOREIGN KEY (ied_device_id)
+        REFERENCES ied_device(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='IED 装置全量软压板状态清单';
+
 
 -- ============================================================================
 -- 11. 逻辑框图配置表

@@ -41,6 +41,23 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         createLearningResourcesTable();
         createDrawingLearningTables();
         createSamplingTestTables();
+        createSoftPressboardListTable();
+    }
+
+    /** 生产环境关闭 Hibernate DDL 时也创建软压板基准清单表。 */
+    private void createSoftPressboardListTable() {
+        executeRequired("CREATE TABLE IF NOT EXISTS soft_pressboard_list_item ("
+                + "id BIGINT NOT NULL AUTO_INCREMENT, scope_type VARCHAR(32) NOT NULL, "
+                + "scope_id BIGINT NOT NULL, pressboard_ref VARCHAR(512) NOT NULL, "
+                + "pressboard_name VARCHAR(256) NOT NULL, baseline_value TINYINT(1) NOT NULL, "
+                + "compare_enabled TINYINT(1) NOT NULL DEFAULT 1, sort_order INT NOT NULL DEFAULT 0, "
+                + "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+                + "updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, "
+                + "PRIMARY KEY (id), UNIQUE KEY uk_soft_pressboard_list_scope_ref "
+                + "(scope_type, scope_id, pressboard_ref), "
+                + "KEY idx_soft_pressboard_list_scope (scope_type, scope_id)) "
+                + "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                + "COMMENT='逻辑学习软压板基准清单项'");
     }
 
     /** 生产环境关闭 Hibernate DDL 时也创建采样测试表。 */

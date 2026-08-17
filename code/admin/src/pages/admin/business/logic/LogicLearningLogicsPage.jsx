@@ -141,6 +141,9 @@ export default function LogicLearningLogicsPage() {
                       <Link className="users-page__link" to={`/admin/logic-learning/logics/${logic.id}/nodes`}>
                         逻辑节点
                       </Link>
+                      <Link className="users-page__link" to={`/admin/logic-learning/logics/${logic.id}/settings`}>
+                        独立定值清单
+                      </Link>
                     </td>
                   </tr>
                 ))

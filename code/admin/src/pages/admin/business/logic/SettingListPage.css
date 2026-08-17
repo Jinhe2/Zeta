@@ -1,0 +1,31 @@
+.setting-list-page__toolbar,
+.setting-list-page__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.setting-list-page__toolbar button,
+.setting-list-page__actions button {
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  padding: 9px 14px;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+}
+
+.setting-list-page__toolbar button:disabled,
+.setting-list-page__actions button:disabled { opacity: .55; cursor: not-allowed; }
+.setting-list-page__fallback { margin-bottom: 16px; padding: 12px 14px; border-radius: 8px; background: #fff7ed; color: #9a3412; }
+.setting-list-page__active { margin-bottom: 16px; padding: 12px 14px; border-radius: 8px; background: #ecfdf5; color: #047857; }
+.setting-list-page__ref { max-width: 460px; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.setting-list-page__table input { width: 130px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 7px 9px; }
+.setting-list-page__compare { text-align: center; }
+.setting-list-page__compare input { width: 18px; height: 18px; padding: 0; border: 0; accent-color: #2563eb; }
+.setting-list-page__sort { white-space: nowrap; }
+.setting-list-page__sort button { margin-right: 4px; border: 1px solid #cbd5e1; border-radius: 5px; background: #fff; cursor: pointer; }
+.setting-list-page__sort button:disabled { opacity: .35; cursor: not-allowed; }
+.setting-list-page__actions { justify-content: flex-end; margin-top: 18px; }
+.setting-list-page__actions .setting-list-page__save { background: #2563eb; border-color: #2563eb; color: #fff; }
+.setting-list-page__actions .setting-list-page__clear { color: #b91c1c; border-color: #fecaca; }

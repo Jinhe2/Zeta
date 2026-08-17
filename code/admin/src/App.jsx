@@ -35,6 +35,7 @@ import LogicLearningDevicesPage from './pages/admin/business/logic/LogicLearning
 import LogicLearningLogicsPage from './pages/admin/business/logic/LogicLearningLogicsPage'
 import LogicLearningNodesPage from './pages/admin/business/logic/LogicLearningNodesPage'
 import LogicNodeItemsPage from './pages/admin/business/logic/LogicNodeItemsPage'
+import SettingListPage from './pages/admin/business/logic/SettingListPage'
 import CabinetBindingPage from './pages/admin/binding/CabinetBindingPage'
 import CabinetCatalogListPage from './pages/admin/screen/catalog/CabinetCatalogListPage'
 import CabinetCatalogDetailPage from './pages/admin/screen/catalog/CabinetCatalogDetailPage'
@@ -160,6 +161,8 @@ export default function App() {
             <Route path="sampling-tests/cabinets/:cabinetId" element={<SamplingItemsPage />} />
             <Route path="logic-learning/cabinets/:cabinetId/devices" element={<LogicLearningDevicesPage />} />
             <Route path="logic-learning/devices/:deviceId/logics" element={<LogicLearningLogicsPage />} />
+            <Route path="logic-learning/devices/:deviceId/settings" element={<SettingListPage scopeType="IED_DEVICE" />} />
+            <Route path="logic-learning/logics/:logicDiagramId/settings" element={<SettingListPage scopeType="LOGIC_DIAGRAM" />} />
             <Route path="logic-learning/logics/:logicDiagramId/nodes" element={<LogicLearningNodesPage />} />
             <Route
               path="logic-learning/logics/:logicDiagramId/nodes/:nodeId/items"

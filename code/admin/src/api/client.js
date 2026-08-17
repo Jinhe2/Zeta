@@ -207,6 +207,22 @@ async function multipartRequest(path, method, formData, retried = false) {
   return data
 }
 
+async function downloadRequest(path, retried = false) {
+  const headers = {}
+  const accessToken = getAccessToken()
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`
+  const res = await fetch(apiUrl(path), { headers })
+  if (res.status === 401 && !retried && getRefreshToken()) {
+    await ensureRefreshed()
+    return downloadRequest(path, true)
+  }
+  if (!res.ok) {
+    const data = await parseResponse(res)
+    throw new Error(data?.message || `下载失败 (${res.status})`)
+  }
+  return res.blob()
+}
+
 export const api = {
   login(username, password) {
     return authRequest('/api/auth/login', {
@@ -370,6 +386,42 @@ export const api = {
     return request('/api/monitor/commands/baseline-settings-compare', {
       method: 'POST',
       body: JSON.stringify({ cognitionDeviceId }),
+    })
+  },
+
+  getSettingList(scopeType, scopeId) {
+    return request(`/api/admin/setting-lists/${scopeType}/${scopeId}`)
+  },
+
+  saveSettingList(scopeType, scopeId, items) {
+    return request(`/api/admin/setting-lists/${scopeType}/${scopeId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ items }),
+    })
+  },
+
+  clearSettingList(scopeType, scopeId) {
+    return request(`/api/admin/setting-lists/${scopeType}/${scopeId}`, { method: 'DELETE' })
+  },
+
+  summonSettingList(scopeType, scopeId) {
+    return request(`/api/admin/setting-lists/${scopeType}/${scopeId}/summon`, { method: 'POST' })
+  },
+
+  importSettingList(scopeType, scopeId, file) {
+    const form = new FormData()
+    form.append('file', file)
+    return uploadRequest(`/api/admin/setting-lists/${scopeType}/${scopeId}/import`, form)
+  },
+
+  downloadSettingList(scopeType, scopeId) {
+    return downloadRequest(`/api/admin/setting-lists/${scopeType}/${scopeId}/export`)
+  },
+
+  checkLogicSettingList(logicDiagramId) {
+    return request('/api/setting-lists/check', {
+      method: 'POST',
+      body: JSON.stringify({ logicDiagramId }),
     })
   },
 

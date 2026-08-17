@@ -2,6 +2,7 @@ package com.zeta.integration.queue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zeta.integration.monitor.MonitorCommandService;
+import com.zeta.integration.mms.MmsSettingClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,14 +26,17 @@ public class ScreenQueueListener {
     private final ObjectMapper objectMapper;
     private final MonitorCommandService monitorCommandService;
     private final ScreenQueueProperties properties;
+    private final MmsSettingClient mmsSettingClient;
 
     public ScreenQueueListener(
             ObjectMapper objectMapper,
             MonitorCommandService monitorCommandService,
-            ScreenQueueProperties properties) {
+            ScreenQueueProperties properties,
+            MmsSettingClient mmsSettingClient) {
         this.objectMapper = objectMapper;
         this.monitorCommandService = monitorCommandService;
         this.properties = properties;
+        this.mmsSettingClient = mmsSettingClient;
     }
 
     @Bean
@@ -57,6 +61,11 @@ public class ScreenQueueListener {
 
         container.addMessageListener(listener, new ChannelTopic(properties.getInboundKey()));
         log.info("Subscribed to Redis Pub/Sub channel: {}", properties.getInboundKey());
+
+        MessageListener mmsListener = (Message message, byte[] pattern) ->
+                mmsSettingClient.handleResponse(new String(message.getBody()));
+        container.addMessageListener(mmsListener, new ChannelTopic(properties.getMmsInboundKey()));
+        log.info("Subscribed to Redis Pub/Sub channel: {}", properties.getMmsInboundKey());
 
         return container;
     }

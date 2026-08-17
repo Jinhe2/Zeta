@@ -9,6 +9,7 @@
     "build:electron": "vite build --mode electron",
     "lint": "eslint .",
     "test:sampling": "node --test src/utils/samplingValidation.test.js",
+    "test:setting": "node --test src/utils/settingCheck.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

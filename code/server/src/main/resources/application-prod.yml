@@ -48,5 +48,9 @@ zeta:
     enabled: false
     inbound-key: ct:screen:business:inbound
     outbound-key: ct:business:screen:outbound
+    mms-outbound-key: mms_command_request
+    mms-inbound-key: mms_command_response
+    mms-temp-dir: ${MMS_TEMP_DIR:/opt/TestMonitor/linux/temp}
+    mms-timeout-seconds: 30
     poll-timeout-seconds: 5
     poll-interval-ms: 2000

@@ -34,5 +34,9 @@ zeta:
     enabled: true
     inbound-key: monitor_command_response
     outbound-key: monitor_command_request
+    mms-outbound-key: mms_command_request
+    mms-inbound-key: mms_command_response
+    mms-temp-dir: ${MMS_TEMP_DIR:./temp}
+    mms-timeout-seconds: 30
     poll-timeout-seconds: 5
     poll-interval-ms: 2000

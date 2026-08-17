@@ -9,6 +9,7 @@ import JsonViewerModal from '../components/JsonViewerModal'
 import SnapshotImportModal from '../components/SnapshotImportModal'
 import CognitionMediaViewer from '../components/CognitionMediaViewer'
 import { useAuth } from '../auth/AuthContext'
+import { buildSettingMismatchDialog, canStartAfterSettingCheck } from '../utils/settingCheck'
 import './student/TabletShell.css'
 import './StudentPages.css'
 
@@ -529,7 +530,7 @@ export default function StudentDiagramPage() {
     taskUuidRef.current = null
 
     setMonitoring(true)
-    setMonitorStatus('starting')
+    setMonitorStatus('checking')
     setError(null)
     setExperimentDialog({ open: false, title: '', message: '' })
     setTimeoutDialog({ open: false, autoStopAt: null })
@@ -538,10 +539,19 @@ export default function StudentDiagramPage() {
     setSelectedSnapshotId(null)
 
     try {
+      const settingCheck = await api.checkLogicSettingList(Number(id))
+      if (!canStartAfterSettingCheck(settingCheck)) {
+        setMonitoring(false)
+        setMonitorStatus('')
+        setExperimentDialog(buildSettingMismatchDialog(settingCheck))
+        return
+      }
+
       if (previousTaskUuid) {
         await api.endLogicMonitor(previousTaskUuid).catch(() => {})
       }
 
+      setMonitorStatus('starting')
       const response = await api.startLogicMonitor(detail.iedName, detail.code)
       // req_id 就是 taskUuid
       const taskUuid = response.req_id || response.reqId
@@ -563,9 +573,9 @@ export default function StudentDiagramPage() {
     } catch (err) {
       setMonitoring(false)
       setMonitorStatus('')
-      setError('启动实验失败: ' + err.message)
+      setError('定值校核或启动实验失败: ' + err.message)
     }
-  }, [clearMonitorTimers, detail, scheduleExperimentReminder, startResultPolling])
+  }, [clearMonitorTimers, detail, id, scheduleExperimentReminder, startResultPolling])
 
   // 停止实验
   const handleStopExperiment = useCallback(async () => {
@@ -694,6 +704,7 @@ export default function StudentDiagramPage() {
   }
 
   const statusLabel = {
+    checking: '定值校核中…',
     starting: '正在启动…',
     watching: '实验监视中',
     stopping: '正在停止…',
@@ -758,13 +769,15 @@ export default function StudentDiagramPage() {
                   {monitoring ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ color: '#ffd54f', fontSize: 12 }}>● {statusLabel[monitorStatus] || '监视中'}</span>
-                      <button
-                        type="button"
-                        className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline diagram-canvas__trigger-btn--stop"
-                        onClick={handleStopExperiment}
-                      >
-                        ■ 停止实验
-                      </button>
+                      {monitorStatus !== 'checking' && (
+                        <button
+                          type="button"
+                          className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline diagram-canvas__trigger-btn--stop"
+                          onClick={handleStopExperiment}
+                        >
+                          ■ 停止实验
+                        </button>
+                      )}
                     </div>
                   ) : nodeStates ? (
                     <button

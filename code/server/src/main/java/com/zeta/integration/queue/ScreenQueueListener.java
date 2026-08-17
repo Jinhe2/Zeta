@@ -77,6 +77,7 @@ public class ScreenQueueListener {
 
         if (command != null && (
                 command.equals("summon_pressboard_status") ||
+                command.equals("summon_ied_soft_pressboard_status") ||
                 command.equals("summon_terminal_status") ||
                 command.equals("summon_ied_comm_status") ||
                 command.equals("compare_baseline_settings") ||

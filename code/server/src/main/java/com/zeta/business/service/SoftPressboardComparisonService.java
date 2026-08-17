@@ -4,7 +4,7 @@ import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.entities.softpressboardlist.SoftPressboardDtos.*;
 import com.zeta.business.entities.softpressboardlist.SoftPressboardListItem;
 import com.zeta.business.service.SoftPressboardListService.ResolvedSoftPressboardList;
-import com.zeta.integration.mms.MmsSettingClient;
+import com.zeta.integration.monitor.IedSoftPressboardStatusClient;
 import com.zeta.screen.softpressboard.IedSoftPressboardItem;
 import java.math.BigDecimal;
 import java.util.*;
@@ -16,20 +16,21 @@ import org.springframework.web.server.ResponseStatusException;
 public class SoftPressboardComparisonService {
   private final SettingListTargetService targetService;
   private final SoftPressboardCatalogService catalogService;
-  private final MmsSettingClient mmsSettingClient;
+  private final IedSoftPressboardStatusClient statusClient;
 
   public SoftPressboardComparisonService(
       SettingListTargetService targetService,
-      SoftPressboardCatalogService catalogService, MmsSettingClient mmsSettingClient) {
+      SoftPressboardCatalogService catalogService, IedSoftPressboardStatusClient statusClient) {
     this.targetService = targetService;
     this.catalogService = catalogService;
-    this.mmsSettingClient = mmsSettingClient;
+    this.statusClient = statusClient;
   }
 
   public SummonResponse summonPreview(SettingListScopeType scopeType, Long scopeId) {
     SettingListTargetService.Target target = targetService.require(scopeType, scopeId);
     List<IedSoftPressboardItem> catalog = catalogService.list(target.getIedDeviceId());
-    MmsSettingClient.SummonResult summon = mmsSettingClient.summon(target.getIedName());
+    IedSoftPressboardStatusClient.StatusResult summon =
+        statusClient.summon(target.getIedDeviceId());
     List<ItemResponse> rows = new ArrayList<>();
     int order = 0;
     for (IedSoftPressboardItem item : catalog) {
@@ -53,6 +54,10 @@ public class SoftPressboardComparisonService {
       if (!Boolean.FALSE.equals(item.getCompareEnabled())) return true;
     }
     return false;
+  }
+
+  public Map<String, Double> summonCurrentValues(Long iedDeviceId) {
+    return statusClient.summon(iedDeviceId).getValues();
   }
 
   public CheckResponse skipped(ResolvedSoftPressboardList resolved) {

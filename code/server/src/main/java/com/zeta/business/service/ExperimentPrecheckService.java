@@ -37,15 +37,18 @@ public class ExperimentPrecheckService {
         softPressboardListService.resolveForLogic(logicDiagramId);
     boolean checkSettings = settingComparisonService.hasEnabledItems(settings);
     boolean checkPressboards = softPressboardComparisonService.hasEnabledItems(pressboards);
-    Map<String, Double> actualValues = Collections.emptyMap();
-    if (checkSettings || checkPressboards) {
-      actualValues = mmsSettingClient.summon(settings.getTarget().getIedName()).getValues();
-    }
+    Map<String, Double> actualSettingValues = checkSettings
+        ? mmsSettingClient.summon(settings.getTarget().getIedName()).getValues()
+        : Collections.emptyMap();
+    Map<String, Double> actualPressboardValues = checkPressboards
+        ? softPressboardComparisonService.summonCurrentValues(
+            pressboards.getTarget().getIedDeviceId())
+        : Collections.emptyMap();
     SettingCheckResponse settingCheck = checkSettings
-        ? settingComparisonService.compareResolved(settings, actualValues)
+        ? settingComparisonService.compareResolved(settings, actualSettingValues)
         : settingComparisonService.skipped(settings);
     CheckResponse pressboardCheck = checkPressboards
-        ? softPressboardComparisonService.compareResolved(pressboards, actualValues)
+        ? softPressboardComparisonService.compareResolved(pressboards, actualPressboardValues)
         : softPressboardComparisonService.skipped(pressboards);
     String status;
     if ("MISMATCH".equals(settingCheck.getStatus())

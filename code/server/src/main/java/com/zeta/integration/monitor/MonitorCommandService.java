@@ -101,6 +101,13 @@ public class MonitorCommandService {
     return sendCommand("summon_ied_comm_status", null, data, "ied-comm:" + cabinetId);
   }
 
+  /** 读取指定 IED 的软压板实时状态。 */
+  public CompletableFuture<ScreenQueueMessage> sendIedSoftPressboardStatusRequest(Long iedDeviceId) {
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("ied_device_id", iedDeviceId);
+    return sendCommand("summon_ied_soft_pressboard_status", null, data, null);
+  }
+
   /** 比对指定 IED 的当前定值与配置库基准定值。 */
   public CompletableFuture<ScreenQueueMessage> compareIedBaselineSettings(Long iedDeviceId) {
     Map<String, Object> data = new LinkedHashMap<>();
@@ -395,6 +402,7 @@ public class MonitorCommandService {
       return true;
     }
     if ("summon_pressboard_status".equals(command)
+        || "summon_ied_soft_pressboard_status".equals(command)
         || "summon_terminal_status".equals(command)
         || "summon_ied_comm_status".equals(command)
         || "compare_baseline_settings".equals(command)) {

@@ -8,7 +8,7 @@ import com.zeta.business.entities.softpressboardlist.SoftPressboardDtos.CheckRes
 import com.zeta.business.entities.softpressboardlist.SoftPressboardListItem;
 import com.zeta.business.service.SettingListTargetService.Target;
 import com.zeta.business.service.SoftPressboardListService.ResolvedSoftPressboardList;
-import com.zeta.integration.mms.MmsSettingClient;
+import com.zeta.integration.monitor.IedSoftPressboardStatusClient;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ class SoftPressboardComparisonServiceTest {
   void setUp() {
     service = new SoftPressboardComparisonService(
         mock(SettingListTargetService.class), mock(SoftPressboardCatalogService.class),
-        mock(MmsSettingClient.class));
+        mock(IedSoftPressboardStatusClient.class));
     target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A");
   }
 

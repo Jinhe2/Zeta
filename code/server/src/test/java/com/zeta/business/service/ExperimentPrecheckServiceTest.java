@@ -53,16 +53,31 @@ class ExperimentPrecheckServiceTest {
   }
 
   @Test
-  void 两类校验共用一次装置召唤() {
+  void 两类校验分别读取定值和软压板() {
     when(settingComparisonService.hasEnabledItems(settings)).thenReturn(true);
     when(pressboardComparisonService.hasEnabledItems(pressboards)).thenReturn(true);
     Map<String, Double> values = Collections.singletonMap("ref", 1D);
     when(mmsClient.summon("IED_A")).thenReturn(new MmsSettingClient.SummonResult(values));
+    when(pressboardComparisonService.summonCurrentValues(2L)).thenReturn(values);
     when(settingComparisonService.compareResolved(settings, values)).thenReturn(setting("MATCHED"));
     when(pressboardComparisonService.compareResolved(pressboards, values)).thenReturn(pressboard("MISMATCH"));
     ExperimentPrecheckResponse result = service.check(8L);
     assertEquals("MISMATCH", result.getStatus());
     verify(mmsClient, times(1)).summon("IED_A");
+    verify(pressboardComparisonService, times(1)).summonCurrentValues(2L);
+  }
+
+  @Test
+  void 仅校验软压板时不召唤定值() {
+    when(pressboardComparisonService.hasEnabledItems(pressboards)).thenReturn(true);
+    Map<String, Double> values = Collections.singletonMap("ref", 0D);
+    when(pressboardComparisonService.summonCurrentValues(2L)).thenReturn(values);
+    when(settingComparisonService.skipped(settings)).thenReturn(setting("SKIPPED"));
+    when(pressboardComparisonService.compareResolved(pressboards, values))
+        .thenReturn(pressboard("MATCHED"));
+
+    assertEquals("MATCHED", service.check(8L).getStatus());
+    verifyNoInteractions(mmsClient);
   }
 
   private SettingCheckResponse setting(String status) {

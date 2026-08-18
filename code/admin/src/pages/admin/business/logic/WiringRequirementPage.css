@@ -1,0 +1,50 @@
+.wiring-requirement {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.wiring-requirement__section {
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.wiring-requirement__header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.wiring-requirement__title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.wiring-requirement__required {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wiring-requirement__mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wiring-requirement__hint {
+  margin: 0;
+  color: #888;
+}
+
+.wiring-requirement__table select {
+  min-width: 140px;
+}
+
+.wiring-requirement__add {
+  margin-top: 12px;
+  padding: 6px 14px;
+  cursor: pointer;
+}

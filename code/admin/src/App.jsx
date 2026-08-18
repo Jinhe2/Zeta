@@ -38,6 +38,7 @@ import LogicNodeItemsPage from './pages/admin/business/logic/LogicNodeItemsPage'
 import SettingListPage from './pages/admin/business/logic/SettingListPage'
 import SoftPressboardListPage from './pages/admin/business/logic/SoftPressboardListPage'
 import HardPressboardListPage from './pages/admin/business/logic/HardPressboardListPage'
+import WiringRequirementPage from './pages/admin/business/logic/WiringRequirementPage'
 import CabinetBindingPage from './pages/admin/binding/CabinetBindingPage'
 import CabinetCatalogListPage from './pages/admin/screen/catalog/CabinetCatalogListPage'
 import CabinetCatalogDetailPage from './pages/admin/screen/catalog/CabinetCatalogDetailPage'
@@ -169,6 +170,7 @@ export default function App() {
             <Route path="logic-learning/logics/:logicDiagramId/soft-pressboards" element={<SoftPressboardListPage scopeType="LOGIC_DIAGRAM" />} />
             <Route path="logic-learning/devices/:deviceId/hard-pressboards" element={<HardPressboardListPage scopeType="IED_DEVICE" />} />
             <Route path="logic-learning/logics/:logicDiagramId/hard-pressboards" element={<HardPressboardListPage scopeType="LOGIC_DIAGRAM" />} />
+            <Route path="logic-learning/logics/:logicDiagramId/wiring" element={<WiringRequirementPage />} />
             <Route path="logic-learning/logics/:logicDiagramId/nodes" element={<LogicLearningNodesPage />} />
             <Route
               path="logic-learning/logics/:logicDiagramId/nodes/:nodeId/items"

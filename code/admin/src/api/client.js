@@ -483,6 +483,17 @@ export const api = {
     return downloadRequest(`/api/admin/hard-pressboard-lists/${scopeType}/${scopeId}/export`)
   },
 
+  getWiringRequirement(logicDiagramId) {
+    return request(`/api/admin/wiring-requirements/${logicDiagramId}`)
+  },
+
+  saveWiringRequirement(logicDiagramId, categories) {
+    return request(`/api/admin/wiring-requirements/${logicDiagramId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ categories }),
+    })
+  },
+
   checkExperimentPreconditions(logicDiagramId) {
     return request('/api/experiment-prechecks', {
       method: 'POST',

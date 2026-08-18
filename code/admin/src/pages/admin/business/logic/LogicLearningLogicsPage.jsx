@@ -150,6 +150,9 @@ export default function LogicLearningLogicsPage() {
                       <Link className="users-page__link" to={`/admin/logic-learning/logics/${logic.id}/hard-pressboards`}>
                         独立硬压板基准清单
                       </Link>
+                      <Link className="users-page__link" to={`/admin/logic-learning/logics/${logic.id}/wiring`}>
+                        试验仪接线要求
+                      </Link>
                     </td>
                   </tr>
                 ))

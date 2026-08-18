@@ -1012,6 +1012,19 @@ export default function StudentDiagramPage() {
                 </table>
               </section>
             )}
+            {experimentDialog.wiringItems?.length > 0 && (
+              <section className="experiment-result-dialog__section">
+                <h3>试验仪接线</h3>
+                <table className="experiment-result-dialog__table">
+                  <thead><tr><th>分组</th><th>结果</th><th>接线明细</th></tr></thead>
+                  <tbody>
+                    {experimentDialog.wiringItems.map((item) => (
+                      <tr key={item.key}><td>{item.name}</td><td>{item.message}</td><td>{item.detail}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
             {experimentDialog.diagnosticErrors?.length > 0 && (
               <div className="experiment-result-dialog__errors">
                 {experimentDialog.diagnosticErrors.map((item) => <p key={item}>{item}</p>)}

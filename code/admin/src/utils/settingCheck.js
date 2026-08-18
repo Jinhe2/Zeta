@@ -22,6 +22,23 @@ export function canStartAfterExperimentPrecheck(result) {
   return result?.status === 'MATCHED' || result?.status === 'SKIPPED'
 }
 
+const WIRING_CATEGORY_LABELS = { VOLTAGE: '电压', CURRENT: '电流' }
+
+export function buildWiringRequirementItems(wiringCheck) {
+  return (wiringCheck?.categories || []).flatMap((category) =>
+    (category.groups || [])
+      .filter((group) => !group.passed)
+      .map((group) => ({
+        key: `${category.category}-${group.groupNo}`,
+        name: `${WIRING_CATEGORY_LABELS[category.category] || category.category} · 第 ${(group.groupNo ?? 0) + 1} 组`,
+        message: group.message || '接线错误',
+        detail: (group.phases || [])
+          .map((phase) => `${phase.position}相（${phase.terminalLabel || '—'}）：${phase.actualOutput || '未接线'}`)
+          .join('；'),
+      })),
+  )
+}
+
 export function buildExperimentPrecheckMismatchDialog(result) {
   const settingDialog = buildSettingMismatchDialog(result?.settingCheck)
   return {
@@ -45,6 +62,7 @@ export function buildExperimentPrecheckMismatchDialog(result) {
         baselineValue: item.baselineValue ?? '—',
         actualValue: item.matched ? (item.actualValue ?? '—') : '未召唤到',
       })),
+    wiringItems: buildWiringRequirementItems(result?.wiringCheck),
   }
 }
 

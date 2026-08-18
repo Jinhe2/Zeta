@@ -26,7 +26,7 @@ class SettingListServiceTest {
     catalogService = mock(SettingCatalogService.class);
     service = new SettingListService(repository, targetService, catalogService);
     when(targetService.require(any(), anyLong()))
-        .thenReturn(new Target(SettingListScopeType.IED_DEVICE, 2L, "装置", 2L, "IED_A"));
+        .thenReturn(new Target(SettingListScopeType.IED_DEVICE, 2L, "装置", 2L, "IED_A", 3L));
     when(repository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(any(), anyLong()))
         .thenReturn(Collections.emptyList());
   }

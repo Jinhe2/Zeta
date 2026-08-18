@@ -999,6 +999,19 @@ export default function StudentDiagramPage() {
                 </table>
               </section>
             )}
+            {experimentDialog.hardPressboardItems?.length > 0 && (
+              <section className="experiment-result-dialog__section">
+                <h3>硬压板比对</h3>
+                <table className="experiment-result-dialog__table">
+                  <thead><tr><th>名称</th><th>基准状态</th><th>实际状态</th></tr></thead>
+                  <tbody>
+                    {experimentDialog.hardPressboardItems.map((item) => (
+                      <tr key={item.key}><td>{item.name}</td><td>{item.baselineValue}</td><td>{item.actualValue}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
             {experimentDialog.diagnosticErrors?.length > 0 && (
               <div className="experiment-result-dialog__errors">
                 {experimentDialog.diagnosticErrors.map((item) => <p key={item}>{item}</p>)}

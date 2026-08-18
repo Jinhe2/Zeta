@@ -1,5 +1,6 @@
 package com.zeta.business.entities.experiment;
 
+import com.zeta.business.entities.hardpressboardlist.HardPressboardDtos;
 import com.zeta.business.entities.settinglist.dto.SettingCheckResponse;
 import com.zeta.business.entities.softpressboardlist.SoftPressboardDtos.CheckResponse;
 import lombok.AllArgsConstructor;
@@ -11,4 +12,5 @@ public class ExperimentPrecheckResponse {
   private String status;
   private SettingCheckResponse settingCheck;
   private CheckResponse softPressboardCheck;
+  private HardPressboardDtos.CheckResponse hardPressboardCheck;
 }

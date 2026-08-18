@@ -22,7 +22,7 @@ class SoftPressboardComparisonServiceTest {
     service = new SoftPressboardComparisonService(
         mock(SettingListTargetService.class), mock(SoftPressboardCatalogService.class),
         mock(IedSoftPressboardStatusClient.class));
-    target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A");
+    target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A", 3L);
   }
 
   @Test

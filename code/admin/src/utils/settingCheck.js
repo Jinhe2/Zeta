@@ -37,6 +37,14 @@ export function buildExperimentPrecheckMismatchDialog(result) {
         baselineValue: item.baselineValue ?? '—',
         actualValue: item.matched ? (item.actualValue ?? '—') : '未召唤到',
       })),
+    hardPressboardItems: (result?.hardPressboardCheck?.items || [])
+      .filter((item) => !item.equal)
+      .map((item, index) => ({
+        key: `${item.pressboardRef}-${index}`,
+        name: item.pressboardName || item.pressboardRef,
+        baselineValue: item.baselineValue ?? '—',
+        actualValue: item.matched ? (item.actualValue ?? '—') : '未召唤到',
+      })),
   }
 }
 

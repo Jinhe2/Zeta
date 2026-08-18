@@ -31,7 +31,7 @@ class SettingComparisonServiceTest {
 
   @Test
   void 两级清单为空时跳过召唤() {
-    Target target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A");
+    Target target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A", 3L);
     when(listService.resolveForLogic(8L))
         .thenReturn(new ResolvedSettingList(target, null, null, Collections.emptyList()));
 
@@ -43,7 +43,7 @@ class SettingComparisonServiceTest {
 
   @Test
   void 清单项目全部关闭比对时跳过召唤() {
-    Target target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A");
+    Target target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A", 3L);
     SettingListItem disabled = item("IED_A/LD0/PTOC$SG$StrVal", "启动值", "2");
     disabled.setCompareEnabled(false);
     when(listService.resolveForLogic(8L))
@@ -60,7 +60,7 @@ class SettingComparisonServiceTest {
 
   @Test
   void 时间定值按秒换算并识别缺失项() {
-    Target target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A");
+    Target target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A", 3L);
     SettingListItem time = item("IED_A/LD0/PTOC$SG$OpDlTmms", "动作延时", "1.5");
     SettingListItem missing = item("IED_A/LD0/PTOC$SG$StrVal", "启动值", "2");
     when(listService.resolveForLogic(8L))

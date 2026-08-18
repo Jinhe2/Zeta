@@ -30,14 +30,16 @@ public class SettingListTargetService {
           deviceRepository
               .findById(scopeId)
               .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "装置不存在"));
-      return new Target(scopeType, scopeId, device.getName(), device.getId(), device.getIedName());
+      return new Target(scopeType, scopeId, device.getName(), device.getId(), device.getIedName(),
+          device.getCabinet().getId());
     }
     ProtectionLogic logic =
         logicRepository
             .findById(scopeId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "逻辑框图不存在"));
     Device device = logic.getDevice();
-    return new Target(scopeType, scopeId, logic.getTitle(), device.getId(), device.getIedName());
+    return new Target(scopeType, scopeId, logic.getTitle(), device.getId(), device.getIedName(),
+        device.getCabinet().getId());
   }
 
   @Getter
@@ -48,5 +50,6 @@ public class SettingListTargetService {
     private String scopeName;
     private Long iedDeviceId;
     private String iedName;
+    private Long cabinetId;
   }
 }

@@ -27,7 +27,7 @@ class SoftPressboardListServiceTest {
     catalogService = mock(SoftPressboardCatalogService.class);
     service = new SoftPressboardListService(repository, targetService, catalogService);
     when(targetService.require(any(), anyLong()))
-        .thenReturn(new Target(SettingListScopeType.IED_DEVICE, 2L, "装置", 2L, "IED_A"));
+        .thenReturn(new Target(SettingListScopeType.IED_DEVICE, 2L, "装置", 2L, "IED_A", 3L));
     when(repository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(any(), anyLong()))
         .thenReturn(Collections.emptyList());
   }
@@ -67,7 +67,7 @@ class SoftPressboardListServiceTest {
     deviceItem.setCompareEnabled(true);
     deviceItem.setSortOrder(0);
     when(targetService.require(SettingListScopeType.LOGIC_DIAGRAM, 8L))
-        .thenReturn(new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A"));
+        .thenReturn(new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A", 3L));
     when(repository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
         SettingListScopeType.LOGIC_DIAGRAM, 8L)).thenReturn(Collections.emptyList());
     when(repository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(

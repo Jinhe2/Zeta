@@ -51,3 +51,17 @@ test('不一致弹窗只展示失败项目并标记未召唤项', () => {
   assert.equal(dialog.baselineItems.length, 1)
   assert.equal(dialog.baselineItems[0].actualValue, '未召唤到')
 })
+
+test('联合预检失败弹窗展示硬压板失败项', () => {
+  const dialog = buildExperimentPrecheckMismatchDialog({
+    settingCheck: { items: [] },
+    softPressboardCheck: { items: [] },
+    hardPressboardCheck: { items: [
+      { pressboardRef: 'h1', pressboardName: '保护跳闸出口', equal: true, matched: true, baselineValue: '投入', actualValue: '投入' },
+      { pressboardRef: 'h2', pressboardName: '重合闸功能', equal: false, matched: false, baselineValue: '退出' },
+    ] },
+  })
+  assert.equal(dialog.hardPressboardItems.length, 1)
+  assert.equal(dialog.hardPressboardItems[0].name, '重合闸功能')
+  assert.equal(dialog.hardPressboardItems[0].actualValue, '未召唤到')
+})

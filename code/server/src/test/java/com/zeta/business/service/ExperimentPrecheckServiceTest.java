@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.zeta.business.entities.experiment.ExperimentPrecheckResponse;
+import com.zeta.business.entities.hardpressboardlist.HardPressboardDtos;
 import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.entities.settinglist.dto.SettingCheckResponse;
 import com.zeta.business.entities.softpressboardlist.SoftPressboardDtos.CheckResponse;
+import com.zeta.business.service.HardPressboardListService.ResolvedHardPressboardList;
 import com.zeta.business.service.SettingListService.ResolvedSettingList;
 import com.zeta.business.service.SettingListTargetService.Target;
 import com.zeta.business.service.SoftPressboardListService.ResolvedSoftPressboardList;
@@ -18,42 +20,50 @@ import org.junit.jupiter.api.Test;
 class ExperimentPrecheckServiceTest {
   private SettingListService settingListService;
   private SoftPressboardListService pressboardListService;
+  private HardPressboardListService hardPressboardListService;
   private SettingComparisonService settingComparisonService;
   private SoftPressboardComparisonService pressboardComparisonService;
+  private HardPressboardComparisonService hardPressboardComparisonService;
   private MmsSettingClient mmsClient;
   private ExperimentPrecheckService service;
   private ResolvedSettingList settings;
   private ResolvedSoftPressboardList pressboards;
+  private ResolvedHardPressboardList hardPressboards;
 
   @BeforeEach
   void setUp() {
     settingListService = mock(SettingListService.class);
     pressboardListService = mock(SoftPressboardListService.class);
+    hardPressboardListService = mock(HardPressboardListService.class);
     settingComparisonService = mock(SettingComparisonService.class);
     pressboardComparisonService = mock(SoftPressboardComparisonService.class);
+    hardPressboardComparisonService = mock(HardPressboardComparisonService.class);
     mmsClient = mock(MmsSettingClient.class);
     service = new ExperimentPrecheckService(settingListService, pressboardListService,
-        settingComparisonService, pressboardComparisonService, mmsClient);
-    Target target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A");
+        hardPressboardListService, settingComparisonService, pressboardComparisonService,
+        hardPressboardComparisonService, mmsClient);
+    Target target = new Target(SettingListScopeType.LOGIC_DIAGRAM, 8L, "过流保护", 2L, "IED_A", 3L);
     settings = new ResolvedSettingList(target, null, null, Collections.emptyList());
     pressboards = new ResolvedSoftPressboardList(target, null, null, Collections.emptyList());
+    hardPressboards = new ResolvedHardPressboardList(target, null, null, Collections.emptyList());
     when(settingListService.resolveForLogic(8L)).thenReturn(settings);
     when(pressboardListService.resolveForLogic(8L)).thenReturn(pressboards);
+    when(hardPressboardListService.resolveForLogic(8L)).thenReturn(hardPressboards);
+    when(settingComparisonService.skipped(settings)).thenReturn(setting("SKIPPED"));
+    when(pressboardComparisonService.skipped(pressboards)).thenReturn(pressboard("SKIPPED"));
+    when(hardPressboardComparisonService.skipped(hardPressboards))
+        .thenReturn(hardPressboard("SKIPPED"));
   }
 
   @Test
-  void 两类均跳过时不召唤装置() {
-    SettingCheckResponse settingSkipped = setting("SKIPPED");
-    CheckResponse pressboardSkipped = pressboard("SKIPPED");
-    when(settingComparisonService.skipped(settings)).thenReturn(settingSkipped);
-    when(pressboardComparisonService.skipped(pressboards)).thenReturn(pressboardSkipped);
+  void 三类均跳过时不召唤装置() {
     ExperimentPrecheckResponse result = service.check(8L);
     assertEquals("SKIPPED", result.getStatus());
     verifyNoInteractions(mmsClient);
   }
 
   @Test
-  void 两类校验分别读取定值和软压板() {
+  void 定值与软压板分别读取且硬压板跳过() {
     when(settingComparisonService.hasEnabledItems(settings)).thenReturn(true);
     when(pressboardComparisonService.hasEnabledItems(pressboards)).thenReturn(true);
     Map<String, Double> values = Collections.singletonMap("ref", 1D);
@@ -72,12 +82,23 @@ class ExperimentPrecheckServiceTest {
     when(pressboardComparisonService.hasEnabledItems(pressboards)).thenReturn(true);
     Map<String, Double> values = Collections.singletonMap("ref", 0D);
     when(pressboardComparisonService.summonCurrentValues(2L)).thenReturn(values);
-    when(settingComparisonService.skipped(settings)).thenReturn(setting("SKIPPED"));
     when(pressboardComparisonService.compareResolved(pressboards, values))
         .thenReturn(pressboard("MATCHED"));
 
     assertEquals("MATCHED", service.check(8L).getStatus());
     verifyNoInteractions(mmsClient);
+  }
+
+  @Test
+  void 硬压板不一致时整体判定不通过() {
+    when(hardPressboardComparisonService.hasEnabledItems(hardPressboards)).thenReturn(true);
+    Map<String, Double> values = Collections.singletonMap("3", 0D);
+    when(hardPressboardComparisonService.summonCurrentValues(3L)).thenReturn(values);
+    when(hardPressboardComparisonService.compareResolved(hardPressboards, values))
+        .thenReturn(hardPressboard("MISMATCH"));
+    ExperimentPrecheckResponse result = service.check(8L);
+    assertEquals("MISMATCH", result.getStatus());
+    verify(hardPressboardComparisonService, times(1)).summonCurrentValues(3L);
   }
 
   private SettingCheckResponse setting(String status) {
@@ -86,5 +107,9 @@ class ExperimentPrecheckServiceTest {
 
   private CheckResponse pressboard(String status) {
     return new CheckResponse(status, null, null, 0, 0, 0, 0, Collections.emptyList());
+  }
+
+  private HardPressboardDtos.CheckResponse hardPressboard(String status) {
+    return new HardPressboardDtos.CheckResponse(status, null, null, 0, 0, 0, 0, Collections.emptyList());
   }
 }

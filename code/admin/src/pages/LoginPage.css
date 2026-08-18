@@ -40,18 +40,10 @@
 }
 
 .login-card__logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
+  display: inline-block;
+  height: 40px;
+  width: auto;
   margin-bottom: 16px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #4a7ebb, #3d6ba8);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
 }
 
 .login-card__title {

@@ -89,7 +89,7 @@ export default function LoginPage() {
 
       <div className="login-card">
         <header className="login-card__header">
-          <div className="login-card__logo">Zeta</div>
+          <img className="login-card__logo" src="/logo.png" alt="Zeta" />
           <h1 className="login-card__title">继电保护逻辑教学系统</h1>
           <p className="login-card__subtitle">使用用户名和密码登录</p>
           <button

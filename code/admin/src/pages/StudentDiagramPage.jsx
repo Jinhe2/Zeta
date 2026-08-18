@@ -8,6 +8,7 @@ import ConfigPanel from '../components/ConfigPanel'
 import JsonViewerModal from '../components/JsonViewerModal'
 import SnapshotImportModal from '../components/SnapshotImportModal'
 import CognitionMediaViewer from '../components/CognitionMediaViewer'
+import ExperimentGuideDialog from '../components/ExperimentGuideDialog'
 import { useAuth } from '../auth/AuthContext'
 import {
   buildExperimentPrecheckMismatchDialog,
@@ -255,6 +256,9 @@ export default function StudentDiagramPage() {
   const [nodeCognitionIndex, setNodeCognitionIndex] = useState(0)
   const [nodeCognitionLoading, setNodeCognitionLoading] = useState(false)
   const [nodeCognitionError, setNodeCognitionError] = useState('')
+  const [guideOpen, setGuideOpen] = useState(false)
+  const [guideItems, setGuideItems] = useState([])
+  const [guideLoading, setGuideLoading] = useState(false)
 
   // 实验监视状态
   const [monitoring, setMonitoring] = useState(false)
@@ -720,6 +724,25 @@ export default function StudentDiagramPage() {
     setNodeCognitionError('')
   }, [])
 
+  const handleOpenGuide = useCallback(async () => {
+    setGuideLoading(true)
+    setError(null)
+    try {
+      const items = await api.listKnowledgeExperimentGuides('LOGIC_DIAGRAM', Number(id))
+      setGuideItems(items)
+      setGuideOpen(true)
+    } catch (err) {
+      setError(err.message || '加载实验引导失败')
+    } finally {
+      setGuideLoading(false)
+    }
+  }, [id])
+
+  const closeGuide = useCallback(() => {
+    setGuideOpen(false)
+    setGuideItems([])
+  }, [])
+
   const formatSnapTime = (ts) => {
     if (!ts) return ''
     const d = new Date(ts)
@@ -810,21 +833,41 @@ export default function StudentDiagramPage() {
                       )}
                     </div>
                   ) : nodeStates ? (
-                    <button
-                      type="button"
-                      className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline diagram-canvas__trigger-btn--restart"
-                      onClick={handleStartExperiment}
-                    >
-                      ↻ 重新开始实验
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        type="button"
+                        className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline diagram-canvas__trigger-btn--restart"
+                        onClick={handleStartExperiment}
+                      >
+                        ↻ 重新开始实验
+                      </button>
+                      <button
+                        type="button"
+                        className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline"
+                        onClick={handleOpenGuide}
+                        disabled={guideLoading}
+                      >
+                        {guideLoading ? '加载中…' : '试验引导'}
+                      </button>
+                    </div>
                   ) : (
-                    <button
-                      type="button"
-                      className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline"
-                      onClick={handleStartExperiment}
-                    >
-                      ▶ 开始实验
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        type="button"
+                        className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline"
+                        onClick={handleStartExperiment}
+                      >
+                        ▶ 开始实验
+                      </button>
+                      <button
+                        type="button"
+                        className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline"
+                        onClick={handleOpenGuide}
+                        disabled={guideLoading}
+                      >
+                        {guideLoading ? '加载中…' : '试验引导'}
+                      </button>
+                    </div>
                   )}
                 </div>
                 <div className="diagram-canvas__area">
@@ -1149,6 +1192,14 @@ export default function StudentDiagramPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {guideOpen && (
+        <ExperimentGuideDialog
+          items={guideItems}
+          title={detail?.title}
+          onClose={closeGuide}
+        />
       )}
     </div>
   )

@@ -15,6 +15,7 @@ import com.zeta.business.entities.configcopy.ConfigCopyStatus;
 import com.zeta.business.entities.configcopy.dto.*;
 import com.zeta.business.entities.devicedisplay.*;
 import com.zeta.business.entities.drawinglearning.*;
+import com.zeta.business.entities.experimentguide.*;
 import com.zeta.business.entities.learningresource.LearningResource;
 import com.zeta.business.entities.learningresource.LearningResourceRepository;
 import com.zeta.business.entities.logiclearning.LogicLearningConfig;
@@ -22,6 +23,7 @@ import com.zeta.business.entities.logiclearning.LogicLearningConfigRepository;
 import com.zeta.business.entities.logicnodecognition.LogicNodeCognitionItem;
 import com.zeta.business.entities.logicnodecognition.LogicNodeCognitionItemRepository;
 import com.zeta.business.entities.samplingtest.*;
+import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.media.CognitionMediaType;
 import com.zeta.screen.baseline.IedBaselineSettingItem;
 import com.zeta.screen.baseline.IedBaselineSettingItemRepository;
@@ -63,6 +65,7 @@ public class ConfigCopyService {
   private final DrawingCognitionItemRepository drawingItemRepository;
   private final LogicLearningConfigRepository logicConfigRepository;
   private final LogicNodeCognitionItemRepository logicItemRepository;
+  private final ExperimentGuideItemRepository experimentGuideItemRepository;
   private final SamplingTestItemRepository samplingItemRepository;
   private final SamplingTestChannelRepository samplingChannelRepository;
   private final LearningResourceRepository resourceRepository;
@@ -86,6 +89,7 @@ public class ConfigCopyService {
       DrawingCognitionItemRepository drawingItemRepository,
       LogicLearningConfigRepository logicConfigRepository,
       LogicNodeCognitionItemRepository logicItemRepository,
+      ExperimentGuideItemRepository experimentGuideItemRepository,
       SamplingTestItemRepository samplingItemRepository,
       SamplingTestChannelRepository samplingChannelRepository,
       LearningResourceRepository resourceRepository,
@@ -107,6 +111,7 @@ public class ConfigCopyService {
     this.drawingItemRepository = drawingItemRepository;
     this.logicConfigRepository = logicConfigRepository;
     this.logicItemRepository = logicItemRepository;
+    this.experimentGuideItemRepository = experimentGuideItemRepository;
     this.samplingItemRepository = samplingItemRepository;
     this.samplingChannelRepository = samplingChannelRepository;
     this.resourceRepository = resourceRepository;
@@ -415,6 +420,8 @@ public class ConfigCopyService {
         .map(LogicLearningConfig::getLogicDiagramId).collect(Collectors.toSet());
     logicItemRepository.findByLogicDiagramIdIn(ids).stream()
         .map(LogicNodeCognitionItem::getLogicDiagramId).forEach(configured::add);
+    experimentGuideItemRepository.findByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, ids).stream()
+        .map(ExperimentGuideItem::getScopeId).forEach(configured::add);
     return candidates.stream().filter(item -> configured.contains(item.getId())).collect(Collectors.toList());
   }
 
@@ -643,6 +650,22 @@ public class ConfigCopyService {
         target.setSortOrder(source.getSortOrder()); target.setEnabled(source.getEnabled()); target.setCreatedAt(Instant.now());
         logicItemRepository.save(target);
       }
+      for (ExperimentGuideItem source : experimentGuideItemRepository
+          .findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(SettingListScopeType.LOGIC_DIAGRAM, entry.getKey())) {
+        ExperimentGuideItem target = new ExperimentGuideItem();
+        target.setScopeType(SettingListScopeType.LOGIC_DIAGRAM);
+        target.setScopeId(entry.getValue());
+        target.setType(source.getType());
+        target.setTitle(source.getTitle());
+        target.setImageUrl(source.getImageUrl());
+        target.setImageData(copyBytes(source.getImageData()));
+        target.setImageContentType(source.getImageContentType());
+        target.setContent(source.getContent());
+        target.setSortOrder(source.getSortOrder());
+        target.setEnabled(source.getEnabled());
+        target.setCreatedAt(Instant.now());
+        experimentGuideItemRepository.save(target);
+      }
       copied++;
     }
     return copied;
@@ -737,6 +760,12 @@ public class ConfigCopyService {
         .forEach(mediaCleanupService::scheduleDeviceImageDeletion);
     logicItemRepository.deleteByLogicDiagramIdIn(logicIds);
     logicConfigRepository.deleteByLogicDiagramIdIn(logicIds);
+
+    List<ExperimentGuideItem> guides = experimentGuideItemRepository
+        .findByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    guides.stream().map(ExperimentGuideItem::getImageUrl).filter(StringUtils::hasText)
+        .forEach(mediaCleanupService::scheduleDeviceImageDeletion);
+    experimentGuideItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
   }
 
   private void deleteSamplingTests(Long cabinetId) {

@@ -15,6 +15,8 @@ import com.zeta.business.entities.devicedisplay.DeviceDisplayItem;
 import com.zeta.business.entities.devicedisplay.DeviceDisplayItemRepository;
 import com.zeta.business.entities.devicedisplay.dto.*;
 import com.zeta.business.entities.drawinglearning.*;
+import com.zeta.business.entities.experimentguide.ExperimentGuideItem;
+import com.zeta.business.entities.experimentguide.ExperimentGuideItemRepository;
 import com.zeta.business.entities.drawinglearning.DrawingPage;
 import com.zeta.business.entities.drawinglearning.DrawingPageRepository;
 import com.zeta.business.entities.drawinglearning.dto.*;
@@ -55,18 +57,21 @@ public class ImageController {
   private final LogicNodeCognitionItemRepository logicNodeRepository;
   private final DrawingPageRepository drawingPageRepository;
   private final SamplingTestItemRepository samplingTestItemRepository;
+  private final ExperimentGuideItemRepository experimentGuideRepository;
 
   public ImageController(
       CabinetDisplayItemRepository cabinetRepository,
       DeviceDisplayItemRepository deviceRepository,
       LogicNodeCognitionItemRepository logicNodeRepository,
       DrawingPageRepository drawingPageRepository,
-      SamplingTestItemRepository samplingTestItemRepository) {
+      SamplingTestItemRepository samplingTestItemRepository,
+      ExperimentGuideItemRepository experimentGuideRepository) {
     this.cabinetRepository = cabinetRepository;
     this.deviceRepository = deviceRepository;
     this.logicNodeRepository = logicNodeRepository;
     this.drawingPageRepository = drawingPageRepository;
     this.samplingTestItemRepository = samplingTestItemRepository;
+    this.experimentGuideRepository = experimentGuideRepository;
   }
 
   @GetMapping("/cabinet-display/{id}")
@@ -176,6 +181,22 @@ public class ImageController {
   @GetMapping("/sampling-test/{id}")
   public ResponseEntity<?> getSamplingTestImage(@PathVariable Long id) {
     SamplingTestItem item = samplingTestItemRepository.findById(id)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "图片不存在"));
+    if (item.getImageData() == null || item.getImageData().length == 0) {
+      if (StringUtils.hasText(item.getImageUrl())) {
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(item.getImageUrl()))
+            .cacheControl(CacheControl.noStore()).build();
+      }
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
+    }
+    String contentType = item.getImageContentType() != null ? item.getImageContentType() : "image/jpeg";
+    return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
+        .cacheControl(CacheControl.noStore()).body(item.getImageData());
+  }
+
+  @GetMapping("/experiment-guide/{id}")
+  public ResponseEntity<?> getExperimentGuideImage(@PathVariable Long id) {
+    ExperimentGuideItem item = experimentGuideRepository.findById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "图片不存在"));
     if (item.getImageData() == null || item.getImageData().length == 0) {
       if (StringUtils.hasText(item.getImageUrl())) {

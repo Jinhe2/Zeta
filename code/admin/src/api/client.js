@@ -934,6 +934,38 @@ export const api = {
     return request(`/api/knowledge/protection-logics/${logicDiagramId}/node-items?nodeId=${encodeURIComponent(nodeId)}`)
   },
 
+  listExperimentGuides(scopeType, scopeId) {
+    return request(`/api/admin/experiment-guides/${scopeType}/${scopeId}`)
+  },
+
+  createExperimentGuide(scopeType, scopeId, payload) {
+    return request(`/api/admin/experiment-guides/${scopeType}/${scopeId}`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  updateExperimentGuide(id, payload) {
+    return request(`/api/admin/experiment-guides/items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteExperimentGuide(id) {
+    return request(`/api/admin/experiment-guides/items/${id}`, { method: 'DELETE' })
+  },
+
+  uploadExperimentGuideImage(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return uploadRequest('/api/admin/experiment-guide-images', formData)
+  },
+
+  listKnowledgeExperimentGuides(scopeType, scopeId) {
+    return request(`/api/knowledge/experiment-guides/${scopeType}/${scopeId}`)
+  },
+
   listKnowledgeCognitionDevices(itemId) {
     return request(`/api/knowledge/cabinet-display-items/${itemId}/cognition-devices`)
   },

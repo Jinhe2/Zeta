@@ -4,11 +4,14 @@ import com.zeta.business.auth.AuthService;
 import com.zeta.business.entities.cabinetdisplay.dto.CabinetDisplayItemResponse;
 import com.zeta.business.entities.cognitiondevice.dto.CognitionDeviceResponse;
 import com.zeta.business.entities.devicedisplay.dto.DeviceDisplayItemResponse;
+import com.zeta.business.entities.experimentguide.dto.ExperimentGuideItemStudentResponse;
 import com.zeta.business.entities.logicgroup.dto.LogicGroupDtos.LogicGroupDetailResponse;
 import com.zeta.business.entities.logicgroup.dto.LogicGroupDtos.LogicGroupResponse;
+import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.service.CabinetDisplayItemService;
 import com.zeta.business.service.CognitionDeviceService;
 import com.zeta.business.service.DeviceDisplayItemService;
+import com.zeta.business.service.ExperimentGuideService;
 import com.zeta.business.service.LogicGroupService;
 import com.zeta.screen.baseline.IedBaselineSettingResponse;
 import com.zeta.screen.baseline.IedBaselineSettingService;
@@ -25,6 +28,7 @@ public class KnowledgeStructureController {
     private final CabinetDisplayItemService cabinetDisplayItemService;
     private final IedBaselineSettingService iedBaselineSettingService;
     private final LogicGroupService logicGroupService;
+    private final ExperimentGuideService experimentGuideService;
     private final AuthService authService;
 
     public KnowledgeStructureController(
@@ -34,6 +38,7 @@ public class KnowledgeStructureController {
             CabinetDisplayItemService cabinetDisplayItemService,
             IedBaselineSettingService iedBaselineSettingService,
             LogicGroupService logicGroupService,
+            ExperimentGuideService experimentGuideService,
             AuthService authService) {
         this.knowledgeStructureService = knowledgeStructureService;
         this.deviceDisplayItemService = deviceDisplayItemService;
@@ -41,6 +46,7 @@ public class KnowledgeStructureController {
         this.cabinetDisplayItemService = cabinetDisplayItemService;
         this.iedBaselineSettingService = iedBaselineSettingService;
         this.logicGroupService = logicGroupService;
+        this.experimentGuideService = experimentGuideService;
         this.authService = authService;
     }
 
@@ -136,5 +142,14 @@ public class KnowledgeStructureController {
             @PathVariable Long id) {
         authService.requireUser(authorization);
         return iedBaselineSettingService.listForCognitionDevice(id);
+    }
+
+    @GetMapping("/experiment-guides/{scopeType}/{scopeId}")
+    public List<ExperimentGuideItemStudentResponse> listExperimentGuides(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable SettingListScopeType scopeType,
+            @PathVariable Long scopeId) {
+        authService.requireUser(authorization);
+        return experimentGuideService.listEnabledByScope(scopeType, scopeId);
     }
 }

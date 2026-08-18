@@ -37,6 +37,7 @@ import LogicLearningLogicsPage from './pages/admin/business/logic/LogicLearningL
 import LogicLearningGroupsPage from './pages/admin/business/logic/LogicLearningGroupsPage'
 import LogicLearningNodesPage from './pages/admin/business/logic/LogicLearningNodesPage'
 import LogicNodeItemsPage from './pages/admin/business/logic/LogicNodeItemsPage'
+import ExperimentGuidePage from './pages/admin/business/logic/ExperimentGuidePage'
 import SettingListPage from './pages/admin/business/logic/SettingListPage'
 import SoftPressboardListPage from './pages/admin/business/logic/SoftPressboardListPage'
 import HardPressboardListPage from './pages/admin/business/logic/HardPressboardListPage'
@@ -184,6 +185,8 @@ export default function App() {
               path="logic-learning/logics/:logicDiagramId/nodes/:nodeId/items"
               element={<LogicNodeItemsPage />}
             />
+            <Route path="logic-learning/logics/:logicDiagramId/guide" element={<ExperimentGuidePage scopeType="LOGIC_DIAGRAM" />} />
+            <Route path="logic-learning/groups/:groupId/guide" element={<ExperimentGuidePage scopeType="LOGIC_GROUP" />} />
             <Route path="binding" element={<CabinetBindingPage />} />
             <Route path="display/cabinets/:cabinetId" element={<CabinetDisplayItemsPage />} />
             <Route path="display/cabinet-items/:itemId/cognition-devices" element={<CognitionDevicesPage />} />

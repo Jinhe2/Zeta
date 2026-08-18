@@ -9,6 +9,7 @@ import {
   buildExperimentStartConfirmDialog,
   canStartAfterExperimentPrecheck,
 } from '../../utils/settingCheck'
+import ExperimentGuideDialog from '../../components/ExperimentGuideDialog'
 import './TabletShell.css'
 import '../StudentPages.css'
 
@@ -68,6 +69,10 @@ export default function StudentLogicGroupDetailPage() {
 
   const [experimentDialog, setExperimentDialog] = useState({ open: false, title: '', message: '' })
   const [snapshots, setSnapshots] = useState([])
+
+  const [guideOpen, setGuideOpen] = useState(false)
+  const [guideItems, setGuideItems] = useState([])
+  const [guideLoading, setGuideLoading] = useState(false)
 
   const fromCoach = location.state?.from === 'coach'
   const listState = {
@@ -231,6 +236,25 @@ export default function StudentLogicGroupDetailPage() {
     taskUuidRef.current = null
   }, [clearMonitorTimers, startResultPolling])
 
+  const handleOpenGuide = useCallback(async () => {
+    setGuideLoading(true)
+    setError(null)
+    try {
+      const items = await api.listKnowledgeExperimentGuides('LOGIC_GROUP', Number(groupId))
+      setGuideItems(items)
+      setGuideOpen(true)
+    } catch (err) {
+      setError(err.message || '加载实验引导失败')
+    } finally {
+      setGuideLoading(false)
+    }
+  }, [groupId])
+
+  const closeGuide = useCallback(() => {
+    setGuideOpen(false)
+    setGuideItems([])
+  }, [])
+
   const viewSnapshot = (snapshot) => {
     const meta = typeof snapshot.snapshotJson === 'string'
       ? (() => { try { return JSON.parse(snapshot.snapshotJson) } catch { return {} } })()
@@ -328,9 +352,14 @@ export default function StudentLogicGroupDetailPage() {
                     </button>
                   )
                 ) : (
-                  <button type="button" className="diagram-canvas__trigger-btn" onClick={handleStartExperiment}>
-                    ▶ 开始实验
-                  </button>
+                  <>
+                    <button type="button" className="diagram-canvas__trigger-btn" onClick={handleStartExperiment}>
+                      ▶ 开始实验
+                    </button>
+                    <button type="button" className="diagram-canvas__trigger-btn" onClick={handleOpenGuide} disabled={guideLoading}>
+                      {guideLoading ? '加载中…' : '试验引导'}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -390,6 +419,14 @@ export default function StudentLogicGroupDetailPage() {
             )}
           </div>
         </div>
+      )}
+
+      {guideOpen && (
+        <ExperimentGuideDialog
+          items={guideItems}
+          title={detail?.name}
+          onClose={closeGuide}
+        />
       )}
     </div>
   )

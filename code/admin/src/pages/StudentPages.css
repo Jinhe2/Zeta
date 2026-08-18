@@ -471,6 +471,188 @@
   }
 }
 
+.experiment-guide-dialog {
+  position: fixed;
+  inset: 90px clamp(400px, 33vw, 460px) 28px 28px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.experiment-guide-dialog__panel {
+  width: min(760px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(100, 181, 246, 0.35);
+  border-radius: 10px;
+  background: rgba(13, 20, 34, 0.78);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.experiment-guide-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.experiment-guide-dialog__eyebrow {
+  color: #64b5f6;
+  font-size: 16.56px;
+  font-weight: 700;
+}
+
+.experiment-guide-dialog__header h2 {
+  margin: 4px 0 0;
+  color: #f1f8e9;
+  font-size: 27.6px;
+  letter-spacing: 0;
+}
+
+.experiment-guide-dialog__count {
+  flex-shrink: 0;
+  color: #bbdefb;
+  font-size: 17.94px;
+  font-weight: 700;
+}
+
+.experiment-guide-dialog__image {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 18px 10px;
+  max-height: 46vh;
+  overflow: hidden;
+}
+
+.experiment-guide-dialog__image img {
+  max-width: 100%;
+  max-height: 42vh;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(8, 13, 24, 0.58);
+}
+
+.experiment-guide-dialog__text {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 20px 18px;
+}
+
+.experiment-guide-dialog__text h3 {
+  margin: 0 0 8px;
+  color: #e3f2fd;
+  font-size: 23.46px;
+}
+
+.experiment-guide-dialog__text p {
+  margin: 0;
+  color: #d7e2ea;
+  font-size: 19.32px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.experiment-guide-dialog__setting {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.experiment-guide-dialog__setting .experiment-guide-dialog__text {
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.experiment-guide-dialog__table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0 18px 16px;
+  border: 1px solid rgba(142, 197, 248, 0.25);
+  border-radius: 8px;
+}
+
+.experiment-guide-dialog__table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #dceafa;
+  font-size: 15px;
+}
+
+.experiment-guide-dialog__table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #17304b;
+  color: #fff;
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  white-space: nowrap;
+}
+
+.experiment-guide-dialog__table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.experiment-guide-dialog__empty {
+  text-align: center;
+  color: #90a4ae;
+  padding: 20px;
+}
+
+.experiment-guide-dialog__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(96px, 1fr));
+  gap: 10px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.experiment-guide-dialog__actions button {
+  min-height: 48px;
+  border: 1px solid rgba(100, 181, 246, 0.42);
+  border-radius: 7px;
+  background: rgba(100, 181, 246, 0.18);
+  color: #f1f8e9;
+  font-size: 19.32px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.experiment-guide-dialog__actions button:hover:not(:disabled) {
+  background: rgba(100, 181, 246, 0.28);
+}
+
+.experiment-guide-dialog__actions button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1180px) {
+  .experiment-guide-dialog {
+    inset: 96px 24px 28px;
+  }
+
+  .experiment-guide-dialog__panel {
+    width: 100%;
+  }
+}
+
 .diagram-page__history {
   flex: 1;
   min-height: 0;

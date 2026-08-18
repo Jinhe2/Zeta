@@ -279,6 +279,9 @@ export default function LogicLearningGroupsPage() {
                       <Link className="users-page__link" to={`/admin/logic-learning/groups/${group.id}/wiring`}>
                         试验仪接线
                       </Link>
+                      <Link className="users-page__link" to={`/admin/logic-learning/groups/${group.id}/guide`}>
+                        实验引导
+                      </Link>
                       <button type="button" className="users-page__link users-page__link--danger" onClick={() => remove(group)}>
                         删除
                       </button>

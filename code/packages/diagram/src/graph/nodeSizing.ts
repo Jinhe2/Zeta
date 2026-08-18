@@ -8,6 +8,8 @@ import {
   INPUT_HEIGHT,
   INPUT_WIDE_WIDTH,
   INPUT_WIDTH,
+  LOGIC_HEIGHT,
+  LOGIC_WIDTH,
   OUTPUT_HEIGHT,
   OUTPUT_WIDTH,
   TIMER_HEIGHT,
@@ -62,6 +64,10 @@ function adaptiveOutputWidth(node: GraphNode): number {
   return Math.max(OUTPUT_WIDTH, Math.ceil(textWidth + 28))
 }
 
+function adaptiveLogicWidth(node: GraphNode): number {
+  return Math.max(LOGIC_WIDTH, Math.ceil(visualTextWidth(node.name) + 32))
+}
+
 /** 按 V3 规则计算节点宽高 */
 export function getNodeDimensions(
   node: GraphNode,
@@ -86,6 +92,8 @@ export function getNodeDimensions(
       return { width: TIMER_WIDTH, height: TIMER_HEIGHT }
     case 'output':
       return { width: adaptiveOutputWidth(node), height: OUTPUT_HEIGHT }
+    case 'logic':
+      return { width: adaptiveLogicWidth(node), height: LOGIC_HEIGHT }
     default:
       return { width: INPUT_WIDTH, height: INPUT_HEIGHT }
   }

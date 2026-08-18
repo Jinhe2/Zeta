@@ -1,6 +1,7 @@
 package com.zeta.integration.monitor;
 
 import com.zeta.business.auth.AuthService;
+import com.zeta.business.service.LogicGroupService;
 import com.zeta.integration.queue.ScreenQueueMessage;
 import com.zeta.integration.queue.ScreenQueueProperties;
 import com.zeta.screen.baseline.IedBaselineSettingService;
@@ -22,18 +23,21 @@ public class MonitorCommandController {
   private final StringRedisTemplate redisTemplate;
   private final ScreenQueueProperties queueProperties;
   private final IedBaselineSettingService iedBaselineSettingService;
+  private final LogicGroupService logicGroupService;
 
   public MonitorCommandController(
       MonitorCommandService commandService,
       AuthService authService,
       StringRedisTemplate redisTemplate,
       ScreenQueueProperties queueProperties,
-      IedBaselineSettingService iedBaselineSettingService) {
+      IedBaselineSettingService iedBaselineSettingService,
+      LogicGroupService logicGroupService) {
     this.commandService = commandService;
     this.authService = authService;
     this.redisTemplate = redisTemplate;
     this.queueProperties = queueProperties;
     this.iedBaselineSettingService = iedBaselineSettingService;
+    this.logicGroupService = logicGroupService;
   }
 
   /** 触发压板状态读取 */
@@ -207,6 +211,87 @@ public class MonitorCommandController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 taskUuid");
           }
           commandService.abortLogicMonitor(taskUuid);
+          return java.util.Collections.singletonMap("status", "sent");
+        }
+      default:
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不支持的 action: " + action);
+    }
+  }
+
+  /** 组合监视命令（start/heartbeat/end/abort）。 */
+  @PostMapping("/commands/logic-group-monitor")
+  public Map<String, Object> logicGroupMonitorAction(
+      @RequestHeader("Authorization") String authorization, @RequestBody Map<String, Object> body) {
+    com.zeta.business.entities.user.User user = authService.requireUser(authorization);
+
+    String action = String.valueOf(body.getOrDefault("action", "start"));
+
+    switch (action) {
+      case "start":
+        {
+          Object groupIdObj = body.get("groupId");
+          if (!(groupIdObj instanceof Number)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 groupId 参数");
+          }
+          Long groupId = ((Number) groupIdObj).longValue();
+          LogicGroupService.ExperimentTarget target =
+              logicGroupService.resolveForExperiment(groupId);
+          CompletableFuture<ScreenQueueMessage> future =
+              commandService.startLogicGroupMonitor(
+                  target.getIedName(), target.getLogicIds(), user.getId(), user.getUsername(), groupId);
+          try {
+            ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);
+            if (Boolean.FALSE.equals(response.getSuccess())) {
+              throw new ResponseStatusException(
+                  HttpStatus.INTERNAL_SERVER_ERROR, "monitord 返回错误: " + response.getErrorMessage());
+            }
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("req_id", response.getReqId());
+            result.put("success", response.getSuccess());
+            if (response.getData() != null) {
+              result.putAll(response.getData());
+            }
+            return result;
+          } catch (java.util.concurrent.TimeoutException e) {
+            throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+          } catch (java.util.concurrent.ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof java.util.concurrent.TimeoutException) {
+              throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "等待 monitord 响应超时");
+            }
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "命令执行失败: " + (cause != null ? cause.getMessage() : e.getMessage()));
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "命令被中断");
+          }
+        }
+      case "heartbeat":
+        {
+          String taskUuid = (String) body.get("taskUuid");
+          if (taskUuid == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 taskUuid");
+          }
+          commandService.sendLogicGroupMonitorHeartbeat(taskUuid);
+          return java.util.Collections.singletonMap("status", "sent");
+        }
+      case "end":
+        {
+          String taskUuid = (String) body.get("taskUuid");
+          if (taskUuid == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 taskUuid");
+          }
+          commandService.endLogicGroupMonitor(taskUuid);
+          return java.util.Collections.singletonMap("status", "sent");
+        }
+      case "abort":
+        {
+          String taskUuid = (String) body.get("taskUuid");
+          if (taskUuid == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 taskUuid");
+          }
+          commandService.abortLogicGroupMonitor(taskUuid);
           return java.util.Collections.singletonMap("status", "sent");
         }
       default:

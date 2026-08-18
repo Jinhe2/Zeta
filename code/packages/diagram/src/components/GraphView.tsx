@@ -15,6 +15,7 @@ import InputNode from '../nodes/InputNode'
 import GateNode from '../nodes/GateNode'
 import TimerNode from '../nodes/TimerNode'
 import OutputNode from '../nodes/OutputNode'
+import LogicNode from '../nodes/LogicNode'
 import ElkEdge from './ElkEdge'
 import { runElkPipeline, type GraphData } from '../graph'
 import type { ReactFlowLayoutResult } from '../graph/toReactFlow'
@@ -25,6 +26,7 @@ const nodeTypes = {
   gate: GateNode,
   timer: TimerNode,
   output: OutputNode,
+  logic: LogicNode,
 }
 
 const edgeTypes = {

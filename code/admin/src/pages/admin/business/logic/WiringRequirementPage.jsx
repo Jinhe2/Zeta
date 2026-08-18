@@ -40,9 +40,10 @@ function toId(value) {
   return value === '' || value == null ? null : Number(value)
 }
 
-export default function WiringRequirementPage() {
-  const { logicDiagramId } = useParams()
-  const scopeId = Number(logicDiagramId)
+export default function WiringRequirementPage({ scopeType = 'LOGIC_DIAGRAM' }) {
+  const params = useParams()
+  const rawId = scopeType === 'LOGIC_GROUP' ? params.groupId : params.logicDiagramId
+  const scopeId = Number(rawId)
   const [data, setData] = useState(null)
   const [categories, setCategories] = useState([])
   const [strips, setStrips] = useState([])
@@ -68,7 +69,7 @@ export default function WiringRequirementPage() {
     setLoading(true)
     setError('')
     try {
-      const result = await api.getWiringRequirement(scopeId)
+      const result = await api.getWiringRequirement(scopeType, scopeId)
       applyData(result)
       if (result.cabinetId) {
         const [stripData, terminalData] = await Promise.all([
@@ -83,7 +84,7 @@ export default function WiringRequirementPage() {
     } finally {
       setLoading(false)
     }
-  }, [applyData, scopeId])
+  }, [applyData, scopeId, scopeType])
 
   useEffect(() => { load() }, [load])
 
@@ -176,7 +177,7 @@ export default function WiringRequirementPage() {
           terminalNId: toId(group.n),
         })) : [],
       }))
-      const result = await api.saveWiringRequirement(scopeId, payload)
+      const result = await api.saveWiringRequirement(scopeType, scopeId, payload)
       applyData(result)
       setMessage('试验仪接线要求已保存')
     } catch (err) {
@@ -184,7 +185,7 @@ export default function WiringRequirementPage() {
     } finally { setWorking(false) }
   }
 
-  if (!logicDiagramId || Number.isNaN(scopeId)) return <Navigate to="/admin/logic-learning" replace />
+  if (!rawId || Number.isNaN(scopeId)) return <Navigate to="/admin/logic-learning" replace />
 
   const renderTerminalSelect = (value, onChange, ariaLabel, disabled) => (
     <select value={value} onChange={(event) => onChange(event.target.value)} aria-label={ariaLabel} disabled={disabled}>

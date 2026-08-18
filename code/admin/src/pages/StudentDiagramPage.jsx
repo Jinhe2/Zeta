@@ -747,7 +747,14 @@ export default function StudentDiagramPage() {
           <button
             type="button"
             className="tablet-shell__back"
-            onClick={() => navigate('/student/modes/panorama', { state: listState })}
+            onClick={() => {
+              const groupId = location.state?.groupId
+              if (groupId != null) {
+                navigate(`/student/modes/panorama/groups/${groupId}`, { state: listState })
+              } else {
+                navigate('/student/modes/panorama', { state: listState })
+              }
+            }}
           >
             ← 返回上级
           </button>

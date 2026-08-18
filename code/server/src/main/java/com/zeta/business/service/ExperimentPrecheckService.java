@@ -55,13 +55,26 @@ public class ExperimentPrecheckService {
   }
 
   public ExperimentPrecheckResponse check(Long logicDiagramId) {
-    ResolvedSettingList settings = settingListService.resolveForLogic(logicDiagramId);
-    ResolvedSoftPressboardList pressboards =
-        softPressboardListService.resolveForLogic(logicDiagramId);
-    ResolvedHardPressboardList hardPressboards =
-        hardPressboardListService.resolveForLogic(logicDiagramId);
-    ResolvedWiringRequirement wiring =
-        wiringRequirementService.resolveForLogic(logicDiagramId);
+    return runCheck(
+        settingListService.resolveForLogic(logicDiagramId),
+        softPressboardListService.resolveForLogic(logicDiagramId),
+        hardPressboardListService.resolveForLogic(logicDiagramId),
+        wiringRequirementService.resolveForLogic(logicDiagramId));
+  }
+
+  public ExperimentPrecheckResponse checkForGroup(Long groupId) {
+    return runCheck(
+        settingListService.resolveForGroup(groupId),
+        softPressboardListService.resolveForGroup(groupId),
+        hardPressboardListService.resolveForGroup(groupId),
+        wiringRequirementService.resolveForGroup(groupId));
+  }
+
+  private ExperimentPrecheckResponse runCheck(
+      ResolvedSettingList settings,
+      ResolvedSoftPressboardList pressboards,
+      ResolvedHardPressboardList hardPressboards,
+      ResolvedWiringRequirement wiring) {
     boolean checkSettings = settingComparisonService.hasEnabledItems(settings);
     boolean checkPressboards = softPressboardComparisonService.hasEnabledItems(pressboards);
     boolean checkHardPressboards = hardPressboardComparisonService.hasEnabledItems(hardPressboards);

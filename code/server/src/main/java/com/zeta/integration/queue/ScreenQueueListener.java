@@ -81,7 +81,8 @@ public class ScreenQueueListener {
                 command.equals("summon_terminal_status") ||
                 command.equals("summon_ied_comm_status") ||
                 command.equals("compare_baseline_settings") ||
-                command.equals("summon_logic_monitor"))) {
+                command.equals("summon_logic_monitor") ||
+                command.equals("summon_logic_group_monitor"))) {
             monitorCommandService.handleResponse(message);
         } else if ("summon_wiring_status".equals(command)) {
             log.info("Received wiring status sub-response req_id={} success={} error={}",

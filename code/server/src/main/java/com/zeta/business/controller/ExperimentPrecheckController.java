@@ -29,4 +29,16 @@ public class ExperimentPrecheckController {
     }
     return service.check(((Number) id).longValue());
   }
+
+  @PostMapping("/api/experiment-prechecks/group")
+  public ExperimentPrecheckResponse checkForGroup(
+      @RequestHeader(value = "Authorization", required = false) String authorization,
+      @RequestBody Map<String, Object> body) {
+    authService.requireUser(authorization);
+    Object id = body.get("groupId");
+    if (!(id instanceof Number)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 groupId 参数");
+    }
+    return service.checkForGroup(((Number) id).longValue());
+  }
 }

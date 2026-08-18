@@ -30,7 +30,7 @@ public class MonitorTask {
     @Column(name = "ied_device_id", nullable = false)
     private Long iedDeviceId;
 
-    @Column(name = "logic_diagram_id", nullable = false)
+    @Column(name = "logic_diagram_id")
     private Long logicDiagramId;
 
     @Enumerated(EnumType.STRING)

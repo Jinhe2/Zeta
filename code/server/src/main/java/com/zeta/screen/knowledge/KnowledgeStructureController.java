@@ -4,9 +4,12 @@ import com.zeta.business.auth.AuthService;
 import com.zeta.business.entities.cabinetdisplay.dto.CabinetDisplayItemResponse;
 import com.zeta.business.entities.cognitiondevice.dto.CognitionDeviceResponse;
 import com.zeta.business.entities.devicedisplay.dto.DeviceDisplayItemResponse;
+import com.zeta.business.entities.logicgroup.dto.LogicGroupDtos.LogicGroupDetailResponse;
+import com.zeta.business.entities.logicgroup.dto.LogicGroupDtos.LogicGroupResponse;
 import com.zeta.business.service.CabinetDisplayItemService;
 import com.zeta.business.service.CognitionDeviceService;
 import com.zeta.business.service.DeviceDisplayItemService;
+import com.zeta.business.service.LogicGroupService;
 import com.zeta.screen.baseline.IedBaselineSettingResponse;
 import com.zeta.screen.baseline.IedBaselineSettingService;
 import java.util.List;
@@ -21,6 +24,7 @@ public class KnowledgeStructureController {
     private final CognitionDeviceService cognitionDeviceService;
     private final CabinetDisplayItemService cabinetDisplayItemService;
     private final IedBaselineSettingService iedBaselineSettingService;
+    private final LogicGroupService logicGroupService;
     private final AuthService authService;
 
     public KnowledgeStructureController(
@@ -29,12 +33,14 @@ public class KnowledgeStructureController {
             CognitionDeviceService cognitionDeviceService,
             CabinetDisplayItemService cabinetDisplayItemService,
             IedBaselineSettingService iedBaselineSettingService,
+            LogicGroupService logicGroupService,
             AuthService authService) {
         this.knowledgeStructureService = knowledgeStructureService;
         this.deviceDisplayItemService = deviceDisplayItemService;
         this.cognitionDeviceService = cognitionDeviceService;
         this.cabinetDisplayItemService = cabinetDisplayItemService;
         this.iedBaselineSettingService = iedBaselineSettingService;
+        this.logicGroupService = logicGroupService;
         this.authService = authService;
     }
 
@@ -82,6 +88,22 @@ public class KnowledgeStructureController {
             @PathVariable Long id) {
         authService.requireUser(authorization);
         return knowledgeStructureService.listProtectionLogicsByDevice(id);
+    }
+
+    @GetMapping("/devices/{id}/logic-groups")
+    public List<LogicGroupResponse> listLogicGroups(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable Long id) {
+        authService.requireUser(authorization);
+        return logicGroupService.listKnowledgeByDevice(id);
+    }
+
+    @GetMapping("/logic-groups/{groupId}")
+    public LogicGroupDetailResponse logicGroupDetail(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable Long groupId) {
+        authService.requireUser(authorization);
+        return logicGroupService.getDetail(groupId);
     }
 
     @GetMapping("/cabinets/{id}/display-items")

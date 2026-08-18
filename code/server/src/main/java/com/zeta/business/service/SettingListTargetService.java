@@ -1,5 +1,7 @@
 package com.zeta.business.service;
 
+import com.zeta.business.entities.logicgroup.LogicGroup;
+import com.zeta.business.entities.logicgroup.LogicGroupRepository;
 import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.screen.ieddevice.Device;
 import com.zeta.screen.ieddevice.DeviceRepository;
@@ -16,11 +18,15 @@ import org.springframework.web.server.ResponseStatusException;
 public class SettingListTargetService {
   private final DeviceRepository deviceRepository;
   private final ProtectionLogicRepository logicRepository;
+  private final LogicGroupRepository logicGroupRepository;
 
   public SettingListTargetService(
-      DeviceRepository deviceRepository, ProtectionLogicRepository logicRepository) {
+      DeviceRepository deviceRepository,
+      ProtectionLogicRepository logicRepository,
+      LogicGroupRepository logicGroupRepository) {
     this.deviceRepository = deviceRepository;
     this.logicRepository = logicRepository;
+    this.logicGroupRepository = logicGroupRepository;
   }
 
   @Transactional(value = "screenTransactionManager", readOnly = true)
@@ -31,6 +37,18 @@ public class SettingListTargetService {
               .findById(scopeId)
               .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "装置不存在"));
       return new Target(scopeType, scopeId, device.getName(), device.getId(), device.getIedName(),
+          device.getCabinet().getId());
+    }
+    if (scopeType == SettingListScopeType.LOGIC_GROUP) {
+      LogicGroup group =
+          logicGroupRepository
+              .findById(scopeId)
+              .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "组合逻辑不存在"));
+      Device device =
+          deviceRepository
+              .findById(group.getIedDeviceId())
+              .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "装置不存在"));
+      return new Target(scopeType, scopeId, group.getName(), device.getId(), device.getIedName(),
           device.getCabinet().getId());
     }
     ProtectionLogic logic =

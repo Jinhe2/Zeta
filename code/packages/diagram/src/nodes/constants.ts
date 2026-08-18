@@ -13,6 +13,8 @@ export const OUTPUT_WIDTH = 180
 export const INPUT_HEIGHT = 32
 export const TIMER_HEIGHT = 32
 export const OUTPUT_HEIGHT = 32
+export const LOGIC_WIDTH = 200
+export const LOGIC_HEIGHT = 40
 export const WIDE_LABEL_LEN = 14
 
 /** ELK 同层 nodeNode 默认间距 */

@@ -1,6 +1,7 @@
 package com.zeta.business.controller;
 
 import com.zeta.business.auth.AuthService;
+import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.entities.user.UserRole;
 import com.zeta.business.entities.wiringrequirement.WiringRequirementDtos.*;
 import com.zeta.business.service.WiringRequirementService;
@@ -18,21 +19,23 @@ public class WiringRequirementController {
     this.service = service;
   }
 
-  @GetMapping("/{logicDiagramId}")
+  @GetMapping("/{scopeType}/{scopeId}")
   public GetResponse get(
       @RequestHeader(value = "Authorization", required = false) String authorization,
-      @PathVariable Long logicDiagramId) {
+      @PathVariable SettingListScopeType scopeType,
+      @PathVariable Long scopeId) {
     requireAdmin(authorization);
-    return service.get(logicDiagramId);
+    return service.get(scopeType, scopeId);
   }
 
-  @PutMapping("/{logicDiagramId}")
+  @PutMapping("/{scopeType}/{scopeId}")
   public GetResponse replace(
       @RequestHeader(value = "Authorization", required = false) String authorization,
-      @PathVariable Long logicDiagramId,
+      @PathVariable SettingListScopeType scopeType,
+      @PathVariable Long scopeId,
       @Valid @RequestBody SaveRequest request) {
     requireAdmin(authorization);
-    return service.replace(logicDiagramId, request);
+    return service.replace(scopeType, scopeId, request);
   }
 
   private void requireAdmin(String authorization) {

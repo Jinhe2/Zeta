@@ -4,6 +4,7 @@ import com.zeta.business.entities.monitor.MonitorTask;
 import com.zeta.business.entities.monitor.MonitorTaskRepository;
 import com.zeta.business.entities.snapshot.LogicSnapshot;
 import com.zeta.business.entities.snapshot.LogicSnapshotRepository;
+import com.zeta.business.service.LogicGroupSnapshotService;
 import com.zeta.integration.queue.ScreenQueueMessage;
 import com.zeta.integration.queue.ScreenQueuePublisher;
 import java.time.Instant;
@@ -25,6 +26,7 @@ public class MonitorCommandService {
   private final ScreenQueuePublisher publisher;
   private final LogicSnapshotRepository logicSnapshotRepository;
   private final MonitorTaskRepository monitorTaskRepository;
+  private final LogicGroupSnapshotService logicGroupSnapshotService;
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
   /** req_id → 等待响应的 Future */
@@ -38,6 +40,9 @@ public class MonitorCommandService {
   /** 实验监视完成响应缓存（taskUuid → response data） */
   private final ConcurrentHashMap<String, Map<String, Object>> monitorTaskResults =
       new ConcurrentHashMap<>();
+
+  /** 组合监视任务上下文（req_id → groupId） */
+  private final ConcurrentHashMap<String, Long> groupTaskContext = new ConcurrentHashMap<>();
 
   /** 统计数据 */
   private final java.util.concurrent.atomic.AtomicLong totalSent =
@@ -59,10 +64,12 @@ public class MonitorCommandService {
   public MonitorCommandService(
       Optional<ScreenQueuePublisher> publisher,
       LogicSnapshotRepository logicSnapshotRepository,
-      MonitorTaskRepository monitorTaskRepository) {
+      MonitorTaskRepository monitorTaskRepository,
+      LogicGroupSnapshotService logicGroupSnapshotService) {
     this.publisher = publisher.orElse(null);
     this.logicSnapshotRepository = logicSnapshotRepository;
     this.monitorTaskRepository = monitorTaskRepository;
+    this.logicGroupSnapshotService = logicGroupSnapshotService;
   }
 
   /** 发送压板状态读取命令。 */
@@ -156,6 +163,43 @@ public class MonitorCommandService {
     fireAndForget("summon_logic_monitor", data);
   }
 
+  // ── 组合监视 summon_logic_group_monitor ────────────────────────────────
+
+  /** 启动组合监视任务。返回 accepted 响应（含 req_id 作为 taskUuid）。 */
+  public CompletableFuture<ScreenQueueMessage> startLogicGroupMonitor(
+      String iedName, List<String> logicIds, Long userId, String username, Long groupId) {
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("action", "start");
+    data.put("ied_name", iedName);
+    data.put("logic_ids", logicIds);
+
+    return sendCommand("summon_logic_group_monitor", String.valueOf(userId), data, null, groupId);
+  }
+
+  /** 发送心跳（fire-and-forget）。 */
+  public void sendLogicGroupMonitorHeartbeat(String taskUuid) {
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("action", "heartbeat");
+    data.put("task_uuid", taskUuid);
+    fireAndForget("summon_logic_group_monitor", data);
+  }
+
+  /** 正常结束组合监视任务。 */
+  public void endLogicGroupMonitor(String taskUuid) {
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("action", "end");
+    data.put("task_uuid", taskUuid);
+    fireAndForget("summon_logic_group_monitor", data);
+  }
+
+  /** 立即中止组合监视任务。 */
+  public void abortLogicGroupMonitor(String taskUuid) {
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("action", "abort");
+    data.put("task_uuid", taskUuid);
+    fireAndForget("summon_logic_group_monitor", data);
+  }
+
   /** 获取实验监视任务的完成结果。 */
   public Map<String, Object> getMonitorTaskResult(String taskUuid) {
     return monitorTaskResults.get(taskUuid);
@@ -203,6 +247,34 @@ public class MonitorCommandService {
         userIdStr);
   }
 
+  /** 从 monitor_task 读取 v3.0 组合断面，创建 logic_group_snapshot 记录到业务库。 */
+  private void createLogicGroupSnapshotFromTask(
+      Long taskId, String userIdStr, Long groupId, Boolean experimentPassed) {
+    MonitorTask task = monitorTaskRepository.findById(taskId).orElse(null);
+    if (task == null) {
+      log.warn("monitor_task {} not found, skip group snapshot creation", taskId);
+      return;
+    }
+    if (task.getSnapshotJson() == null || task.getSnapshotJson().isEmpty()) {
+      log.warn("monitor_task {} has no snapshot_json, skip group snapshot", taskId);
+      return;
+    }
+    Long userId = null;
+    if (userIdStr != null) {
+      try {
+        userId = Long.parseLong(userIdStr);
+      } catch (NumberFormatException ignored) {
+      }
+    }
+    if (userId == null) {
+      log.warn("logic group snapshot: invalid userId {}", userIdStr);
+      return;
+    }
+    logicGroupSnapshotService.create(
+        userId, groupId, task.getSnapshotJson(), task.getTotalTransitions(), experimentPassed);
+    log.info("Created logic_group_snapshot groupId={} from monitor_task={}", groupId, taskId);
+  }
+
   /** 处理 monitord 返回的响应消息。 */
   public void handleResponse(ScreenQueueMessage message) {
     String reqId = message.getReqId();
@@ -242,6 +314,42 @@ public class MonitorCommandService {
             } catch (Exception e) {
               log.error(
                   "Failed to create logic_snapshot from monitor_task {}: {}",
+                  snapshotPath,
+                  e.getMessage());
+            }
+          }
+        }
+      }
+    }
+
+    // 组合监视完成响应：按 req_id 缓存结果，成功时创建 logic_group_snapshot
+    if ("summon_logic_group_monitor".equals(command) && data != null) {
+      String result = String.valueOf(data.getOrDefault("result", ""));
+      if ("success".equals(result) || "failed".equals(result)) {
+        if (message.getError() != null) {
+          data.put("error", message.getError());
+        }
+        if (message.getErrorMessage() != null) {
+          data.put("error_message", message.getErrorMessage());
+        }
+        monitorTaskResults.put(reqId, data);
+        log.info("Cached logic group monitor result for req_id={} result={}", reqId, result);
+
+        if ("success".equals(result)) {
+          String snapshotPath = String.valueOf(data.getOrDefault("snapshot_path", ""));
+          String userIdStr = message.getUserData();
+          Long groupId = groupTaskContext.remove(reqId);
+          if (!snapshotPath.isEmpty() && !snapshotPath.equals("null")
+              && userIdStr != null && groupId != null) {
+            Object experimentPassedObj = data.get("experiment_passed");
+            Boolean experimentPassed =
+                experimentPassedObj instanceof Boolean ? (Boolean) experimentPassedObj : null;
+            try {
+              createLogicGroupSnapshotFromTask(
+                  Long.parseLong(snapshotPath), userIdStr, groupId, experimentPassed);
+            } catch (Exception e) {
+              log.error(
+                  "Failed to create logic_group_snapshot from monitor_task {}: {}",
                   snapshotPath,
                   e.getMessage());
             }
@@ -348,6 +456,11 @@ public class MonitorCommandService {
 
   private CompletableFuture<ScreenQueueMessage> sendCommand(
       String command, String userData, Map<String, Object> data, String cachePrefix) {
+    return sendCommand(command, userData, data, cachePrefix, null);
+  }
+
+  private CompletableFuture<ScreenQueueMessage> sendCommand(
+      String command, String userData, Map<String, Object> data, String cachePrefix, Long groupId) {
     if (publisher == null) {
       CompletableFuture<ScreenQueueMessage> future = new CompletableFuture<>();
       future.completeExceptionally(new RuntimeException("Redis 队列未启用，无法发送命令"));
@@ -359,6 +472,9 @@ public class MonitorCommandService {
 
     CompletableFuture<ScreenQueueMessage> future = new CompletableFuture<>();
     pendingRequests.put(reqId, future);
+    if (groupId != null) {
+      groupTaskContext.put(reqId, groupId);
+    }
 
     // 超时处理
     scheduler.schedule(

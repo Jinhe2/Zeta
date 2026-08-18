@@ -166,3 +166,22 @@
   color: #78909c;
   font-size: 19.32px;
 }
+
+.panorama-list__mode-card {
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  text-align: left;
+  font: inherit;
+}
+.panorama-list__mode-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 58px;
+  height: 58px;
+  border: 1px solid rgba(142, 197, 248, 0.48);
+  border-radius: 12px;
+  background: rgba(94, 179, 255, 0.12);
+  color: #8ec5f8;
+  font-size: 30px;
+}

@@ -880,3 +880,19 @@
     min-height: 180px;
   }
 }
+
+.logic-group { padding: 20px; color: #c0d3e4; }
+.logic-group__toolbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+.logic-group__hint { margin: 0 0 8px; color: #90a4ae; font-size: 15px; }
+.logic-group__status { color: #ffd54f; font-size: 13px; margin-right: 10px; }
+.logic-group__overall { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 13px; }
+.logic-group__overall--ok { background: rgba(102, 187, 106, 0.16); color: #81c784; }
+.logic-group__overall--error { background: rgba(239, 83, 80, 0.16); color: #ef9a9a; }
+.logic-group__actions { display: flex; gap: 10px; }
+.logic-group__canvas { margin-bottom: 20px; border: 1px solid rgba(124, 77, 255, 0.25); border-radius: 8px; background: #12182a; overflow: hidden; }
+.logic-group__graph { min-height: 340px; }
+.logic-group__graph .v4-flow-pane { min-height: 320px; }
+.logic-group__history { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.logic-group__history h3 { margin: 0 0 10px; color: #c0d3e4; font-size: 16px; }
+.logic-group__history ul { list-style: none; margin: 0; padding: 0; }
+.logic-group__history li { margin-bottom: 6px; }

@@ -1,5 +1,5 @@
 /** Graph JSON 数据格式（V4 输入） */
-export type GraphNodeType = 'input' | 'gate' | 'timer' | 'output'
+export type GraphNodeType = 'input' | 'gate' | 'timer' | 'output' | 'logic'
 
 export interface GraphNode {
   id: string

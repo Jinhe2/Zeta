@@ -31,22 +31,23 @@ public class WiringRequirementService {
   }
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
-  public GetResponse get(Long logicDiagramId) {
-    Target target = targetService.require(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
-    Resolved resolved = load(logicDiagramId);
-    return new GetResponse(logicDiagramId, target.getScopeName(), target.getCabinetId(),
+  public GetResponse get(SettingListScopeType scopeType, Long scopeId) {
+    Target target = targetService.require(scopeType, scopeId);
+    Resolved resolved = load(scopeType, scopeId);
+    return new GetResponse(scopeType, scopeId, target.getScopeName(), target.getCabinetId(),
         Arrays.asList(
             categoryResponse(WiringCategory.VOLTAGE, resolved),
             categoryResponse(WiringCategory.CURRENT, resolved)));
   }
 
   @Transactional("businessTransactionManager")
-  public GetResponse replace(Long logicDiagramId, SaveRequest request) {
-    Target target = targetService.require(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
+  public GetResponse replace(SettingListScopeType scopeType, Long scopeId, SaveRequest request) {
+    Target target = targetService.require(scopeType, scopeId);
     List<BuiltConfig> built = validateAndBuild(target.getCabinetId(), request);
-    deleteAll(logicDiagramId);
+    deleteAll(scopeType, scopeId);
     for (BuiltConfig item : built) {
-      item.config.setLogicDiagramId(logicDiagramId);
+      item.config.setScopeType(scopeType);
+      item.config.setScopeId(scopeId);
       WiringRequirementConfig saved = configRepository.save(item.config);
       for (WiringRequirementGroup group : item.groups) {
         group.setConfigId(saved.getId());
@@ -54,19 +55,30 @@ public class WiringRequirementService {
       }
     }
     configRepository.flush();
-    return get(logicDiagramId);
+    return get(scopeType, scopeId);
   }
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
-  public ResolvedWiringRequirement resolveForLogic(Long logicDiagramId) {
-    Target target = targetService.require(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
-    Resolved resolved = load(logicDiagramId);
+  public ResolvedWiringRequirement resolveForScope(SettingListScopeType scopeType, Long scopeId) {
+    Target target = targetService.require(scopeType, scopeId);
+    Resolved resolved = load(scopeType, scopeId);
     return new ResolvedWiringRequirement(target, resolved.configs, resolved.groupsByConfigId,
         resolved.terminalsById);
   }
 
-  private Resolved load(Long logicDiagramId) {
-    List<WiringRequirementConfig> configs = configRepository.findByLogicDiagramIdOrderByIdAsc(logicDiagramId);
+  @Transactional(value = "businessTransactionManager", readOnly = true)
+  public ResolvedWiringRequirement resolveForLogic(Long logicDiagramId) {
+    return resolveForScope(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
+  }
+
+  @Transactional(value = "businessTransactionManager", readOnly = true)
+  public ResolvedWiringRequirement resolveForGroup(Long groupId) {
+    return resolveForScope(SettingListScopeType.LOGIC_GROUP, groupId);
+  }
+
+  private Resolved load(SettingListScopeType scopeType, Long scopeId) {
+    List<WiringRequirementConfig> configs =
+        configRepository.findByScopeTypeAndScopeIdOrderByIdAsc(scopeType, scopeId);
     Map<Long, List<WiringRequirementGroup>> groupsByConfigId = new LinkedHashMap<>();
     Set<Long> terminalIds = new LinkedHashSet<>();
     for (WiringRequirementConfig config : configs) {
@@ -217,12 +229,13 @@ public class WiringRequirementService {
     }
   }
 
-  private void deleteAll(Long logicDiagramId) {
-    List<WiringRequirementConfig> existing = configRepository.findByLogicDiagramIdOrderByIdAsc(logicDiagramId);
+  private void deleteAll(SettingListScopeType scopeType, Long scopeId) {
+    List<WiringRequirementConfig> existing =
+        configRepository.findByScopeTypeAndScopeIdOrderByIdAsc(scopeType, scopeId);
     for (WiringRequirementConfig config : existing) {
       groupRepository.deleteByConfigId(config.getId());
     }
-    configRepository.deleteByLogicDiagramId(logicDiagramId);
+    configRepository.deleteByScopeTypeAndScopeId(scopeType, scopeId);
     configRepository.flush();
   }
 

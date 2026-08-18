@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../api/client'
@@ -15,6 +16,8 @@ export default function PanoramaListPage() {
   const [cabinet, setCabinet] = useState(null)
   const [devices, setDevices] = useState([])
   const [selectedDeviceId, setSelectedDeviceId] = useState(location.state?.deviceId ?? null)
+  const [groups, setGroups] = useState([])
+  const [mode, setMode] = useState(null) // null | 'basic' | 'group'
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -25,11 +28,16 @@ export default function PanoramaListPage() {
   const activeDevice = devices.find((device) => device.id === selectedDeviceId)
     ?? (devices.length === 1 ? devices[0] : null)
   const list = activeDevice?.protectionLogics ?? []
+  const hasGroups = groups.length > 0
   const introText = hasDeviceSelection && !activeDevice
     ? `当前屏柜${cabinet?.name ? `「${cabinet.name}」` : ''}有多个装置配置了逻辑图，请先选择装置。`
-    : fromCoach
-      ? '选择保护逻辑，学习逻辑框图与动作原理。'
-      : '选择保护逻辑，进入逻辑框图全景浏览。'
+    : mode === null && hasGroups
+      ? '请选择学习方式：组合逻辑学习（多个基础逻辑拼接）或基础逻辑学习（单个逻辑框图）。'
+      : mode === 'group'
+        ? '选择组合逻辑，学习多个基础逻辑的拼接与联动。'
+        : fromCoach
+          ? '选择保护逻辑，学习逻辑框图与动作原理。'
+          : '选择保护逻辑，进入逻辑框图全景浏览。'
   const diagramState = {
     ...(fromCoach ? { from: 'coach', section: 'logic' } : {}),
     ...(activeDevice ? { deviceId: activeDevice.id } : {}),
@@ -77,7 +85,32 @@ export default function PanoramaListPage() {
     }
   }, [selectedCabinetId, session?.role])
 
+  // 选中装置后加载该装置下的组合逻辑
+  useEffect(() => {
+    if (!activeDevice) {
+      setGroups([])
+      setMode(null)
+      return undefined
+    }
+    let cancelled = false
+    setMode(null)
+    api.listKnowledgeLogicGroups(activeDevice.id)
+      .then((g) => {
+        if (!cancelled) setGroups(Array.isArray(g) ? g : [])
+      })
+      .catch(() => {
+        if (!cancelled) setGroups([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activeDevice?.id])
+
   const goBack = () => {
+    if (mode !== null) {
+      setMode(null)
+      return
+    }
     if (hasDeviceSelection && activeDevice) {
       setSelectedDeviceId(null)
       return
@@ -136,6 +169,50 @@ export default function PanoramaListPage() {
                     </span>
                   </div>
                 </button>
+              ))
+            ) : mode === null && hasGroups ? (
+              <>
+                <button
+                  type="button"
+                  className="panorama-list__card panorama-list__mode-card"
+                  onClick={() => setMode('group')}
+                >
+                  <div className="panorama-list__mode-icon" aria-hidden="true">⧉</div>
+                  <div>
+                    <h3>组合逻辑学习</h3>
+                    <p>多个基础逻辑拼接，学习联动与组合实验</p>
+                    <span className="panorama-list__device-count">{groups.length} 个组合</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className="panorama-list__card panorama-list__mode-card"
+                  onClick={() => setMode('basic')}
+                >
+                  <div className="panorama-list__mode-icon" aria-hidden="true">▦</div>
+                  <div>
+                    <h3>基础逻辑学习</h3>
+                    <p>单个逻辑框图，学习动作原理</p>
+                    <span className="panorama-list__device-count">{list.length} 张逻辑图</span>
+                  </div>
+                </button>
+              </>
+            ) : mode === 'group' ? (
+              groups.map((group) => (
+                <Link
+                  key={group.id}
+                  to={`/student/modes/panorama/groups/${group.id}`}
+                  state={diagramState}
+                  className="panorama-list__card"
+                >
+                  <div className="panorama-list__card-header">
+                    <h3>{group.name}</h3>
+                  </div>
+                  <p>{group.memberCount} 个基础逻辑</p>
+                  <div className="panorama-list__meta">
+                    <span className="panorama-list__meta-item">组合逻辑</span>
+                  </div>
+                </Link>
               ))
             ) : list.length === 0 ? (
               <p className="panorama-list__empty">当前屏柜暂无保护逻辑配置</p>

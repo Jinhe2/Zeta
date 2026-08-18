@@ -1,5 +1,7 @@
 export { default as ZetaGraphView } from './ZetaGraphView'
 export type { ZetaGraphViewProps } from './ZetaGraphView'
+export { default as LogicGroupView } from './LogicGroupView'
+export type { LogicGroupViewProps, LogicGroupItem } from './LogicGroupView'
 export { adaptZetaConfig } from './adaptZetaConfig'
 export type { ZetaConfig } from './adaptZetaConfig'
 export type { GraphData, GraphNode, GraphEdge } from './graph/types'

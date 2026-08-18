@@ -13,7 +13,9 @@ function displayValueType(valueType) {
 
 export default function SettingListPage({ scopeType }) {
   const params = useParams()
-  const rawId = scopeType === 'IED_DEVICE' ? params.deviceId : params.logicDiagramId
+  const rawId = scopeType === 'IED_DEVICE'
+    ? params.deviceId
+    : scopeType === 'LOGIC_GROUP' ? params.groupId : params.logicDiagramId
   const scopeId = Number(rawId)
   const [data, setData] = useState(null)
   const [items, setItems] = useState([])
@@ -133,7 +135,7 @@ export default function SettingListPage({ scopeType }) {
     setError('')
     try {
       applyData(await api.clearSettingList(scopeType, scopeId))
-      setMessage(scopeType === 'LOGIC_DIAGRAM' ? '独立清单已清空，当前自动使用装置级清单。' : '装置级清单已清空。')
+      setMessage(scopeType !== 'IED_DEVICE' ? '独立清单已清空，当前自动使用装置级清单。' : '装置级清单已清空。')
     } catch (err) {
       setError(err.message || '清空定值清单失败')
     } finally {
@@ -178,7 +180,7 @@ export default function SettingListPage({ scopeType }) {
 
   if (!rawId || Number.isNaN(scopeId)) return <Navigate to="/admin/logic-learning" replace />
   const disabled = Boolean(working)
-  const isFallback = scopeType === 'LOGIC_DIAGRAM' && data?.fallbackToDevice
+  const isFallback = (scopeType === 'LOGIC_DIAGRAM' || scopeType === 'LOGIC_GROUP') && data?.fallbackToDevice
 
   return (
     <div className="users-page setting-list-page">
@@ -199,7 +201,7 @@ export default function SettingListPage({ scopeType }) {
       {error && <div className="users-page__error">{error}</div>}
       {message && <div className="users-page__message">{message}</div>}
       {isFallback && <div className="setting-list-page__fallback">当前未配置独立清单，实验时将使用装置级清单（{data.effectiveItems.length} 项）。召唤或导入并保存后将启用独立清单。</div>}
-      {!isFallback && scopeType === 'LOGIC_DIAGRAM' && data?.configuredItems.length > 0 && <div className="setting-list-page__active">当前使用逻辑框图独立清单。</div>}
+      {!isFallback && scopeType !== 'IED_DEVICE' && data?.configuredItems.length > 0 && <div className="setting-list-page__active">当前使用独立清单。</div>}
 
       {loading ? <p className="users-page__loading">加载中…</p> : (
         <div className="users-page__table-wrap">

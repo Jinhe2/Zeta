@@ -91,7 +91,10 @@ export default function LogicLearningDevicesPage() {
                     <td>{device.logicCount}</td>
                     <td className="users-page__actions">
                       <Link className="users-page__link" to={`/admin/logic-learning/devices/${device.id}/logics`}>
-                        逻辑框图
+                        基础逻辑
+                      </Link>
+                      <Link className="users-page__link" to={`/admin/logic-learning/devices/${device.id}/logic-groups`}>
+                        组合逻辑
                       </Link>
                       <Link className="users-page__link" to={`/admin/logic-learning/devices/${device.id}/settings`}>
                         装置定值清单

@@ -284,6 +284,40 @@ export const api = {
     return request(`/api/knowledge/devices/${deviceId}/protection-logics`)
   },
 
+  listLogicGroups(deviceId) {
+    return request(`/api/admin/logic-learning/devices/${deviceId}/logic-groups`)
+  },
+
+  createLogicGroup(deviceId, payload) {
+    return request(`/api/admin/logic-learning/devices/${deviceId}/logic-groups`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  getLogicGroup(groupId) {
+    return request(`/api/admin/logic-learning/groups/${groupId}`)
+  },
+
+  updateLogicGroup(groupId, payload) {
+    return request(`/api/admin/logic-learning/groups/${groupId}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  deleteLogicGroup(groupId) {
+    return request(`/api/admin/logic-learning/groups/${groupId}`, { method: 'DELETE' })
+  },
+
+  listKnowledgeLogicGroups(deviceId) {
+    return request(`/api/knowledge/devices/${deviceId}/logic-groups`)
+  },
+
+  getKnowledgeLogicGroup(groupId) {
+    return request(`/api/knowledge/logic-groups/${groupId}`)
+  },
+
   updateLogicLearningSortOrder(logicDiagramId, sortOrder) {
     return request(`/api/admin/logic-learning/logics/${logicDiagramId}/sort-order`, {
       method: 'PUT',
@@ -483,12 +517,12 @@ export const api = {
     return downloadRequest(`/api/admin/hard-pressboard-lists/${scopeType}/${scopeId}/export`)
   },
 
-  getWiringRequirement(logicDiagramId) {
-    return request(`/api/admin/wiring-requirements/${logicDiagramId}`)
+  getWiringRequirement(scopeType, scopeId) {
+    return request(`/api/admin/wiring-requirements/${scopeType}/${scopeId}`)
   },
 
-  saveWiringRequirement(logicDiagramId, categories) {
-    return request(`/api/admin/wiring-requirements/${logicDiagramId}`, {
+  saveWiringRequirement(scopeType, scopeId, categories) {
+    return request(`/api/admin/wiring-requirements/${scopeType}/${scopeId}`, {
       method: 'PUT',
       body: JSON.stringify({ categories }),
     })
@@ -498,6 +532,13 @@ export const api = {
     return request('/api/experiment-prechecks', {
       method: 'POST',
       body: JSON.stringify({ logicDiagramId }),
+    })
+  },
+
+  checkExperimentPreconditionsForGroup(groupId) {
+    return request('/api/experiment-prechecks/group', {
+      method: 'POST',
+      body: JSON.stringify({ groupId }),
     })
   },
 
@@ -541,6 +582,42 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ action: 'abort', taskUuid }),
     })
+  },
+
+  startLogicGroupMonitor(groupId) {
+    return request('/api/monitor/commands/logic-group-monitor', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'start', groupId }),
+    })
+  },
+
+  sendLogicGroupMonitorHeartbeat(taskUuid) {
+    return request('/api/monitor/commands/logic-group-monitor', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'heartbeat', taskUuid }),
+    })
+  },
+
+  endLogicGroupMonitor(taskUuid) {
+    return request('/api/monitor/commands/logic-group-monitor', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'end', taskUuid }),
+    })
+  },
+
+  abortLogicGroupMonitor(taskUuid) {
+    return request('/api/monitor/commands/logic-group-monitor', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'abort', taskUuid }),
+    })
+  },
+
+  listLogicGroupSnapshots(groupId) {
+    return request(`/api/logic-group-snapshots?groupId=${groupId}`)
+  },
+
+  getLogicGroupSnapshot(id) {
+    return request(`/api/logic-group-snapshots/${id}`)
   },
 
   getMonitorTaskResult(taskUuid) {

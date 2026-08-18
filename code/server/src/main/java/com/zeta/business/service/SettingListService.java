@@ -35,7 +35,9 @@ public class SettingListService {
     SettingListScopeType effectiveType = configured.isEmpty() ? null : scopeType;
     Long effectiveId = configured.isEmpty() ? null : scopeId;
     boolean fallback = false;
-    if (scopeType == SettingListScopeType.LOGIC_DIAGRAM && configured.isEmpty()) {
+    if ((scopeType == SettingListScopeType.LOGIC_DIAGRAM
+            || scopeType == SettingListScopeType.LOGIC_GROUP)
+        && configured.isEmpty()) {
       effective = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId());
       if (!effective.isEmpty()) {
         effectiveType = SettingListScopeType.IED_DEVICE;
@@ -83,6 +85,20 @@ public class SettingListService {
     List<SettingListItem> items = find(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
     SettingListScopeType type = SettingListScopeType.LOGIC_DIAGRAM;
     Long id = logicDiagramId;
+    if (items.isEmpty()) {
+      items = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId());
+      type = items.isEmpty() ? null : SettingListScopeType.IED_DEVICE;
+      id = items.isEmpty() ? null : target.getIedDeviceId();
+    }
+    return new ResolvedSettingList(target, type, id, items);
+  }
+
+  @Transactional(value = "businessTransactionManager", readOnly = true)
+  public ResolvedSettingList resolveForGroup(Long groupId) {
+    Target target = targetService.require(SettingListScopeType.LOGIC_GROUP, groupId);
+    List<SettingListItem> items = find(SettingListScopeType.LOGIC_GROUP, groupId);
+    SettingListScopeType type = SettingListScopeType.LOGIC_GROUP;
+    Long id = groupId;
     if (items.isEmpty()) {
       items = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId());
       type = items.isEmpty() ? null : SettingListScopeType.IED_DEVICE;

@@ -1,5 +1,6 @@
 package com.zeta.business.entities.wiringrequirement;
 
+import com.zeta.business.entities.settinglist.SettingListScopeType;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
@@ -43,7 +44,8 @@ public final class WiringRequirementDtos {
   @Getter
   @AllArgsConstructor
   public static class GetResponse {
-    private Long logicDiagramId;
+    private SettingListScopeType scopeType;
+    private Long scopeId;
     private String scopeName;
     private Long cabinetId;
     private List<CategoryResponse> categories;

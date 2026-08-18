@@ -42,6 +42,18 @@
   padding: 0 8px;
 }
 
+.v4-node--logic {
+  background: #7e57c2;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+}
+
+.v4-node--logic .v4-node__text {
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .v4-node--section-ok {
   border: 3px solid #00e676;
   box-shadow:

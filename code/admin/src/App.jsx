@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import StudentHomePage from './pages/StudentHomePage'
 import StudentDiagramPage from './pages/StudentDiagramPage'
 import PanoramaListPage from './pages/student/PanoramaListPage'
+import StudentLogicGroupDetailPage from './pages/student/StudentLogicGroupDetailPage'
 import StudentPlaceholderPage from './pages/student/StudentPlaceholderPage'
 import ProfilePage from './pages/student/ProfilePage'
 import MistakesPage from './pages/student/MistakesPage'
@@ -33,6 +34,7 @@ import DrawingCognitionItemsPage from './pages/admin/business/drawing/DrawingCog
 import LogicLearningPage from './pages/admin/business/logic/LogicLearningPage'
 import LogicLearningDevicesPage from './pages/admin/business/logic/LogicLearningDevicesPage'
 import LogicLearningLogicsPage from './pages/admin/business/logic/LogicLearningLogicsPage'
+import LogicLearningGroupsPage from './pages/admin/business/logic/LogicLearningGroupsPage'
 import LogicLearningNodesPage from './pages/admin/business/logic/LogicLearningNodesPage'
 import LogicNodeItemsPage from './pages/admin/business/logic/LogicNodeItemsPage'
 import SettingListPage from './pages/admin/business/logic/SettingListPage'
@@ -119,6 +121,7 @@ export default function App() {
             <Route path="modes/coach/accident" element={<StudentPlaceholderPage title="事故处理" description="学习事故处理流程与案例分析，功能开发中。" />} />
             <Route path="modes/exam" element={<StudentPlaceholderPage title="测评模式" description="模拟测评考核，功能开发中。" />} />
             <Route path="modes/panorama" element={<PanoramaListPage />} />
+            <Route path="modes/panorama/groups/:groupId" element={<StudentLogicGroupDetailPage />} />
             <Route path="modes/panorama/:id" element={<StudentDiagramPage />} />
             <Route path="settings/password" element={<ChangePasswordPage />} />
             <Route path="profile" element={<ProfilePage />} />
@@ -164,6 +167,7 @@ export default function App() {
             <Route path="sampling-tests/cabinets/:cabinetId" element={<SamplingItemsPage />} />
             <Route path="logic-learning/cabinets/:cabinetId/devices" element={<LogicLearningDevicesPage />} />
             <Route path="logic-learning/devices/:deviceId/logics" element={<LogicLearningLogicsPage />} />
+            <Route path="logic-learning/devices/:deviceId/logic-groups" element={<LogicLearningGroupsPage />} />
             <Route path="logic-learning/devices/:deviceId/settings" element={<SettingListPage scopeType="IED_DEVICE" />} />
             <Route path="logic-learning/logics/:logicDiagramId/settings" element={<SettingListPage scopeType="LOGIC_DIAGRAM" />} />
             <Route path="logic-learning/devices/:deviceId/soft-pressboards" element={<SoftPressboardListPage scopeType="IED_DEVICE" />} />
@@ -171,6 +175,10 @@ export default function App() {
             <Route path="logic-learning/devices/:deviceId/hard-pressboards" element={<HardPressboardListPage scopeType="IED_DEVICE" />} />
             <Route path="logic-learning/logics/:logicDiagramId/hard-pressboards" element={<HardPressboardListPage scopeType="LOGIC_DIAGRAM" />} />
             <Route path="logic-learning/logics/:logicDiagramId/wiring" element={<WiringRequirementPage />} />
+            <Route path="logic-learning/groups/:groupId/settings" element={<SettingListPage scopeType="LOGIC_GROUP" />} />
+            <Route path="logic-learning/groups/:groupId/soft-pressboards" element={<SoftPressboardListPage scopeType="LOGIC_GROUP" />} />
+            <Route path="logic-learning/groups/:groupId/hard-pressboards" element={<HardPressboardListPage scopeType="LOGIC_GROUP" />} />
+            <Route path="logic-learning/groups/:groupId/wiring" element={<WiringRequirementPage scopeType="LOGIC_GROUP" />} />
             <Route path="logic-learning/logics/:logicDiagramId/nodes" element={<LogicLearningNodesPage />} />
             <Route
               path="logic-learning/logics/:logicDiagramId/nodes/:nodeId/items"

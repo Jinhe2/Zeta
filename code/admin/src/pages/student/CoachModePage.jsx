@@ -110,14 +110,6 @@ const COACH_ENTRIES = [
     desc: '掌握保护回路、控制回路与信号回路',
     route: '/student/modes/coach/circuit',
   },
-  {
-    id: 'accident',
-    label: '事故处理',
-    Icon: IconCabinet,
-    desc: '学习事故处理流程与案例分析',
-    route: '/student/modes/coach/accident',
-    disabled: true,
-  },
 ]
 
 export default function CoachModePage() {

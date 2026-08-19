@@ -20,35 +20,15 @@ const RESOURCE_ITEMS = [
 
 const BOTTOM_MENUS = [
   { id: "resources", label: "资源库", expandable: true },
-  { id: "mistakes", label: "错题本", path: "/student/mistakes" },
-  { id: "tasks", label: "任务中心", path: "/student/tasks" },
 ];
 
 const MODE_ENTRIES = [
   {
     id: "coach",
-    title: "教练模式",
+    title: "开始学习",
     desc: "分步引导，循序渐进掌握操作要点",
     path: "/student/modes/coach",
     accent: "coach",
-  },
-  {
-    id: "exam",
-    title: "测评模式",
-    desc: "模拟考核，检验学习成果",
-    path: "/student/modes/exam",
-    accent: "exam",
-    disabled: true,
-    statusLabel: "功能开发中",
-  },
-  {
-    id: "panorama",
-    title: "全景模式",
-    desc: "逻辑全景与保护框图综合浏览",
-    path: "/student/modes/panorama",
-    accent: "panorama",
-    disabled: true,
-    statusLabel: "功能开发中",
   },
 ];
 

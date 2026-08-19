@@ -60,7 +60,6 @@ export default function TabletHome() {
 
   const displayName = session?.displayName || "学员";
   const levelLabel = "初级学员 Lv.3";
-  const progress = 62;
 
   const handleLogout = async () => {
     await logout();
@@ -115,14 +114,6 @@ export default function TabletHome() {
             onClick={() => navigate("/student/profile")}
           >
             个人中心
-          </button>
-          <button
-            type="button"
-            className="tablet-home__icon-btn info-block"
-            aria-label="设置"
-            onClick={() => navigate("/student/settings/password")}
-          >
-            ⚙
           </button>
           <button
             type="button"

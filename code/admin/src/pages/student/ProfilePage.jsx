@@ -1,14 +1,19 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../auth/AuthContext'
 import StudentSubpageBar from './StudentSubpageBar'
 import './StudentSubpageLayout.css'
 import './ProfilePage.css'
 
 const TABS = [
-  { id: 'learning', label: '学习情况' },
-  { id: 'history', label: '历史记录' },
-  { id: 'scores', label: '学习成绩' },
-  { id: 'honors', label: '荣誉成就' },
+  { id: 'account', label: '个人信息' },
 ]
+
+const ROLE_LABELS = {
+  student: '学员',
+  teacher: '教师',
+  admin: '管理员',
+}
 
 const MOCK_HISTORY = [
   { id: 1, deviceName: '线路保护装置', title: '教练模式 · 线路保护基础', time: '2026-05-28 14:30', duration: '42 分钟' },
@@ -35,6 +40,49 @@ const MOCK_HONORS = [
   { id: 3, title: '逻辑大师', desc: '全景模式浏览全部保护逻辑', earned: false },
   { id: 4, title: '满分挑战', desc: '单次测评获得满分', earned: false },
 ]
+
+function AccountTab({ session, onChangePassword }) {
+  const displayName = session?.displayName || '学员'
+  const username = session?.username || '未获取'
+  const roleLabel = ROLE_LABELS[session?.role] || session?.role || '学员'
+
+  const infoItems = [
+    { label: '姓名', value: displayName },
+    { label: '登录账号', value: username },
+    { label: '用户角色', value: roleLabel },
+  ]
+
+  return (
+    <div className="profile-panel">
+      <section className="profile-account-card">
+        <div className="profile-account-card__avatar" aria-hidden="true">
+          {displayName.slice(0, 1)}
+        </div>
+        <div className="profile-account-card__summary">
+          <span className="profile-account-card__eyebrow">当前登录学员</span>
+          <h2>{displayName}</h2>
+          <p>在个人中心查看账号基础信息，并维护登录密码。</p>
+        </div>
+        <button
+          type="button"
+          className="profile-account-card__action"
+          onClick={onChangePassword}
+        >
+          修改密码
+        </button>
+      </section>
+
+      <section className="profile-info-grid" aria-label="个人信息">
+        {infoItems.map((item) => (
+          <div key={item.label} className="profile-info-item">
+            <span className="profile-info-item__label">{item.label}</span>
+            <span className="profile-info-item__value">{item.value}</span>
+          </div>
+        ))}
+      </section>
+    </div>
+  )
+}
 
 function LearningTab() {
   return (
@@ -147,6 +195,7 @@ function HonorsTab() {
 }
 
 const TAB_PANELS = {
+  account: AccountTab,
   learning: LearningTab,
   history: HistoryTab,
   scores: ScoresTab,
@@ -154,7 +203,9 @@ const TAB_PANELS = {
 }
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState('learning')
+  const { session } = useAuth()
+  const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState('account')
   const ActivePanel = TAB_PANELS[activeTab]
 
   return (
@@ -176,7 +227,10 @@ export default function ProfilePage() {
         </nav>
 
         <main className="student-subpage__content">
-          <ActivePanel />
+          <ActivePanel
+            session={session}
+            onChangePassword={() => navigate('/student/settings/password')}
+          />
         </main>
       </div>
     </div>

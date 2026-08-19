@@ -56,7 +56,8 @@ public class UserController {
   public List<UserSummaryResponse> list(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @RequestParam("role") UserRole role) {
-    authService.requireRole(authorization, UserRole.ADMIN);
+    User operator = authService.requireUser(authorization);
+    requireUserManagementPermission(operator, role);
     return userService.listUsers(role);
   }
 
@@ -64,15 +65,18 @@ public class UserController {
   public UserSummaryResponse detail(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable Long id) {
-    authService.requireRole(authorization, UserRole.ADMIN);
-    return userService.getUser(id);
+    User operator = authService.requireUser(authorization);
+    UserSummaryResponse user = userService.getUser(id);
+    requireUserManagementPermission(operator, user.getRole());
+    return user;
   }
 
   @PostMapping
   public UserSummaryResponse create(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @Valid @RequestBody CreateUserRequest request) {
-    authService.requireRole(authorization, UserRole.ADMIN);
+    User operator = authService.requireUser(authorization);
+    requireUserManagementPermission(operator, request.getRole());
     return userService.createUser(request);
   }
 
@@ -80,7 +84,8 @@ public class UserController {
   public BatchImportStudentsResponse batchImportStudents(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @Valid @RequestBody BatchImportStudentsRequest request) {
-    authService.requireRole(authorization, UserRole.ADMIN);
+    User operator = authService.requireUser(authorization);
+    requireUserManagementPermission(operator, UserRole.STUDENT);
     return userService.batchImportStudents(request);
   }
 
@@ -89,7 +94,9 @@ public class UserController {
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable Long id,
       @Valid @RequestBody UpdateUserRequest request) {
-    authService.requireRole(authorization, UserRole.ADMIN);
+    User operator = authService.requireUser(authorization);
+    requireUserManagementPermission(operator, request.getRole());
+    requireTargetRole(id, request.getRole());
     return userService.updateUser(id, request);
   }
 
@@ -98,7 +105,9 @@ public class UserController {
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable Long id,
       @Valid @RequestBody ResetPasswordRequest request) {
-    authService.requireRole(authorization, UserRole.ADMIN);
+    User operator = authService.requireUser(authorization);
+    UserSummaryResponse user = userService.getUser(id);
+    requireUserManagementPermission(operator, user.getRole());
     userService.resetPassword(id, request.getPassword());
   }
 
@@ -106,7 +115,28 @@ public class UserController {
   public void delete(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable Long id) {
-    User operator = authService.requireRole(authorization, UserRole.ADMIN);
+    User operator = authService.requireUser(authorization);
+    UserSummaryResponse user = userService.getUser(id);
+    requireUserManagementPermission(operator, user.getRole());
     userService.deleteUser(id, operator);
+  }
+
+  private void requireTargetRole(Long id, UserRole expectedRole) {
+    UserSummaryResponse user = userService.getUser(id);
+    if (user.getRole() != expectedRole) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST, "不支持变更用户角色，请在对应角色管理中操作");
+    }
+  }
+
+  private void requireUserManagementPermission(User operator, UserRole targetRole) {
+    if (operator.getRole() == UserRole.ADMIN) {
+      return;
+    }
+    if (operator.getRole() == UserRole.TEACHER && targetRole == UserRole.STUDENT) {
+      return;
+    }
+    throw new org.springframework.web.server.ResponseStatusException(
+        org.springframework.http.HttpStatus.FORBIDDEN, "教师只能管理学员账号");
   }
 }

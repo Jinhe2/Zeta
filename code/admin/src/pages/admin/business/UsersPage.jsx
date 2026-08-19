@@ -82,9 +82,9 @@ function parseStudentCsv(text) {
   return students
 }
 
-export default function UsersPage() {
+export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/students' }) {
   const { roleKey } = useParams()
-  const role = ROLE_KEY_MAP[roleKey]
+  const role = fixedRole || ROLE_KEY_MAP[roleKey]
   const { session } = useAuth()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -244,7 +244,7 @@ export default function UsersPage() {
   const isSelf = (user) => user.username === session?.username
 
   if (!role) {
-    return <Navigate to="/admin/users/students" replace />
+    return <Navigate to={invalidRedirect} replace />
   }
 
   const config = ROLE_CONFIG[role]

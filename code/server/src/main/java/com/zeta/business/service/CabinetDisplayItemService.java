@@ -81,7 +81,10 @@ public class CabinetDisplayItemService {
         item.setTitle(request.getTitle().trim());
         applyImageData(item, request.getImageId(), request.getImageUrl());
         item.setContent(request.getContent().trim());
-        item.setSortOrder(request.getSortOrder());
+        item.setSortOrder(SortOrderHelper.resolveForCreate(
+                request.getSortOrder(),
+                displayItemRepository.findByScreenCabinetIdOrderBySortOrderAscIdAsc(screenCabinetId),
+                CabinetDisplayItem::getSortOrder));
         item.setEnabled(request.getEnabled() == null || request.getEnabled());
         item.setCreatedAt(Instant.now());
         return toAdminResponse(displayItemRepository.save(item));
@@ -95,7 +98,13 @@ public class CabinetDisplayItemService {
         item.setTitle(request.getTitle().trim());
         applyImageData(item, request.getImageId(), request.getImageUrl());
         item.setContent(request.getContent().trim());
-        item.setSortOrder(request.getSortOrder());
+        item.setSortOrder(SortOrderHelper.resolveForUpdate(
+                request.getSortOrder(),
+                item.getSortOrder(),
+                displayItemRepository.findByScreenCabinetIdOrderBySortOrderAscIdAsc(item.getScreenCabinetId()),
+                CabinetDisplayItem::getSortOrder,
+                CabinetDisplayItem::getId,
+                item.getId()));
         item.setEnabled(request.getEnabled());
 
         CabinetDisplayItem saved = displayItemRepository.save(item);

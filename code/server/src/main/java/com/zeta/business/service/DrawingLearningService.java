@@ -80,7 +80,10 @@ public class DrawingLearningService {
         group.setScreenCabinetId(cabinetId);
         group.setDrawingType(request.getDrawingType());
         group.setName(request.getName().trim());
-        group.setSortOrder(request.getSortOrder());
+        group.setSortOrder(SortOrderHelper.resolveForCreate(
+                request.getSortOrder(),
+                groupRepository.findByScreenCabinetIdOrderByDrawingTypeAscSortOrderAscIdAsc(cabinetId),
+                DrawingGroup::getSortOrder));
         group.setEnabled(request.getEnabled() == null || request.getEnabled());
         group.setCreatedAt(Instant.now());
         return toAdminGroupResponse(groupRepository.save(group));
@@ -96,7 +99,13 @@ public class DrawingLearningService {
         DrawingGroup group = requireGroup(id);
         group.setDrawingType(request.getDrawingType());
         group.setName(request.getName().trim());
-        group.setSortOrder(request.getSortOrder());
+        group.setSortOrder(SortOrderHelper.resolveForUpdate(
+                request.getSortOrder(),
+                group.getSortOrder(),
+                groupRepository.findByScreenCabinetIdOrderByDrawingTypeAscSortOrderAscIdAsc(group.getScreenCabinetId()),
+                DrawingGroup::getSortOrder,
+                DrawingGroup::getId,
+                group.getId()));
         group.setEnabled(request.getEnabled());
         return toAdminGroupResponse(groupRepository.save(group));
     }
@@ -129,7 +138,10 @@ public class DrawingLearningService {
         page.setDrawingGroupId(groupId);
         page.setTitle(request.getTitle().trim());
         applyImageData(page, request.getImageId(), request.getImageUrl());
-        page.setSortOrder(request.getSortOrder());
+        page.setSortOrder(SortOrderHelper.resolveForCreate(
+                request.getSortOrder(),
+                pageRepository.findByDrawingGroupIdOrderBySortOrderAscIdAsc(groupId),
+                DrawingPage::getSortOrder));
         page.setEnabled(request.getEnabled() == null || request.getEnabled());
         page.setCreatedAt(Instant.now());
         return toAdminPageResponse(pageRepository.save(page));
@@ -146,7 +158,13 @@ public class DrawingLearningService {
         String previousImageUrl = page.getImageUrl();
         page.setTitle(request.getTitle().trim());
         applyImageData(page, request.getImageId(), request.getImageUrl());
-        page.setSortOrder(request.getSortOrder());
+        page.setSortOrder(SortOrderHelper.resolveForUpdate(
+                request.getSortOrder(),
+                page.getSortOrder(),
+                pageRepository.findByDrawingGroupIdOrderBySortOrderAscIdAsc(page.getDrawingGroupId()),
+                DrawingPage::getSortOrder,
+                DrawingPage::getId,
+                page.getId()));
         page.setEnabled(request.getEnabled());
         DrawingPage saved = pageRepository.save(page);
         if (!Objects.equals(previousImageUrl, page.getImageUrl())) {
@@ -183,7 +201,10 @@ public class DrawingLearningService {
         item.setTopPercent(request.getTopPercent());
         item.setWidthPercent(request.getWidthPercent());
         item.setHeightPercent(request.getHeightPercent());
-        item.setSortOrder(request.getSortOrder());
+        item.setSortOrder(SortOrderHelper.resolveForCreate(
+                request.getSortOrder(),
+                itemRepository.findByDrawingPageIdOrderBySortOrderAscIdAsc(pageId),
+                DrawingCognitionItem::getSortOrder));
         item.setEnabled(request.getEnabled() == null || request.getEnabled());
         item.setCreatedAt(Instant.now());
         return toItemResponse(itemRepository.save(item));
@@ -199,7 +220,13 @@ public class DrawingLearningService {
         item.setTopPercent(request.getTopPercent());
         item.setWidthPercent(request.getWidthPercent());
         item.setHeightPercent(request.getHeightPercent());
-        item.setSortOrder(request.getSortOrder());
+        item.setSortOrder(SortOrderHelper.resolveForUpdate(
+                request.getSortOrder(),
+                item.getSortOrder(),
+                itemRepository.findByDrawingPageIdOrderBySortOrderAscIdAsc(item.getDrawingPageId()),
+                DrawingCognitionItem::getSortOrder,
+                DrawingCognitionItem::getId,
+                item.getId()));
         item.setEnabled(request.getEnabled());
         return toItemResponse(itemRepository.save(item));
     }

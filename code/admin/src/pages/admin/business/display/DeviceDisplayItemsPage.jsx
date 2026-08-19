@@ -6,6 +6,7 @@ import CabinetImageUploadField from '../../../../components/CabinetImageUploadFi
 import CognitionVideoUploadField from '../../../../components/CognitionVideoUploadField'
 import ImageRegionEditor from '../../../../components/ImageRegionEditor'
 import { DEFAULT_REGION, normalizeRegion } from '../../../../utils/imageRegionUtils'
+import { normalizeSortOrder } from '../../../../utils/sortOrder'
 import '../UsersPage.css'
 import './DeviceDisplayItemsPage.css'
 
@@ -21,7 +22,7 @@ const EMPTY_CREATE = {
   widthPercent: null,
   heightPercent: null,
   content: '',
-  sortOrder: 0,
+  sortOrder: '',
   enabled: true,
   terminalOperation: { terminalStripId: '', terminals: [] },
 }
@@ -189,7 +190,7 @@ export default function DeviceDisplayItemsPage() {
     imageUrl: '',
     hasImage: false,
     content: '',
-    sortOrder: 0,
+    sortOrder: '',
     enabled: true,
     leftPercent: null,
     topPercent: null,
@@ -262,7 +263,7 @@ export default function DeviceDisplayItemsPage() {
       delete payload.hasImage
       await api.createCognitionDeviceDisplayItem(cognitionDeviceIdNum, {
         ...payload,
-        sortOrder: Number(createForm.sortOrder),
+        sortOrder: normalizeSortOrder(createForm.sortOrder),
       })
       setShowCreate(false)
       setCreateForm(EMPTY_CREATE)
@@ -317,7 +318,7 @@ export default function DeviceDisplayItemsPage() {
       delete payload.hasImage
       await api.updateDeviceDisplayItem(editingItem.id, {
         ...payload,
-        sortOrder: Number(editForm.sortOrder),
+        sortOrder: normalizeSortOrder(editForm.sortOrder),
       })
       setEditingItem(null)
       setImageVersion(Date.now())
@@ -573,6 +574,7 @@ export default function DeviceDisplayItemsPage() {
               <input
                 type="number"
                 value={createForm.sortOrder}
+                placeholder="不填则自动排到末尾"
                 onChange={(e) => setCreateForm({ ...createForm, sortOrder: e.target.value })}
               />
             </label>
@@ -671,6 +673,7 @@ export default function DeviceDisplayItemsPage() {
               <input
                 type="number"
                 value={editForm.sortOrder}
+                placeholder="不填则保持原排序"
                 onChange={(e) => setEditForm({ ...editForm, sortOrder: e.target.value })}
               />
             </label>

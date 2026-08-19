@@ -19,8 +19,6 @@ public class CreateDrawingPageRequest {
 
   @Size(max = 512, message = "图片地址过长")
   private String imageUrl;
-
-  @NotNull(message = "请指定排序值")
   private Integer sortOrder;
 
   private Boolean enabled = true;

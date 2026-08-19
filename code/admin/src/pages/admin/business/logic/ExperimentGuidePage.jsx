@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api, imageUrl } from '../../../../api/client'
 import CabinetImageUploadField from '../../../../components/CabinetImageUploadField'
+import { normalizeSortOrder } from '../../../../utils/sortOrder'
 import '../UsersPage.css'
 import '../display/DeviceDisplayItemsPage.css'
 import './LogicLearningPage.css'
@@ -14,7 +15,7 @@ const EMPTY_FORM = {
   imageUrl: '',
   hasImage: false,
   content: '',
-  sortOrder: 0,
+  sortOrder: '',
   enabled: true,
 }
 
@@ -133,7 +134,7 @@ export default function ExperimentGuidePage({ scopeType }) {
       delete payload.hasImage
       await api.createExperimentGuide(scopeType, scopeId, {
         ...payload,
-        sortOrder: Number(createForm.sortOrder),
+        sortOrder: normalizeSortOrder(createForm.sortOrder),
       })
       setShowCreate(false)
       setCreateForm(EMPTY_FORM)
@@ -173,7 +174,7 @@ export default function ExperimentGuidePage({ scopeType }) {
       delete payload.hasImage
       await api.updateExperimentGuide(editingItem.id, {
         ...payload,
-        sortOrder: Number(editForm.sortOrder),
+        sortOrder: normalizeSortOrder(editForm.sortOrder),
       })
       setEditingItem(null)
       setImageVersion(Date.now())
@@ -262,6 +263,7 @@ export default function ExperimentGuidePage({ scopeType }) {
             <input
               type="number"
               value={form.sortOrder}
+              placeholder="不填则自动排到末尾"
               onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
             />
           </label>

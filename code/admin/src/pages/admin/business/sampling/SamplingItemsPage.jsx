@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { api, imageUrl, videoUrl } from '../../../../api/client'
 import CabinetImageUploadField from '../../../../components/CabinetImageUploadField'
 import CognitionVideoUploadField from '../../../../components/CognitionVideoUploadField'
+import { normalizeSortOrder } from '../../../../utils/sortOrder'
 import '../UsersPage.css'
 import './SamplingItemsPage.css'
 
@@ -14,7 +15,7 @@ function emptyChannels() {
 }
 
 function emptyForm() {
-  return { title: '', mediaType: 'IMAGE', imageId: null, imageUrl: '', videoPath: '', content: '', sortOrder: 0, enabled: true, channels: emptyChannels() }
+  return { title: '', mediaType: 'IMAGE', imageId: null, imageUrl: '', videoPath: '', content: '', sortOrder: '', enabled: true, channels: emptyChannels() }
 }
 
 function itemToForm(item) {
@@ -102,7 +103,7 @@ export default function SamplingItemsPage() {
     imageUrl: form.imageUrl,
     videoPath: form.videoPath,
     content: form.content,
-    sortOrder: Number(form.sortOrder) || 0,
+    sortOrder: normalizeSortOrder(form.sortOrder),
     enabled: form.enabled,
     channels: form.mediaType === 'SAMPLING_CONFIGURATION' ? form.channels.map((channel) => ({
       outputCode: channel.outputCode,
@@ -150,7 +151,7 @@ export default function SamplingItemsPage() {
         })}
       </tbody></table>}
       <label>说明文字<textarea rows={6} required value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} /></label>
-      <label>排序<input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} /></label>
+      <label>排序<input type="number" value={form.sortOrder} placeholder="不填则自动排到末尾" onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} /></label>
       <label className="users-page__checkbox"><input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />启用</label>
       {form.mediaType === 'SAMPLING_CONFIGURATION' && <p>已选端子：{form.channels.filter((channel) => channel.terminalId).map((channel) => `${channel.outputCode}=${terminalById.get(Number(channel.terminalId))?.terminalLabel || channel.terminalId}`).join('，') || '无'}</p>}
       <div className="users-page__dialog-actions"><button type="button" className="users-page__btn" onClick={closeDialog}>取消</button><button type="submit" className="users-page__btn users-page__btn--primary" disabled={saving}>{saving ? '保存中…' : '保存'}</button></div>

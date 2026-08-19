@@ -122,7 +122,10 @@ public class LogicNodeCognitionService {
         validateCognitionContent(item);
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
                 request.getWidthPercent(), request.getHeightPercent());
-        item.setSortOrder(request.getSortOrder());
+        item.setSortOrder(SortOrderHelper.resolveForCreate(
+                request.getSortOrder(),
+                itemRepository.findByLogicDiagramIdAndNodeIdOrderBySortOrderAscIdAsc(logicDiagramId, node.getNodeId()),
+                LogicNodeCognitionItem::getSortOrder));
         item.setEnabled(request.getEnabled() == null || request.getEnabled());
         item.setCreatedAt(Instant.now());
         return toAdminResponse(itemRepository.save(item));
@@ -144,7 +147,13 @@ public class LogicNodeCognitionService {
         validateCognitionContent(item);
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
                 request.getWidthPercent(), request.getHeightPercent());
-        item.setSortOrder(request.getSortOrder());
+        item.setSortOrder(SortOrderHelper.resolveForUpdate(
+                request.getSortOrder(),
+                item.getSortOrder(),
+                itemRepository.findByLogicDiagramIdAndNodeIdOrderBySortOrderAscIdAsc(item.getLogicDiagramId(), item.getNodeId()),
+                LogicNodeCognitionItem::getSortOrder,
+                LogicNodeCognitionItem::getId,
+                item.getId()));
         item.setEnabled(request.getEnabled());
 
         LogicNodeCognitionItem saved = itemRepository.save(item);

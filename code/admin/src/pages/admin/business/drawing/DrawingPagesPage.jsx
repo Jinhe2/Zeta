@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api, imageUrl } from '../../../../api/client'
 import CabinetImageUploadField from '../../../../components/CabinetImageUploadField'
+import { normalizeSortOrder } from '../../../../utils/sortOrder'
 import '../UsersPage.css'
 import '../display/CabinetDisplayItemsPage.css'
 
-const EMPTY_FORM = { title: '', imageId: null, imageUrl: '', hasImage: false, sortOrder: 0, enabled: true }
+const EMPTY_FORM = { title: '', imageId: null, imageUrl: '', hasImage: false, sortOrder: '', enabled: true }
 const TYPE_LABELS = { BLUEPRINT: '蓝图', WHITEPRINT: '白图' }
 
 function formatDate(iso) {
@@ -68,7 +69,7 @@ export default function DrawingPagesPage() {
     setSaving(true)
     setError('')
     try {
-      const payload = { ...createForm, sortOrder: Number(createForm.sortOrder) }
+      const payload = { ...createForm, sortOrder: normalizeSortOrder(createForm.sortOrder) }
       delete payload.hasImage
       await api.createDrawingPage(groupIdNum, payload)
       setShowCreate(false)
@@ -93,7 +94,7 @@ export default function DrawingPagesPage() {
     setSaving(true)
     setError('')
     try {
-      const payload = { ...editForm, sortOrder: Number(editForm.sortOrder) }
+      const payload = { ...editForm, sortOrder: normalizeSortOrder(editForm.sortOrder) }
       delete payload.hasImage
       await api.updateDrawingPage(editingPage.id, payload)
       setEditingPage(null)
@@ -140,7 +141,7 @@ export default function DrawingPagesPage() {
         />
         <label>
           排序
-          <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} />
+          <input type="number" value={form.sortOrder} placeholder="不填则自动排到末尾" onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} />
         </label>
         <label className="users-page__checkbox">
           <input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />

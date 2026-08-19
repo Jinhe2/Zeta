@@ -24,8 +24,6 @@ public class CreateCabinetDisplayItemRequest {
 
   @NotBlank(message = "请输入文字描述")
   private String content;
-
-  @NotNull(message = "请指定排序值")
   private Integer sortOrder;
 
   private Boolean enabled = true;

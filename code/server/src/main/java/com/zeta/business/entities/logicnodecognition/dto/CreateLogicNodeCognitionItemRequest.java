@@ -36,8 +36,6 @@ public class CreateLogicNodeCognitionItemRequest {
   private Double heightPercent;
 
   private String content;
-
-  @NotNull(message = "请指定排序值")
   private Integer sortOrder;
 
   private Boolean enabled = true;

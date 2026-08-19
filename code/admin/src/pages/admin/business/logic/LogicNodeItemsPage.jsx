@@ -6,6 +6,7 @@ import CabinetImageUploadField from '../../../../components/CabinetImageUploadFi
 import CognitionVideoUploadField from '../../../../components/CognitionVideoUploadField'
 import ImageRegionEditor from '../../../../components/ImageRegionEditor'
 import { DEFAULT_REGION, normalizeRegion } from '../../../../utils/imageRegionUtils'
+import { normalizeSortOrder } from '../../../../utils/sortOrder'
 import '../UsersPage.css'
 import '../display/DeviceDisplayItemsPage.css'
 import './LogicLearningPage.css'
@@ -22,7 +23,7 @@ const EMPTY_FORM = {
   widthPercent: null,
   heightPercent: null,
   content: '',
-  sortOrder: 0,
+  sortOrder: '',
   enabled: true,
 }
 
@@ -235,7 +236,7 @@ export default function LogicNodeItemsPage() {
       delete payload.hasImage
       await api.createLogicNodeCognitionItem(logicDiagramIdNum, decodedNodeId, {
         ...payload,
-        sortOrder: Number(createForm.sortOrder),
+        sortOrder: normalizeSortOrder(createForm.sortOrder),
       })
       setShowCreate(false)
       setCreateForm(EMPTY_FORM)
@@ -280,7 +281,7 @@ export default function LogicNodeItemsPage() {
       delete payload.hasImage
       await api.updateLogicNodeCognitionItem(editingItem.id, {
         ...payload,
-        sortOrder: Number(editForm.sortOrder),
+        sortOrder: normalizeSortOrder(editForm.sortOrder),
       })
       setEditingItem(null)
       setImageVersion(Date.now())
@@ -403,6 +404,7 @@ export default function LogicNodeItemsPage() {
             <input
               type="number"
               value={form.sortOrder}
+              placeholder="不填则自动排到末尾"
               onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
             />
           </label>

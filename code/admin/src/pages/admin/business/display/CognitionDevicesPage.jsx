@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { api, imageUrl } from '../../../../api/client'
 import ImageRegionEditor from '../../../../components/ImageRegionEditor'
 import { DEFAULT_REGION, normalizeRegion } from '../../../../utils/imageRegionUtils'
+import { normalizeSortOrder } from '../../../../utils/sortOrder'
 import '../UsersPage.css'
 import './CognitionDevicesPage.css'
 import '../../../../components/ImageRegionEditor.css'
@@ -23,7 +24,7 @@ const EMPTY_FORM = {
   topPercent: DEFAULT_REGION.topPercent,
   widthPercent: DEFAULT_REGION.widthPercent,
   heightPercent: DEFAULT_REGION.heightPercent,
-  sortOrder: 0,
+  sortOrder: '',
   enabled: true,
 }
 
@@ -142,7 +143,7 @@ export default function CognitionDevicesPage() {
       const payload = {
         ...createForm,
         screenDeviceId: isIedCognitionType(createForm.deviceType) ? Number(createForm.screenDeviceId) : null,
-        sortOrder: Number(createForm.sortOrder),
+        sortOrder: normalizeSortOrder(createForm.sortOrder),
       }
       await api.createCognitionDevice(itemIdNum, payload)
       setShowCreate(false)
@@ -180,7 +181,7 @@ export default function CognitionDevicesPage() {
       await api.updateCognitionDevice(editingDevice.id, {
         ...editForm,
         screenDeviceId: isIedCognitionType(editForm.deviceType) ? Number(editForm.screenDeviceId) : null,
-        sortOrder: Number(editForm.sortOrder),
+        sortOrder: normalizeSortOrder(editForm.sortOrder),
       })
       setEditingDevice(null)
       flash('认知设备已更新')
@@ -410,6 +411,7 @@ function DeviceFormDialog({ title, form, setForm, cabinetDevices, onClose, onSub
           <input
             type="number"
             value={form.sortOrder}
+            placeholder="不填则自动排到末尾"
             onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
           />
         </label>

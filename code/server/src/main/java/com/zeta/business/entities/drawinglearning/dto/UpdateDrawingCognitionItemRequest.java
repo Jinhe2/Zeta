@@ -25,8 +25,6 @@ public class UpdateDrawingCognitionItemRequest {
   private Double widthPercent;
 
   private Double heightPercent;
-
-  @NotNull(message = "请指定排序值")
   private Integer sortOrder;
 
   @NotNull(message = "请选择启用状态")

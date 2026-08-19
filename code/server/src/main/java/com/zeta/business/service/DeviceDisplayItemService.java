@@ -113,7 +113,10 @@ public class DeviceDisplayItemService {
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
                 request.getWidthPercent(), request.getHeightPercent());
         item.setContent(request.getContent().trim());
-        item.setSortOrder(request.getSortOrder());
+        item.setSortOrder(SortOrderHelper.resolveForCreate(
+                request.getSortOrder(),
+                displayItemRepository.findByCognitionDeviceIdOrderBySortOrderAscIdAsc(cognitionDeviceId),
+                DeviceDisplayItem::getSortOrder));
         item.setEnabled(request.getEnabled() == null || request.getEnabled());
         item.setCreatedAt(Instant.now());
         DeviceDisplayItem saved = displayItemRepository.save(item);
@@ -133,7 +136,13 @@ public class DeviceDisplayItemService {
         applyHighlightRegion(item, request.getLeftPercent(), request.getTopPercent(),
                 request.getWidthPercent(), request.getHeightPercent());
         item.setContent(request.getContent().trim());
-        item.setSortOrder(request.getSortOrder());
+        item.setSortOrder(SortOrderHelper.resolveForUpdate(
+                request.getSortOrder(),
+                item.getSortOrder(),
+                displayItemRepository.findByCognitionDeviceIdOrderBySortOrderAscIdAsc(item.getCognitionDeviceId()),
+                DeviceDisplayItem::getSortOrder,
+                DeviceDisplayItem::getId,
+                item.getId()));
         item.setEnabled(request.getEnabled());
 
         DeviceDisplayItem saved = displayItemRepository.save(item);

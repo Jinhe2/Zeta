@@ -87,7 +87,10 @@ public class ExperimentGuideService {
     item.setContent(trimToNull(request.getContent()));
     applyImage(item, request.getImageId(), request.getImageUrl());
     validateContent(item);
-    item.setSortOrder(request.getSortOrder());
+    item.setSortOrder(SortOrderHelper.resolveForCreate(
+        request.getSortOrder(),
+        repository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(scopeType, scopeId),
+        ExperimentGuideItem::getSortOrder));
     item.setEnabled(request.getEnabled() == null || request.getEnabled());
     item.setCreatedAt(Instant.now());
     return toAdminResponse(repository.save(item));
@@ -102,7 +105,13 @@ public class ExperimentGuideService {
     item.setContent(trimToNull(request.getContent()));
     applyImage(item, request.getImageId(), request.getImageUrl());
     validateContent(item);
-    item.setSortOrder(request.getSortOrder());
+    item.setSortOrder(SortOrderHelper.resolveForUpdate(
+        request.getSortOrder(),
+        item.getSortOrder(),
+        repository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(item.getScopeType(), item.getScopeId()),
+        ExperimentGuideItem::getSortOrder,
+        ExperimentGuideItem::getId,
+        item.getId()));
     item.setEnabled(request.getEnabled());
     ExperimentGuideItem saved = repository.save(item);
     if (!Objects.equals(saved.getImageUrl(), previousImageUrl)) {

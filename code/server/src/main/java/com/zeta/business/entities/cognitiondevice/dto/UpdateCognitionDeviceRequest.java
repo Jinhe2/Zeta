@@ -41,8 +41,7 @@ public class UpdateCognitionDeviceRequest {
   @Min(0)
   @Max(100)
   private Double heightPercent;
-
-  @NotNull private Integer sortOrder;
+  private Integer sortOrder;
 
   @NotNull private Boolean enabled;
 }

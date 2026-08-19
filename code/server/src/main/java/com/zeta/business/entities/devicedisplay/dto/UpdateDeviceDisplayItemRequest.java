@@ -37,8 +37,6 @@ public class UpdateDeviceDisplayItemRequest {
 
   @NotBlank(message = "请输入展示内容")
   private String content;
-
-  @NotNull(message = "请指定排序值")
   private Integer sortOrder;
 
   @NotNull(message = "请指定启用状态")

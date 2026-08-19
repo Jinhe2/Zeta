@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api, imageUrl } from '../../../../api/client'
 import CabinetImageUploadField from '../../../../components/CabinetImageUploadField'
+import { normalizeSortOrder } from '../../../../utils/sortOrder'
 import '../UsersPage.css'
 import './CabinetDisplayItemsPage.css'
 
@@ -11,7 +12,7 @@ const EMPTY_CREATE = {
   imageUrl: '',
   hasImage: false,
   content: '',
-  sortOrder: 0,
+  sortOrder: '',
   enabled: true,
 }
 
@@ -106,7 +107,7 @@ export default function CabinetDisplayItemsPage() {
       delete payload.hasImage
       await api.createCabinetDisplayItem(cabinetIdNum, {
         ...payload,
-        sortOrder: Number(createForm.sortOrder),
+        sortOrder: normalizeSortOrder(createForm.sortOrder),
       })
       setShowCreate(false)
       setCreateForm(EMPTY_CREATE)
@@ -147,7 +148,7 @@ export default function CabinetDisplayItemsPage() {
       delete payload.hasImage
       await api.updateCabinetDisplayItem(editingItem.id, {
         ...payload,
-        sortOrder: Number(editForm.sortOrder),
+        sortOrder: normalizeSortOrder(editForm.sortOrder),
       })
       setEditingItem(null)
       setImageVersion(Date.now())
@@ -310,6 +311,7 @@ export default function CabinetDisplayItemsPage() {
               <input
                 type="number"
                 value={createForm.sortOrder}
+                placeholder="不填则自动排到末尾"
                 onChange={(e) => setCreateForm({ ...createForm, sortOrder: e.target.value })}
               />
             </label>

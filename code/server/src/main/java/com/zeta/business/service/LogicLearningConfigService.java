@@ -23,9 +23,11 @@ import com.zeta.business.entities.user.*;
 import com.zeta.business.entities.user.dto.*;
 import com.zeta.business.media.*;
 import com.zeta.business.storage.*;
+import com.zeta.screen.logicdiagram.ProtectionLogic;
 import com.zeta.screen.logicdiagram.ProtectionLogicRepository;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
@@ -59,13 +61,25 @@ public class LogicLearningConfigService {
 
     @Transactional("businessTransactionManager")
     public int updateSortOrder(Long logicDiagramId, int sortOrder) {
-        if (!protectionLogicRepository.existsById(logicDiagramId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "逻辑框图不存在");
-        }
+        ProtectionLogic logic = protectionLogicRepository.findById(logicDiagramId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "逻辑框图不存在"));
         LogicLearningConfig config = configRepository.findByLogicDiagramId(logicDiagramId)
                 .orElseGet(LogicLearningConfig::new);
+        Integer currentSortOrder = config.getSortOrder();
+        List<Long> siblingLogicIds = protectionLogicRepository
+                .findByDeviceIdOrderByIdAsc(logic.getDevice().getId())
+                .stream()
+                .map(ProtectionLogic::getId)
+                .collect(Collectors.toList());
+        List<LogicLearningConfig> siblingConfigs = configRepository.findByLogicDiagramIdIn(siblingLogicIds);
         config.setLogicDiagramId(logicDiagramId);
-        config.setSortOrder(sortOrder);
+        config.setSortOrder(SortOrderHelper.resolveForUpdate(
+                sortOrder,
+                currentSortOrder,
+                siblingConfigs,
+                LogicLearningConfig::getSortOrder,
+                LogicLearningConfig::getLogicDiagramId,
+                logicDiagramId));
         return configRepository.save(config).getSortOrder();
     }
 }

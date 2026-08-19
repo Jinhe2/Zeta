@@ -37,8 +37,6 @@ public class CreateDeviceDisplayItemRequest {
 
   @NotBlank(message = "请输入展示内容")
   private String content;
-
-  @NotNull(message = "请指定排序值")
   private Integer sortOrder;
 
   private Boolean enabled = true;

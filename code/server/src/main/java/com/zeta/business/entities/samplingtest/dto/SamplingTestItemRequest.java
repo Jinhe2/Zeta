@@ -24,7 +24,6 @@ public class SamplingTestItemRequest {
   @NotBlank(message = "请输入说明文字")
   private String content;
 
-  @NotNull(message = "请指定排序值")
   private Integer sortOrder;
 
   private Boolean enabled = true;

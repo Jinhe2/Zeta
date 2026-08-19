@@ -24,8 +24,6 @@ public class UpdateCabinetDisplayItemRequest {
 
   @NotBlank(message = "请输入文字描述")
   private String content;
-
-  @NotNull(message = "请指定排序值")
   private Integer sortOrder;
 
   @NotNull(message = "请指定启用状态")

@@ -109,7 +109,20 @@ public class SamplingTestService {
   private void apply(SamplingTestItem item, SamplingTestItemRequest request) {
     item.setTitle(request.getTitle().trim());
     item.setContent(request.getContent().trim());
-    item.setSortOrder(request.getSortOrder());
+    if (item.getId() == null) {
+      item.setSortOrder(SortOrderHelper.resolveForCreate(
+          request.getSortOrder(),
+          itemRepository.findByScreenCabinetIdOrderBySortOrderAscIdAsc(item.getScreenCabinetId()),
+          SamplingTestItem::getSortOrder));
+    } else {
+      item.setSortOrder(SortOrderHelper.resolveForUpdate(
+          request.getSortOrder(),
+          item.getSortOrder(),
+          itemRepository.findByScreenCabinetIdOrderBySortOrderAscIdAsc(item.getScreenCabinetId()),
+          SamplingTestItem::getSortOrder,
+          SamplingTestItem::getId,
+          item.getId()));
+    }
     item.setEnabled(request.getEnabled() == null || request.getEnabled());
     item.setMediaType(request.getMediaType());
 

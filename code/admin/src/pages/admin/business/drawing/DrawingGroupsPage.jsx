@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api } from '../../../../api/client'
+import { normalizeSortOrder } from '../../../../utils/sortOrder'
 import '../UsersPage.css'
 
-const EMPTY_FORM = { drawingType: 'BLUEPRINT', name: '', sortOrder: 0, enabled: true }
+const EMPTY_FORM = { drawingType: 'BLUEPRINT', name: '', sortOrder: '', enabled: true }
 const TYPE_LABELS = { BLUEPRINT: '蓝图', WHITEPRINT: '白图' }
 
 function formatDate(iso) {
@@ -61,7 +62,7 @@ export default function DrawingGroupsPage() {
     setSaving(true)
     setError('')
     try {
-      await api.createDrawingGroup(cabinetIdNum, { ...createForm, sortOrder: Number(createForm.sortOrder) })
+      await api.createDrawingGroup(cabinetIdNum, { ...createForm, sortOrder: normalizeSortOrder(createForm.sortOrder) })
       setShowCreate(false)
       setCreateForm(EMPTY_FORM)
       flash('图纸分组创建成功')
@@ -79,7 +80,7 @@ export default function DrawingGroupsPage() {
     setSaving(true)
     setError('')
     try {
-      await api.updateDrawingGroup(editingGroup.id, { ...editForm, sortOrder: Number(editForm.sortOrder) })
+      await api.updateDrawingGroup(editingGroup.id, { ...editForm, sortOrder: normalizeSortOrder(editForm.sortOrder) })
       setEditingGroup(null)
       flash('图纸分组已更新')
       await loadData()
@@ -149,7 +150,7 @@ export default function DrawingGroupsPage() {
         </label>
         <label>
           排序
-          <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} />
+          <input type="number" value={form.sortOrder} placeholder="不填则自动排到末尾" onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} />
         </label>
         <label className="users-page__checkbox">
           <input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />

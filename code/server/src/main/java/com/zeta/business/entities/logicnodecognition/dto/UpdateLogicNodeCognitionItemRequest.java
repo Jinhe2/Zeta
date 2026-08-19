@@ -38,8 +38,6 @@ public class UpdateLogicNodeCognitionItemRequest {
   private Double heightPercent;
 
   private String content;
-
-  @NotNull(message = "请指定排序值")
   private Integer sortOrder;
 
   @NotNull(message = "请指定启用状态")

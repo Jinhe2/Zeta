@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { api, imageUrl } from '../../../../api/client'
 import ImageRegionEditor from '../../../../components/ImageRegionEditor'
 import { DEFAULT_REGION, normalizeRegion } from '../../../../utils/imageRegionUtils'
+import { normalizeSortOrder } from '../../../../utils/sortOrder'
 import '../UsersPage.css'
 import '../display/DeviceDisplayItemsPage.css'
 
@@ -14,7 +15,7 @@ const EMPTY_FORM = {
   topPercent: null,
   widthPercent: null,
   heightPercent: null,
-  sortOrder: 0,
+  sortOrder: '',
   enabled: true,
 }
 
@@ -102,7 +103,7 @@ export default function DrawingCognitionItemsPage() {
     setSaving(true)
     setError('')
     try {
-      const payload = { ...createForm, sortOrder: Number(createForm.sortOrder) }
+      const payload = { ...createForm, sortOrder: normalizeSortOrder(createForm.sortOrder) }
       delete payload.hasRegion
       await api.createDrawingCognitionItem(pageIdNum, payload)
       setShowCreate(false)
@@ -122,7 +123,7 @@ export default function DrawingCognitionItemsPage() {
     setSaving(true)
     setError('')
     try {
-      const payload = { ...editForm, sortOrder: Number(editForm.sortOrder) }
+      const payload = { ...editForm, sortOrder: normalizeSortOrder(editForm.sortOrder) }
       delete payload.hasRegion
       await api.updateDrawingCognitionItem(editingItem.id, payload)
       setEditingItem(null)
@@ -194,7 +195,7 @@ export default function DrawingCognitionItemsPage() {
           </div>
           <label>
             排序
-            <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} />
+            <input type="number" value={form.sortOrder} placeholder="不填则自动排到末尾" onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} />
           </label>
           <label className="users-page__checkbox">
             <input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />

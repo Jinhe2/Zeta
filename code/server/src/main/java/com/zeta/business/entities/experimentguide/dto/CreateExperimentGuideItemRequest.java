@@ -24,8 +24,6 @@ public class CreateExperimentGuideItemRequest {
   private String imageUrl;
 
   private String content;
-
-  @NotNull(message = "请指定排序值")
   private Integer sortOrder;
 
   private Boolean enabled = true;

@@ -59,7 +59,10 @@ public class LogicGroupService {
     LogicGroup group = new LogicGroup();
     group.setIedDeviceId(deviceId);
     group.setName(request.getName());
-    group.setSortOrder(request.getSortOrder() == null ? 0 : request.getSortOrder());
+    group.setSortOrder(SortOrderHelper.resolveForCreate(
+        request.getSortOrder(),
+        groupRepository.findByIedDeviceIdOrderBySortOrderAscIdAsc(deviceId),
+        LogicGroup::getSortOrder));
     groupRepository.save(group);
     groupRepository.flush();
     replaceMembers(group.getId(), request.getMembers(), deviceId);
@@ -71,7 +74,13 @@ public class LogicGroupService {
   public LogicGroupDetailResponse update(Long groupId, UpdateLogicGroupRequest request) {
     LogicGroup group = requireGroup(groupId);
     group.setName(request.getName());
-    group.setSortOrder(request.getSortOrder() == null ? 0 : request.getSortOrder());
+    group.setSortOrder(SortOrderHelper.resolveForUpdate(
+        request.getSortOrder(),
+        group.getSortOrder(),
+        groupRepository.findByIedDeviceIdOrderBySortOrderAscIdAsc(group.getIedDeviceId()),
+        LogicGroup::getSortOrder,
+        LogicGroup::getId,
+        group.getId()));
     groupRepository.save(group);
     replaceMembers(groupId, request.getMembers(), group.getIedDeviceId());
     memberRepository.flush();

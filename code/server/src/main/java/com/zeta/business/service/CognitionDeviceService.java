@@ -119,7 +119,10 @@ public class CognitionDeviceService {
         device.setTopPercent(request.getTopPercent());
         device.setWidthPercent(request.getWidthPercent());
         device.setHeightPercent(request.getHeightPercent());
-        device.setSortOrder(request.getSortOrder());
+        device.setSortOrder(SortOrderHelper.resolveForCreate(
+                request.getSortOrder(),
+                cognitionDeviceRepository.findByCabinetDisplayItemIdOrderBySortOrderAscIdAsc(device.getCabinetDisplayItemId()),
+                CognitionDevice::getSortOrder));
         device.setEnabled(request.getEnabled() == null || request.getEnabled());
     }
 
@@ -132,7 +135,13 @@ public class CognitionDeviceService {
         device.setTopPercent(request.getTopPercent());
         device.setWidthPercent(request.getWidthPercent());
         device.setHeightPercent(request.getHeightPercent());
-        device.setSortOrder(request.getSortOrder());
+        device.setSortOrder(SortOrderHelper.resolveForUpdate(
+                request.getSortOrder(),
+                device.getSortOrder(),
+                cognitionDeviceRepository.findByCabinetDisplayItemIdOrderBySortOrderAscIdAsc(device.getCabinetDisplayItemId()),
+                CognitionDevice::getSortOrder,
+                CognitionDevice::getId,
+                device.getId()));
         device.setEnabled(request.getEnabled());
     }
 

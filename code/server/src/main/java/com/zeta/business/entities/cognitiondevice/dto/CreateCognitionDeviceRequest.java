@@ -42,7 +42,7 @@ public class CreateCognitionDeviceRequest {
   @Max(100)
   private Double heightPercent;
 
-  @NotNull private Integer sortOrder;
+  private Integer sortOrder;
 
   private Boolean enabled = true;
 }

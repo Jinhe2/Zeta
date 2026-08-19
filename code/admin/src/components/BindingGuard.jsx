@@ -6,7 +6,7 @@ import UnboundDeviceModal from './UnboundDeviceModal'
 import './BindingGuard.css'
 
 /**
- * 绑定检查守卫：学生/教师路由使用。
+ * 绑定检查守卫：学员路由使用。
  *
  * 判定逻辑：
  *  - 服务端明确返回 BOUND → 放行
@@ -17,13 +17,11 @@ export default function BindingGuard({ children }) {
   const { logout, session } = useAuth()
   const [status, setStatus] = useState('checking') // checking | bound | unbound | error
   const [errorMsg, setErrorMsg] = useState('')
-
-  // 管理员无需设备绑定，直接放行
-  if (session?.role === 'ADMIN') {
-    return children
-  }
+  const requiresBinding = session?.role === 'STUDENT'
 
   const check = useCallback(() => {
+    if (!requiresBinding) return
+
     setStatus('checking')
     setErrorMsg('')
     const bindId = getDeviceBindId()
@@ -41,9 +39,15 @@ export default function BindingGuard({ children }) {
         setErrorMsg(err.message || '网络请求失败，请检查网络连接')
         setStatus('error')
       })
-  }, [])
+  }, [requiresBinding])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { check() }, [check])
+
+  // 只有学员需要绑定屏柜，教师/管理员直接放行
+  if (!requiresBinding) {
+    return children
+  }
 
   if (status === 'unbound') {
     return <UnboundDeviceModal onLogout={() => logout()} />

@@ -39,7 +39,7 @@ export default function TabletHome() {
   const [confirmType, setConfirmType] = useState(null);
 
   const displayName = session?.displayName || "学员";
-  const levelLabel = "初级学员 Lv.3";
+  const levelLabel = "初级学员 Lv.1";
 
   const handleLogout = async () => {
     await logout();

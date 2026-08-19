@@ -7,7 +7,7 @@ export default function StudentSubpageBar({ title }) {
   const { session } = useAuth()
 
   const displayName = session?.displayName || '学员'
-  const levelLabel = '初级学员 Lv.3'
+  const levelLabel = '初级学员 Lv.1'
 
   return (
     <header className="student-subpage__bar">

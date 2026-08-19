@@ -18,7 +18,7 @@
   },
   "build": {
     "appId": "cn.qyabc.zeta",
-    "productName": "Zeta 教学系统",
+    "productName": "CYG继电保护教学系统",
     "directories": {
       "output": "release"
     },
@@ -51,7 +51,7 @@
       "allowToChangeInstallationDirectory": true,
       "installerLanguages": ["zh_CN"],
       "language": "2052",
-      "shortcutName": "Zeta 教学系统"
+      "shortcutName": "CYG继电保护教学系统"
     }
   }
 }

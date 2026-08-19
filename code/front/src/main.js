@@ -36,7 +36,7 @@ log('userData:', app.getPath('userData'))
 
 const DEFAULT_SETTINGS = {
   apiBaseUrl: 'https://zeta-api.qyabc.cn',
-  windowTitle: 'Zeta 继电保护逻辑教学系统',
+  windowTitle: 'CYG继电保护教学系统',
 }
 
 function getSettingsPaths() {
@@ -136,7 +136,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width,
     height,
-    title: settings.windowTitle || 'Zeta 教学系统',
+    title: settings.windowTitle || 'CYG继电保护教学系统',
     show: false,
     autoHideMenuBar: true,
     webPreferences: {

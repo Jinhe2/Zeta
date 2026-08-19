@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { getApiBaseUrl } from '../api/client'
+import { getApiBaseUrl, publicUrl } from '../api/client'
 import ServerSettingsModal from '../components/ServerSettingsModal'
 import './LoginPage.css'
 
@@ -89,7 +89,7 @@ export default function LoginPage() {
 
       <div className="login-card">
         <header className="login-card__header">
-          <img className="login-card__logo" src="/logo.png" alt="Zeta" />
+          <img className="login-card__logo" src={publicUrl('logo.png')} alt="Zeta" />
           <h1 className="login-card__title">继电保护逻辑教学系统</h1>
           <p className="login-card__subtitle">使用用户名和密码登录</p>
           <button

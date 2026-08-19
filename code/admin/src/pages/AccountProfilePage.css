@@ -1,0 +1,176 @@
+.account-profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.account-profile-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.account-profile-page__title {
+  margin: 0;
+  color: #f3f7fb;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.account-profile-page__desc {
+  margin: 8px 0 0;
+  color: #8fa4b4;
+  font-size: 14px;
+}
+
+.account-profile-card,
+.account-password-card,
+.account-profile-list {
+  border: 1px solid rgba(100, 181, 246, 0.18);
+  border-radius: 12px;
+  background: rgba(18, 26, 40, 0.72);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.account-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+}
+
+.account-profile-card__avatar {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #64b5f6, #2d6fb0);
+  color: #fff;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.account-profile-card__summary {
+  min-width: 0;
+}
+
+.account-profile-card__eyebrow {
+  color: #64b5f6;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account-profile-card__summary h3 {
+  margin: 6px 0 0;
+  color: #fff;
+  font-size: 22px;
+}
+
+.account-profile-list {
+  overflow: hidden;
+}
+
+.account-profile-list__item {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 58px;
+  padding: 14px 22px;
+}
+
+.account-profile-list__item + .account-profile-list__item {
+  border-top: 1px solid rgba(100, 181, 246, 0.12);
+}
+
+.account-profile-list__label {
+  flex: 0 0 120px;
+  color: #8ec5f8;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.account-profile-list__value {
+  min-width: 0;
+  color: #edf4fb;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.account-password-card {
+  padding: 22px 24px;
+}
+
+.account-password-card h3 {
+  margin: 0 0 18px;
+  color: #f3f7fb;
+  font-size: 18px;
+}
+
+.account-password-form {
+  display: grid;
+  max-width: 520px;
+  gap: 14px;
+}
+
+.account-password-form label {
+  display: grid;
+  gap: 8px;
+  color: #b7c7d4;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.account-password-form input {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #edf4fb;
+  font: inherit;
+}
+
+.account-password-form input:focus {
+  outline: none;
+  border-color: rgba(100, 181, 246, 0.62);
+  box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.15);
+}
+
+.account-password-form__error,
+.account-password-form__success {
+  margin: 0;
+  font-size: 14px;
+}
+
+.account-password-form__error {
+  color: #ff8a80;
+}
+
+.account-password-form__success {
+  color: #81c784;
+}
+
+.account-password-form button {
+  justify-self: start;
+  min-width: 128px;
+  padding: 10px 18px;
+  border: 1px solid rgba(100, 181, 246, 0.42);
+  border-radius: 8px;
+  background: rgba(100, 181, 246, 0.18);
+  color: #e8edf4;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.account-password-form button:hover:not(:disabled) {
+  background: rgba(100, 181, 246, 0.28);
+}
+
+.account-password-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

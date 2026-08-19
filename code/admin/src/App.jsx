@@ -19,7 +19,9 @@ import CircuitViewerPage from './pages/student/CircuitViewerPage'
 import CabinetCognitionPage from './pages/student/CabinetCognitionPage'
 import DrawingLearningPage from './pages/student/DrawingLearningPage'
 import TeacherPage from './pages/TeacherPage'
+import TeacherLayout from './components/TeacherLayout'
 import AdminLayout from './components/AdminLayout'
+import AccountProfilePage from './pages/AccountProfilePage'
 import UsersPage from './pages/admin/business/UsersPage'
 import LearningResourcesPage from './pages/admin/business/LearningResourcesPage'
 import AdminPlaceholderPage from './pages/admin/business/AdminPlaceholderPage'
@@ -133,17 +135,19 @@ export default function App() {
           </Route>
           <Route path="/student/diagram/:id" element={<LegacyDiagramRedirect />} />
 
-          {/* ── Teacher routes (with binding check) ── */}
+          {/* ── Teacher routes ── */}
           <Route
             path="/teacher"
             element={
               <RequireAuth role="TEACHER">
-                <BindingGuard>
-                  <TeacherPage />
-                </BindingGuard>
+                <TeacherLayout />
               </RequireAuth>
             }
-          />
+          >
+            <Route index element={<Navigate to="/teacher/students" replace />} />
+            <Route path="students" element={<TeacherPage />} />
+            <Route path="profile" element={<AccountProfilePage />} />
+          </Route>
 
           <Route
             path="/admin"
@@ -154,6 +158,7 @@ export default function App() {
             }
           >
             <Route index element={<Navigate to="/admin/users/students" replace />} />
+            <Route path="profile" element={<AccountProfilePage />} />
             <Route path="users" element={<Navigate to="/admin/users/students" replace />} />
             <Route path="users/:roleKey" element={<UsersPage />} />
 

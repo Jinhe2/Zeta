@@ -7,6 +7,7 @@ import './AdminLayout.css'
 
 /** 业务模块（持续迭代） */
 const BUSINESS_NAV = [
+  { to: '/admin/profile', label: '个人中心' },
   {
     id: 'users',
     label: '用户管理',

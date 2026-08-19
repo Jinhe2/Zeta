@@ -74,11 +74,29 @@ public class UserService {
     }
 
     public BatchImportStudentsResponse batchImportStudents(BatchImportStudentsRequest request) {
-        List<StudentImportResult> results = new ArrayList<>();
+        BatchImportUsersResponse result = batchImportUsers(toImportUsersRequest(request), UserRole.STUDENT);
+        List<StudentImportResult> studentResults = result.getResults().stream()
+                .map(item -> new StudentImportResult(
+                        item.getRowNumber(),
+                        item.getUsername(),
+                        item.isSuccess(),
+                        item.getMessage()))
+                .collect(Collectors.toList());
+        return new BatchImportStudentsResponse(
+                result.getSuccessCount(),
+                result.getFailureCount(),
+                studentResults);
+    }
+
+    public BatchImportUsersResponse batchImportUsers(BatchImportUsersRequest request, UserRole role) {
+        if (role == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请指定用户角色");
+        }
+        List<UserImportResult> results = new ArrayList<>();
         int successCount = 0;
 
-        for (int index = 0; index < request.getStudents().size(); index++) {
-            ImportStudentRowRequest row = request.getStudents().get(index);
+        for (int index = 0; index < request.getUsers().size(); index++) {
+            ImportUserRowRequest row = request.getUsers().get(index);
             int rowNumber = index + 2;
             String username = row == null ? "" : safeTrim(row.getUsername()).toLowerCase();
             try {
@@ -91,19 +109,19 @@ public class UserService {
                 user.setUsername(username);
                 user.setDisplayName(row.getDisplayName().trim());
                 user.setPassword(row.getPassword());
-                user.setRole(UserRole.STUDENT);
+                user.setRole(role);
                 user.setCreatedAt(Instant.now());
                 userRepository.save(user);
                 successCount++;
-                results.add(new StudentImportResult(rowNumber, username, true, "导入成功"));
+                results.add(new UserImportResult(rowNumber, username, true, "导入成功"));
             } catch (ResponseStatusException ex) {
-                results.add(new StudentImportResult(rowNumber, username, false, ex.getReason()));
+                results.add(new UserImportResult(rowNumber, username, false, ex.getReason()));
             } catch (RuntimeException ex) {
-                results.add(new StudentImportResult(rowNumber, username, false, "导入失败"));
+                results.add(new UserImportResult(rowNumber, username, false, "导入失败"));
             }
         }
 
-        return new BatchImportStudentsResponse(
+        return new BatchImportUsersResponse(
                 successCount,
                 results.size() - successCount,
                 results);
@@ -148,7 +166,24 @@ public class UserService {
         return normalized;
     }
 
-    private void validateImportRow(ImportStudentRowRequest row) {
+    private BatchImportUsersRequest toImportUsersRequest(BatchImportStudentsRequest request) {
+        BatchImportUsersRequest usersRequest = new BatchImportUsersRequest();
+        List<ImportUserRowRequest> users = request.getStudents().stream()
+                .map(row -> {
+                    ImportUserRowRequest user = new ImportUserRowRequest();
+                    if (row != null) {
+                        user.setUsername(row.getUsername());
+                        user.setDisplayName(row.getDisplayName());
+                        user.setPassword(row.getPassword());
+                    }
+                    return user;
+                })
+                .collect(Collectors.toList());
+        usersRequest.setUsers(users);
+        return usersRequest;
+    }
+
+    private void validateImportRow(ImportUserRowRequest row) {
         if (row == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "数据行不能为空");
         }

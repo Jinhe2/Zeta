@@ -11,8 +11,8 @@ const ROLE_KEY_MAP = {
 }
 
 const ROLE_CONFIG = {
-  STUDENT: { title: '学员管理', createLabel: '新建学员' },
-  TEACHER: { title: '教师管理', createLabel: '新建教师' },
+  STUDENT: { title: '学员管理', createLabel: '新建学员', noun: '学员', sampleUsername: 'student001', sampleDisplayName: '张三' },
+  TEACHER: { title: '教师管理', createLabel: '新建教师', noun: '教师', sampleUsername: 'teacher001', sampleDisplayName: '李老师' },
   ADMIN: { title: '管理员管理', createLabel: '新建管理员' },
 }
 
@@ -52,9 +52,9 @@ function parseCsvLine(line) {
   return values
 }
 
-function parseStudentCsv(text) {
+function parseUserCsv(text, noun) {
   const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim())
-  if (lines.length < 2) throw new Error('CSV 中没有可导入的学员数据')
+  if (lines.length < 2) throw new Error(`CSV 中没有可导入的${noun}数据`)
 
   const aliases = {
     username: ['username', '用户名'],
@@ -70,7 +70,7 @@ function parseStudentCsv(text) {
     throw new Error('CSV 表头必须包含 username、displayName、password')
   }
 
-  const students = lines.slice(1).map((line) => {
+  const users = lines.slice(1).map((line) => {
     const values = parseCsvLine(line)
     return {
       username: values[indexes.username] || '',
@@ -78,8 +78,8 @@ function parseStudentCsv(text) {
       password: values[indexes.password] || '',
     }
   })
-  if (students.length > 500) throw new Error('单次最多导入 500 名学员')
-  return students
+  if (users.length > 500) throw new Error(`单次最多导入 500 名${noun}`)
+  return users
 }
 
 export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/students' }) {
@@ -107,6 +107,8 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
   const [resetUser, setResetUser] = useState(null)
   const [resetPassword, setResetPassword] = useState('')
   const [resetting, setResetting] = useState(false)
+  const config = role ? ROLE_CONFIG[role] : null
+  const canBatchImport = role === 'STUDENT' || role === 'TEACHER'
 
   const loadUsers = useCallback(async () => {
     if (!role) return
@@ -145,7 +147,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
     setError('')
     if (!file) return
     try {
-      setImportRows(parseStudentCsv(await file.text()))
+      setImportRows(parseUserCsv(await file.text(), config?.noun || '用户'))
     } catch (err) {
       setError(err.message || 'CSV 解析失败')
     }
@@ -156,7 +158,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
     setImporting(true)
     setError('')
     try {
-      const result = await api.batchImportStudents(importRows)
+      const result = await api.batchImportUsers(role, importRows)
       setImportResult(result)
       if (result.successCount > 0) await loadUsers()
     } catch (err) {
@@ -247,8 +249,6 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
     return <Navigate to={invalidRedirect} replace />
   }
 
-  const config = ROLE_CONFIG[role]
-
   return (
     <div className="users-page">
       <div className="users-page__header">
@@ -257,7 +257,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
           <p className="users-page__desc">仅管理{config.title.replace('管理', '')}账号，角色固定不可变更。</p>
         </div>
         <div className="users-page__header-actions">
-          {role === 'STUDENT' && (
+          {canBatchImport && (
             <button
               type="button"
               className="users-page__btn"
@@ -382,17 +382,17 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
         </div>
       )}
 
-      {showImport && role === 'STUDENT' && (
+      {showImport && canBatchImport && (
         <div className="users-page__overlay">
           <div className="users-page__dialog users-page__dialog--import" role="dialog" aria-modal="true">
-            <h3>批量导入学员</h3>
+            <h3>批量导入{config.noun}</h3>
             <p className="users-page__import-help">
-              上传 CSV 文件，表头为 username、displayName、password。单次最多 500 名学员，角色固定为学员。
+              上传 CSV 文件，表头为 username、displayName、password。单次最多 500 名{config.noun}，角色固定为{config.noun}。
             </p>
             <a
               className="users-page__template-link"
-              href={'data:text/csv;charset=utf-8,%EF%BB%BFusername%2CdisplayName%2Cpassword%0Astudent001%2C%E5%BC%A0%E4%B8%89%2C123456'}
-              download="学员批量导入模板.csv"
+              href={`data:text/csv;charset=utf-8,%EF%BB%BFusername%2CdisplayName%2Cpassword%0A${encodeURIComponent(config.sampleUsername)}%2C${encodeURIComponent(config.sampleDisplayName)}%2C123456`}
+              download={`${config.noun}批量导入模板.csv`}
             >
               下载 CSV 模板
             </a>
@@ -429,7 +429,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
                 disabled={!importRows.length || importing || Boolean(importResult)}
                 onClick={handleBatchImport}
               >
-                {importing ? '导入中…' : `导入 ${importRows.length || ''} 名学员`}
+                {importing ? '导入中…' : `导入 ${importRows.length || ''} 名${config.noun}`}
               </button>
             </div>
           </div>

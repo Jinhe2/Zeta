@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import RoleIdentityBadge from './RoleIdentityBadge'
 import './AdminLayout.css'
 
 const TEACHER_NAV = [
@@ -38,14 +39,7 @@ export default function TeacherLayout() {
 
       <div className="admin-layout__body">
         <header className="admin-layout__header">
-          <div className="admin-layout__header-meta teacher-layout__profile">
-            <span className="teacher-layout__avatar" aria-hidden="true">
-              教师
-            </span>
-            <span className="teacher-layout__identity">
-              <span className="admin-layout__user teacher-layout__user">{displayName}</span>
-            </span>
-          </div>
+          <RoleIdentityBadge displayName={displayName} roleLabel="教师" />
           <button
             type="button"
             className="admin-layout__logout"

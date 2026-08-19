@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { api } from '../api/client'
+import RoleIdentityBadge from './RoleIdentityBadge'
 import './AdminLayout.css'
 
 /** 业务模块（持续迭代） */
@@ -139,10 +140,7 @@ export default function AdminLayout() {
 
       <div className="admin-layout__body">
         <header className="admin-layout__header">
-          <div className="admin-layout__header-meta">
-            <span className="admin-layout__user">{session?.displayName}</span>
-            <span className="admin-layout__role">管理员</span>
-          </div>
+          <RoleIdentityBadge displayName={session?.displayName} roleLabel="管理员" />
           <button
             type="button"
             className="admin-layout__student-entry"

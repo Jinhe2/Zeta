@@ -661,6 +661,13 @@ export const api = {
     })
   },
 
+  batchImportUsers(role, users) {
+    return request(`/api/users/batch-import/${encodeURIComponent(role)}`, {
+      method: 'POST',
+      body: JSON.stringify({ users }),
+    })
+  },
+
   updateUser(id, payload) {
     return request(`/api/users/${id}`, {
       method: 'PUT',

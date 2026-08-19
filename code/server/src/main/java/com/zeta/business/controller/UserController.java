@@ -89,6 +89,17 @@ public class UserController {
     return userService.batchImportStudents(request);
   }
 
+  @PostMapping("/batch-import/{role}")
+  public BatchImportUsersResponse batchImportUsers(
+      @RequestHeader(value = "Authorization", required = false) String authorization,
+      @PathVariable UserRole role,
+      @Valid @RequestBody BatchImportUsersRequest request) {
+    User operator = authService.requireUser(authorization);
+    requireBatchImportRole(role);
+    requireUserManagementPermission(operator, role);
+    return userService.batchImportUsers(request, role);
+  }
+
   @PutMapping("/{id}")
   public UserSummaryResponse update(
       @RequestHeader(value = "Authorization", required = false) String authorization,
@@ -127,6 +138,14 @@ public class UserController {
       throw new org.springframework.web.server.ResponseStatusException(
           org.springframework.http.HttpStatus.BAD_REQUEST, "不支持变更用户角色，请在对应角色管理中操作");
     }
+  }
+
+  private void requireBatchImportRole(UserRole role) {
+    if (role == UserRole.STUDENT || role == UserRole.TEACHER) {
+      return;
+    }
+    throw new org.springframework.web.server.ResponseStatusException(
+        org.springframework.http.HttpStatus.BAD_REQUEST, "仅支持批量导入学员和教师账号");
   }
 
   private void requireUserManagementPermission(User operator, UserRole targetRole) {

@@ -11,6 +11,12 @@ const HOME_BY_ROLE = {
   ADMIN: '/admin',
 }
 
+const QUICK_ACCOUNTS = [
+  { label: '学员', username: 'student', icon: '👤' },
+  { label: '教师', username: 'teacher', icon: '🎓' },
+  { label: '管理员', username: 'admin', icon: '⚙️' },
+]
+
 function validateForm(username, password) {
   if (!username.trim()) return '请输入用户名'
   if (!password) return '请输入密码'
@@ -69,12 +75,6 @@ export default function LoginPage() {
     }
     await doLogin(username, password)
   }
-
-  const quickAccounts = [
-    { label: '学员', username: 'student', icon: '👤' },
-    { label: '教师', username: 'teacher', icon: '🎓' },
-    { label: '管理员', username: 'admin', icon: '⚙️' },
-  ]
 
   const handleQuickLogin = (account) => {
     if (loading) return
@@ -141,23 +141,25 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="login-card__quick">
-          <span className="login-card__quick-label">快捷登录</span>
-          <div className="login-card__quick-buttons">
-            {quickAccounts.map((account) => (
-              <button
-                key={account.username}
-                type="button"
-                className="login-quick-btn"
-                disabled={loading}
-                onClick={() => handleQuickLogin(account)}
-              >
-                <span className="login-quick-btn__icon">{account.icon}</span>
-                <span className="login-quick-btn__text">{account.label}</span>
-              </button>
-            ))}
+        {import.meta.env.DEV && (
+          <div className="login-card__quick">
+            <span className="login-card__quick-label">快捷登录</span>
+            <div className="login-card__quick-buttons">
+              {QUICK_ACCOUNTS.map((account) => (
+                <button
+                  key={account.username}
+                  type="button"
+                  className="login-quick-btn"
+                  disabled={loading}
+                  onClick={() => handleQuickLogin(account)}
+                >
+                  <span className="login-quick-btn__icon">{account.icon}</span>
+                  <span className="login-quick-btn__text">{account.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {import.meta.env.DEV && (
           <p className="login-card__hint">

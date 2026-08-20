@@ -14,7 +14,7 @@
   background: #4a7ebb;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 16px;
 }
 
 .v4-node--gate {
@@ -23,8 +23,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 6px 4px;
+  gap: 6px;
+  padding: 8px 6px;
   overflow: visible;
 }
 
@@ -32,25 +32,25 @@
   background: #f8bbd9;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 16px;
 }
 
 .v4-node--output {
   background: #4caf50;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 10px 16px;
 }
 
 .v4-node--logic {
   background: #7e57c2;
   display: flex;
   align-items: center;
-  padding: 0 14px;
+  padding: 0 18px;
 }
 
 .v4-node--logic .v4-node__text {
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 600;
 }
 
@@ -74,11 +74,11 @@
 
 .v4-node__text {
   color: #fff;
-  font-size: 12px;
+  font-size: 18px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .v4-node--timer .v4-node__text {
@@ -86,28 +86,42 @@
 }
 
 .v4-node--output .v4-node__text {
-  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  white-space: normal;
+  overflow: hidden;
   text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-.v4-node__threshold,
-.v4-node__value,
-.v4-node__ref {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.v4-node--timer .v4-node__value {
-  color: rgba(0, 0, 0, 0.75);
+.v4-node--output .v4-node__label {
+  font-weight: 600;
 }
 
 .v4-node__id {
   color: rgba(255, 255, 255, 0.65);
-  font-size: 9px;
+  font-size: 13px;
   margin-left: 6px;
 }
 
 .v4-node--timer .v4-node__id {
   color: rgba(0, 0, 0, 0.55);
+}
+
+.v4-node__value,
+.v4-node__ref {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.v4-node--output .v4-node__ref {
+  line-height: 1.24;
+}
+
+.v4-node--timer .v4-node__value {
+  color: rgba(0, 0, 0, 0.75);
 }
 
 .v4-node__sep {
@@ -117,14 +131,14 @@
 
 .v4-node__symbol {
   color: #1a1a1a;
-  font-size: 16px;
+  font-size: 24px;
   font-weight: 700;
   line-height: 1;
 }
 
 .v4-node__gate-id {
   color: rgba(0, 0, 0, 0.55);
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1;
 }
 

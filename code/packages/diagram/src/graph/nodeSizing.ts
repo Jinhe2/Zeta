@@ -55,13 +55,21 @@ function visualTextWidth(text: string): number {
       width += 7
     }
   }
-  return width
+  return width * 1.46
 }
 
 function adaptiveOutputWidth(node: GraphNode): number {
   const channelRef = typeof node.data?.channelRef === 'string' ? node.data.channelRef : '-'
-  const textWidth = visualTextWidth(node.name) + 8 + visualTextWidth(channelRef)
-  return Math.max(OUTPUT_WIDTH, Math.ceil(textWidth + 28))
+  const widestLine = Math.max(visualTextWidth(node.name), visualTextWidth(channelRef))
+  return Math.max(OUTPUT_WIDTH, Math.min(440, Math.ceil(widestLine + 44)))
+}
+
+function adaptiveOutputHeight(node: GraphNode): number {
+  const channelRef = typeof node.data?.channelRef === 'string' ? node.data.channelRef : '-'
+  const contentWidth = adaptiveOutputWidth(node) - 32
+  const labelLines = Math.max(1, Math.ceil(visualTextWidth(node.name) / contentWidth))
+  const refLines = Math.max(1, Math.ceil(visualTextWidth(channelRef) / contentWidth))
+  return Math.max(OUTPUT_HEIGHT, Math.ceil(26 + (labelLines + refLines) * 23 + 6))
 }
 
 function adaptiveLogicWidth(node: GraphNode): number {
@@ -91,7 +99,7 @@ export function getNodeDimensions(
     case 'timer':
       return { width: TIMER_WIDTH, height: TIMER_HEIGHT }
     case 'output':
-      return { width: adaptiveOutputWidth(node), height: OUTPUT_HEIGHT }
+      return { width: adaptiveOutputWidth(node), height: adaptiveOutputHeight(node) }
     case 'logic':
       return { width: adaptiveLogicWidth(node), height: LOGIC_HEIGHT }
     default:

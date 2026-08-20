@@ -82,9 +82,9 @@
 .v4-stats-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 8px 12px;
-  font-size: 12px;
+  gap: 20px;
+  padding: 13px 18px;
+  font-size: 17px;
   color: #b39ddb;
   background: rgba(124, 77, 255, 0.12);
   border-bottom: 1px solid rgba(124, 77, 255, 0.2);
@@ -98,19 +98,19 @@
 .v4-zoom-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   margin-left: auto;
 }
 
 .v4-zoom-controls button {
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 8px;
   border: 1px solid rgba(124, 77, 255, 0.45);
   border-radius: 4px;
   background: rgba(18, 24, 42, 0.9);
   color: #ce93d8;
-  font-size: 14px;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
 }
@@ -140,5 +140,5 @@
   align-items: center;
   justify-content: center;
   color: #b39ddb;
-  font-size: 14px;
+  font-size: 18px;
 }

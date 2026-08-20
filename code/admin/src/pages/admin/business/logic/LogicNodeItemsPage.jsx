@@ -376,6 +376,7 @@ export default function LogicNodeItemsPage() {
               uploadImage={api.uploadDeviceDisplayImage}
               disabled={busy}
               allowClear
+              hidePreviewImage={hasHighlightRegion(form)}
               renderPreviewExtra={(previewSrc) => (
                 <HighlightRegionField form={form} setForm={setForm} previewSrc={previewSrc} disabled={busy} />
               )}

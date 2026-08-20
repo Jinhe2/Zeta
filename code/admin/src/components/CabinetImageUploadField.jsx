@@ -14,6 +14,7 @@ export default function CabinetImageUploadField({
   disabled,
   uploadImage,
   renderPreviewExtra,
+  hidePreviewImage = false,
   allowClear = false,
 }) {
   const fileInputRef = useRef(null)
@@ -162,7 +163,9 @@ export default function CabinetImageUploadField({
         {uploadError && <span className="cabinet-display-items__upload-error">{uploadError}</span>}
         {previewSrc ? (
           <>
-            <img className="cabinet-display-items__preview" src={previewSrc} alt="认知图片预览" />
+            {!hidePreviewImage && (
+              <img className="cabinet-display-items__preview" src={previewSrc} alt="认知图片预览" />
+            )}
             {renderPreviewExtra?.(previewSrc)}
           </>
         ) : (

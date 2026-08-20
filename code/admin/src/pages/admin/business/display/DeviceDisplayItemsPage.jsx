@@ -267,7 +267,7 @@ export default function DeviceDisplayItemsPage() {
       })
       setShowCreate(false)
       setCreateForm(EMPTY_CREATE)
-      setImageVersion(Date.now())
+      setImageVersion((version) => version + 1)
       flash('认知条目创建成功')
       await loadData()
     } catch (err) {
@@ -321,7 +321,7 @@ export default function DeviceDisplayItemsPage() {
         sortOrder: normalizeSortOrder(editForm.sortOrder),
       })
       setEditingItem(null)
-      setImageVersion(Date.now())
+      setImageVersion((version) => version + 1)
       flash('认知条目已更新')
       await loadData()
     } catch (err) {
@@ -549,6 +549,7 @@ export default function DeviceDisplayItemsPage() {
                 }))}
                 uploadImage={api.uploadDeviceDisplayImage}
                 disabled={creating}
+                hidePreviewImage={hasHighlightRegion(createForm)}
                 renderPreviewExtra={(previewSrc) => (
                   <HighlightRegionField form={createForm} setForm={setCreateForm} previewSrc={previewSrc} disabled={creating} />
                 )}
@@ -647,6 +648,7 @@ export default function DeviceDisplayItemsPage() {
                 }))}
                 uploadImage={api.uploadDeviceDisplayImage}
                 disabled={saving}
+                hidePreviewImage={hasHighlightRegion(editForm)}
                 renderPreviewExtra={(previewSrc) => (
                   <HighlightRegionField form={editForm} setForm={setEditForm} previewSrc={previewSrc} disabled={saving} />
                 )}

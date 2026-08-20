@@ -423,33 +423,33 @@ export const api = {
     })
   },
 
-  getSettingList(scopeType, scopeId) {
-    return request(`/api/admin/setting-lists/${scopeType}/${scopeId}`)
+  getSettingList(scopeType, scopeId, namespace = 'admin') {
+    return request(`/api/${namespace}/setting-lists/${scopeType}/${scopeId}`)
   },
 
-  saveSettingList(scopeType, scopeId, items) {
-    return request(`/api/admin/setting-lists/${scopeType}/${scopeId}`, {
+  saveSettingList(scopeType, scopeId, items, namespace = 'admin') {
+    return request(`/api/${namespace}/setting-lists/${scopeType}/${scopeId}`, {
       method: 'PUT',
       body: JSON.stringify({ items }),
     })
   },
 
-  clearSettingList(scopeType, scopeId) {
-    return request(`/api/admin/setting-lists/${scopeType}/${scopeId}`, { method: 'DELETE' })
+  clearSettingList(scopeType, scopeId, namespace = 'admin') {
+    return request(`/api/${namespace}/setting-lists/${scopeType}/${scopeId}`, { method: 'DELETE' })
   },
 
-  summonSettingList(scopeType, scopeId) {
-    return request(`/api/admin/setting-lists/${scopeType}/${scopeId}/summon`, { method: 'POST' })
+  summonSettingList(scopeType, scopeId, namespace = 'admin') {
+    return request(`/api/${namespace}/setting-lists/${scopeType}/${scopeId}/summon`, { method: 'POST' })
   },
 
-  importSettingList(scopeType, scopeId, file) {
+  importSettingList(scopeType, scopeId, file, namespace = 'admin') {
     const form = new FormData()
     form.append('file', file)
-    return uploadRequest(`/api/admin/setting-lists/${scopeType}/${scopeId}/import`, form)
+    return uploadRequest(`/api/${namespace}/setting-lists/${scopeType}/${scopeId}/import`, form)
   },
 
-  downloadSettingList(scopeType, scopeId) {
-    return downloadRequest(`/api/admin/setting-lists/${scopeType}/${scopeId}/export`)
+  downloadSettingList(scopeType, scopeId, namespace = 'admin') {
+    return downloadRequest(`/api/${namespace}/setting-lists/${scopeType}/${scopeId}/export`)
   },
 
   checkLogicSettingList(logicDiagramId) {
@@ -459,33 +459,33 @@ export const api = {
     })
   },
 
-  getSoftPressboardList(scopeType, scopeId) {
-    return request(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}`)
+  getSoftPressboardList(scopeType, scopeId, namespace = 'admin') {
+    return request(`/api/${namespace}/soft-pressboard-lists/${scopeType}/${scopeId}`)
   },
 
-  saveSoftPressboardList(scopeType, scopeId, items) {
-    return request(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}`, {
+  saveSoftPressboardList(scopeType, scopeId, items, namespace = 'admin') {
+    return request(`/api/${namespace}/soft-pressboard-lists/${scopeType}/${scopeId}`, {
       method: 'PUT',
       body: JSON.stringify({ items }),
     })
   },
 
-  clearSoftPressboardList(scopeType, scopeId) {
-    return request(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}`, { method: 'DELETE' })
+  clearSoftPressboardList(scopeType, scopeId, namespace = 'admin') {
+    return request(`/api/${namespace}/soft-pressboard-lists/${scopeType}/${scopeId}`, { method: 'DELETE' })
   },
 
-  summonSoftPressboardList(scopeType, scopeId) {
-    return request(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}/summon`, { method: 'POST' })
+  summonSoftPressboardList(scopeType, scopeId, namespace = 'admin') {
+    return request(`/api/${namespace}/soft-pressboard-lists/${scopeType}/${scopeId}/summon`, { method: 'POST' })
   },
 
-  importSoftPressboardList(scopeType, scopeId, file) {
+  importSoftPressboardList(scopeType, scopeId, file, namespace = 'admin') {
     const form = new FormData()
     form.append('file', file)
-    return uploadRequest(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}/import`, form)
+    return uploadRequest(`/api/${namespace}/soft-pressboard-lists/${scopeType}/${scopeId}/import`, form)
   },
 
-  downloadSoftPressboardList(scopeType, scopeId) {
-    return downloadRequest(`/api/admin/soft-pressboard-lists/${scopeType}/${scopeId}/export`)
+  downloadSoftPressboardList(scopeType, scopeId, namespace = 'admin') {
+    return downloadRequest(`/api/${namespace}/soft-pressboard-lists/${scopeType}/${scopeId}/export`)
   },
 
   getHardPressboardList(scopeType, scopeId) {

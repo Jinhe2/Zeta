@@ -11,7 +11,7 @@ function displayValueType(valueType) {
   return valueType || '—'
 }
 
-export default function SettingListPage({ scopeType }) {
+export default function SettingListPage({ scopeType, basePath = '/admin/logic-learning', apiNamespace = 'admin' }) {
   const params = useParams()
   const rawId = scopeType === 'IED_DEVICE'
     ? params.deviceId
@@ -37,13 +37,13 @@ export default function SettingListPage({ scopeType }) {
     setLoading(true)
     setError('')
     try {
-      applyData(await api.getSettingList(scopeType, scopeId))
+      applyData(await api.getSettingList(scopeType, scopeId, apiNamespace))
     } catch (err) {
       setError(err.message || '加载定值清单失败')
     } finally {
       setLoading(false)
     }
-  }, [applyData, scopeId, scopeType])
+  }, [apiNamespace, applyData, scopeId, scopeType])
 
   useEffect(() => { load() }, [load])
 
@@ -102,7 +102,7 @@ export default function SettingListPage({ scopeType }) {
         baselineValue: item.baselineValue,
         compareEnabled: item.compareEnabled !== false,
         sortOrder: index,
-      })))
+      })), apiNamespace)
       applyData(result)
       setMessage('定值清单已保存')
     } catch (err) {
@@ -118,7 +118,7 @@ export default function SettingListPage({ scopeType }) {
     setError('')
     setMessage('')
     try {
-      const result = await api.summonSettingList(scopeType, scopeId)
+      const result = await api.summonSettingList(scopeType, scopeId, apiNamespace)
       setItems(result.items || [])
       setDirty(true)
       setMessage(`已召唤 ${result.summonCount} 项，匹配装置目录 ${result.matchedCount}/${result.catalogCount} 项；确认无误后请保存。`)
@@ -134,7 +134,7 @@ export default function SettingListPage({ scopeType }) {
     setWorking('clear')
     setError('')
     try {
-      applyData(await api.clearSettingList(scopeType, scopeId))
+      applyData(await api.clearSettingList(scopeType, scopeId, apiNamespace))
       setMessage(scopeType !== 'IED_DEVICE' ? '独立清单已清空，当前自动使用装置级清单。' : '装置级清单已清空。')
     } catch (err) {
       setError(err.message || '清空定值清单失败')
@@ -151,7 +151,7 @@ export default function SettingListPage({ scopeType }) {
     setWorking('import')
     setError('')
     try {
-      applyData(await api.importSettingList(scopeType, scopeId, file))
+      applyData(await api.importSettingList(scopeType, scopeId, file, apiNamespace))
       setMessage('Excel 已导入并替换当前定值清单')
     } catch (err) {
       setError(err.message || '导入 Excel 失败')
@@ -164,7 +164,7 @@ export default function SettingListPage({ scopeType }) {
     setWorking('export')
     setError('')
     try {
-      const blob = await api.downloadSettingList(scopeType, scopeId)
+      const blob = await api.downloadSettingList(scopeType, scopeId, apiNamespace)
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
       anchor.href = url
@@ -178,7 +178,7 @@ export default function SettingListPage({ scopeType }) {
     }
   }
 
-  if (!rawId || Number.isNaN(scopeId)) return <Navigate to="/admin/logic-learning" replace />
+  if (!rawId || Number.isNaN(scopeId)) return <Navigate to={basePath} replace />
   const disabled = Boolean(working)
   const isFallback = (scopeType === 'LOGIC_DIAGRAM' || scopeType === 'LOGIC_GROUP') && data?.fallbackToDevice
 
@@ -186,7 +186,7 @@ export default function SettingListPage({ scopeType }) {
     <div className="users-page setting-list-page">
       <div className="users-page__header">
         <div>
-          <p className="users-page__breadcrumb"><Link to="/admin/logic-learning">逻辑学习</Link><span> / </span><span>定值清单</span></p>
+          <p className="users-page__breadcrumb"><Link to={basePath}>基准管理</Link><span> / </span><span>定值清单</span></p>
           <h2 className="users-page__title">{data ? `${data.scopeName} — ${scopeType === 'IED_DEVICE' ? '装置定值清单' : '独立定值清单'}` : '定值清单'}</h2>
           <p className="users-page__desc">定值项目集合由装置召唤或 Excel 导入生成，界面可直接修改定值。</p>
         </div>

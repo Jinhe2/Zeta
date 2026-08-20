@@ -5,7 +5,7 @@ import { api } from '../../../../api/client'
 import '../UsersPage.css'
 import './SettingListPage.css'
 
-export default function SoftPressboardListPage({ scopeType }) {
+export default function SoftPressboardListPage({ scopeType, basePath = '/admin/logic-learning', apiNamespace = 'admin' }) {
   const params = useParams()
   const rawId = scopeType === 'IED_DEVICE'
     ? params.deviceId
@@ -31,13 +31,13 @@ export default function SoftPressboardListPage({ scopeType }) {
     setLoading(true)
     setError('')
     try {
-      applyData(await api.getSoftPressboardList(scopeType, scopeId))
+      applyData(await api.getSoftPressboardList(scopeType, scopeId, apiNamespace))
     } catch (err) {
       setError(err.message || '加载软压板基准清单失败')
     } finally {
       setLoading(false)
     }
-  }, [applyData, scopeId, scopeType])
+  }, [apiNamespace, applyData, scopeId, scopeType])
 
   useEffect(() => { load() }, [load])
 
@@ -88,7 +88,7 @@ export default function SoftPressboardListPage({ scopeType }) {
         baselineValue: Boolean(item.baselineValue),
         compareEnabled: item.compareEnabled !== false,
         sortOrder: index,
-      })))
+      })), apiNamespace)
       applyData(result)
       setMessage('软压板基准清单已保存')
     } catch (err) {
@@ -100,7 +100,7 @@ export default function SoftPressboardListPage({ scopeType }) {
     if (dirty && !window.confirm('召唤结果将替换当前未保存的编辑内容，确定继续吗？')) return
     setWorking('summon'); setError(''); setMessage('')
     try {
-      const result = await api.summonSoftPressboardList(scopeType, scopeId)
+      const result = await api.summonSoftPressboardList(scopeType, scopeId, apiNamespace)
       setItems(result.items || [])
       setDirty(true)
       setMessage(`已召唤 ${result.summonCount} 项，匹配软压板目录 ${result.matchedCount}/${result.catalogCount} 项；确认无误后请保存。`)
@@ -113,7 +113,7 @@ export default function SoftPressboardListPage({ scopeType }) {
     if (!window.confirm('确定清空当前层级的整套软压板基准清单吗？')) return
     setWorking('clear'); setError('')
     try {
-      applyData(await api.clearSoftPressboardList(scopeType, scopeId))
+      applyData(await api.clearSoftPressboardList(scopeType, scopeId, apiNamespace))
       setMessage(scopeType !== 'IED_DEVICE' ? '独立清单已清空，当前自动使用装置级清单。' : '装置级清单已清空。')
     } catch (err) {
       setError(err.message || '清空软压板基准清单失败')
@@ -126,7 +126,7 @@ export default function SoftPressboardListPage({ scopeType }) {
     if (!file || !window.confirm('导入成功后将整套替换当前层级清单，确定继续吗？')) return
     setWorking('import'); setError('')
     try {
-      applyData(await api.importSoftPressboardList(scopeType, scopeId, file))
+      applyData(await api.importSoftPressboardList(scopeType, scopeId, file, apiNamespace))
       setMessage('Excel 已导入并替换当前软压板基准清单')
     } catch (err) {
       setError(err.message || '导入 Excel 失败')
@@ -136,7 +136,7 @@ export default function SoftPressboardListPage({ scopeType }) {
   const exportExcel = async () => {
     setWorking('export'); setError('')
     try {
-      const blob = await api.downloadSoftPressboardList(scopeType, scopeId)
+      const blob = await api.downloadSoftPressboardList(scopeType, scopeId, apiNamespace)
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
       anchor.href = url
@@ -148,7 +148,7 @@ export default function SoftPressboardListPage({ scopeType }) {
     } finally { setWorking('') }
   }
 
-  if (!rawId || Number.isNaN(scopeId)) return <Navigate to="/admin/logic-learning" replace />
+  if (!rawId || Number.isNaN(scopeId)) return <Navigate to={basePath} replace />
   const disabled = Boolean(working)
   const isFallback = (scopeType === 'LOGIC_DIAGRAM' || scopeType === 'LOGIC_GROUP') && data?.fallbackToDevice
 
@@ -156,7 +156,7 @@ export default function SoftPressboardListPage({ scopeType }) {
     <div className="users-page setting-list-page">
       <div className="users-page__header">
         <div>
-          <p className="users-page__breadcrumb"><Link to="/admin/logic-learning">逻辑学习</Link><span> / </span><span>软压板基准清单</span></p>
+          <p className="users-page__breadcrumb"><Link to={basePath}>基准管理</Link><span> / </span><span>软压板基准清单</span></p>
           <h2 className="users-page__title">{data ? `${data.scopeName} — ${scopeType === 'IED_DEVICE' ? '装置软压板基准清单' : '独立软压板基准清单'}` : '软压板基准清单'}</h2>
           <p className="users-page__desc">软压板项目由装置召唤或 Excel 导入生成，召唤后确认并保存才会生效。</p>
         </div>

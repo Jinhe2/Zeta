@@ -19,6 +19,7 @@ import CircuitViewerPage from './pages/student/CircuitViewerPage'
 import CabinetCognitionPage from './pages/student/CabinetCognitionPage'
 import DrawingLearningPage from './pages/student/DrawingLearningPage'
 import TeacherPage from './pages/TeacherPage'
+import TeacherBaselinePage from './pages/teacher/TeacherBaselinePage'
 import TeacherLayout from './components/TeacherLayout'
 import AdminLayout from './components/AdminLayout'
 import AccountProfilePage from './pages/AccountProfilePage'
@@ -146,6 +147,15 @@ export default function App() {
           >
             <Route index element={<Navigate to="/teacher/students" replace />} />
             <Route path="students" element={<TeacherPage />} />
+            <Route path="baselines" element={<TeacherBaselinePage />} />
+            <Route path="baselines/cabinets/:cabinetId" element={<TeacherBaselinePage />} />
+            <Route path="baselines/devices/:deviceId" element={<TeacherBaselinePage />} />
+            <Route path="baselines/devices/:deviceId/settings" element={<SettingListPage scopeType="IED_DEVICE" basePath="/teacher/baselines" apiNamespace="teacher" />} />
+            <Route path="baselines/devices/:deviceId/soft-pressboards" element={<SoftPressboardListPage scopeType="IED_DEVICE" basePath="/teacher/baselines" apiNamespace="teacher" />} />
+            <Route path="baselines/logics/:logicDiagramId/settings" element={<SettingListPage scopeType="LOGIC_DIAGRAM" basePath="/teacher/baselines" apiNamespace="teacher" />} />
+            <Route path="baselines/logics/:logicDiagramId/soft-pressboards" element={<SoftPressboardListPage scopeType="LOGIC_DIAGRAM" basePath="/teacher/baselines" apiNamespace="teacher" />} />
+            <Route path="baselines/groups/:groupId/settings" element={<SettingListPage scopeType="LOGIC_GROUP" basePath="/teacher/baselines" apiNamespace="teacher" />} />
+            <Route path="baselines/groups/:groupId/soft-pressboards" element={<SoftPressboardListPage scopeType="LOGIC_GROUP" basePath="/teacher/baselines" apiNamespace="teacher" />} />
             <Route path="profile" element={<AccountProfilePage />} />
           </Route>
 

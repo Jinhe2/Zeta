@@ -30,49 +30,64 @@ public class SettingListController {
     this.excelService = excelService;
   }
 
-  @GetMapping("/api/admin/setting-lists/{scopeType}/{scopeId}")
+  @GetMapping({
+      "/api/admin/setting-lists/{scopeType}/{scopeId}",
+      "/api/teacher/setting-lists/{scopeType}/{scopeId}"
+  })
   public SettingListResponse get(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType,
       @PathVariable Long scopeId) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     return settingListService.get(scopeType, scopeId);
   }
 
-  @PutMapping("/api/admin/setting-lists/{scopeType}/{scopeId}")
+  @PutMapping({
+      "/api/admin/setting-lists/{scopeType}/{scopeId}",
+      "/api/teacher/setting-lists/{scopeType}/{scopeId}"
+  })
   public SettingListResponse replace(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType,
       @PathVariable Long scopeId,
       @Valid @RequestBody SettingListSaveRequest request) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     return settingListService.replace(scopeType, scopeId, request.getItems());
   }
 
-  @DeleteMapping("/api/admin/setting-lists/{scopeType}/{scopeId}")
+  @DeleteMapping({
+      "/api/admin/setting-lists/{scopeType}/{scopeId}",
+      "/api/teacher/setting-lists/{scopeType}/{scopeId}"
+  })
   public SettingListResponse clear(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType,
       @PathVariable Long scopeId) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     return settingListService.clear(scopeType, scopeId);
   }
 
-  @PostMapping("/api/admin/setting-lists/{scopeType}/{scopeId}/summon")
+  @PostMapping({
+      "/api/admin/setting-lists/{scopeType}/{scopeId}/summon",
+      "/api/teacher/setting-lists/{scopeType}/{scopeId}/summon"
+  })
   public SettingSummonResponse summon(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType,
       @PathVariable Long scopeId) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     return comparisonService.summonPreview(scopeType, scopeId);
   }
 
-  @GetMapping("/api/admin/setting-lists/{scopeType}/{scopeId}/export")
+  @GetMapping({
+      "/api/admin/setting-lists/{scopeType}/{scopeId}/export",
+      "/api/teacher/setting-lists/{scopeType}/{scopeId}/export"
+  })
   public ResponseEntity<byte[]> exportExcel(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType,
       @PathVariable Long scopeId) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     byte[] bytes = excelService.exportWorkbook(scopeType, scopeId);
     String name;
     try {
@@ -86,13 +101,18 @@ public class SettingListController {
         .body(bytes);
   }
 
-  @PostMapping(value = "/api/admin/setting-lists/{scopeType}/{scopeId}/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PostMapping(
+      value = {
+          "/api/admin/setting-lists/{scopeType}/{scopeId}/import",
+          "/api/teacher/setting-lists/{scopeType}/{scopeId}/import"
+      },
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public SettingListResponse importExcel(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType,
       @PathVariable Long scopeId,
       @RequestParam("file") MultipartFile file) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     return excelService.importWorkbook(scopeType, scopeId, file);
   }
 
@@ -109,7 +129,7 @@ public class SettingListController {
     return comparisonService.checkForLogic(((Number) id).longValue());
   }
 
-  private void requireAdmin(String authorization) {
-    authService.requireRole(authorization, UserRole.ADMIN);
+  private void requireTeacherOrAdmin(String authorization) {
+    authService.requireAnyRole(authorization, UserRole.ADMIN, UserRole.TEACHER);
   }
 }

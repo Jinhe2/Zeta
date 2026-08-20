@@ -69,6 +69,16 @@ public class AuthService {
     return user;
   }
 
+  public User requireAnyRole(String authorization, UserRole... roles) {
+    User user = requireUser(authorization);
+    for (UserRole role : roles) {
+      if (user.getRole() == role) {
+        return user;
+      }
+    }
+    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无权访问该资源");
+  }
+
   public void logout(String refreshToken) {
     if (refreshToken != null) {
       refreshTokenStore.revoke(refreshToken);

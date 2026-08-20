@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/admin/soft-pressboard-lists")
 public class SoftPressboardListController {
   private final AuthService authService;
   private final SoftPressboardListService listService;
@@ -30,40 +29,55 @@ public class SoftPressboardListController {
     this.excelService = excelService;
   }
 
-  @GetMapping("/{scopeType}/{scopeId}")
+  @GetMapping({
+      "/api/admin/soft-pressboard-lists/{scopeType}/{scopeId}",
+      "/api/teacher/soft-pressboard-lists/{scopeType}/{scopeId}"
+  })
   public ListResponse get(@RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType, @PathVariable Long scopeId) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     return listService.get(scopeType, scopeId);
   }
 
-  @PutMapping("/{scopeType}/{scopeId}")
+  @PutMapping({
+      "/api/admin/soft-pressboard-lists/{scopeType}/{scopeId}",
+      "/api/teacher/soft-pressboard-lists/{scopeType}/{scopeId}"
+  })
   public ListResponse replace(@RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType, @PathVariable Long scopeId,
       @Valid @RequestBody SaveRequest request) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     return listService.replace(scopeType, scopeId, request.getItems());
   }
 
-  @DeleteMapping("/{scopeType}/{scopeId}")
+  @DeleteMapping({
+      "/api/admin/soft-pressboard-lists/{scopeType}/{scopeId}",
+      "/api/teacher/soft-pressboard-lists/{scopeType}/{scopeId}"
+  })
   public ListResponse clear(@RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType, @PathVariable Long scopeId) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     return listService.clear(scopeType, scopeId);
   }
 
-  @PostMapping("/{scopeType}/{scopeId}/summon")
+  @PostMapping({
+      "/api/admin/soft-pressboard-lists/{scopeType}/{scopeId}/summon",
+      "/api/teacher/soft-pressboard-lists/{scopeType}/{scopeId}/summon"
+  })
   public SummonResponse summon(@RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType, @PathVariable Long scopeId) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     return comparisonService.summonPreview(scopeType, scopeId);
   }
 
-  @GetMapping("/{scopeType}/{scopeId}/export")
+  @GetMapping({
+      "/api/admin/soft-pressboard-lists/{scopeType}/{scopeId}/export",
+      "/api/teacher/soft-pressboard-lists/{scopeType}/{scopeId}/export"
+  })
   public ResponseEntity<byte[]> exportExcel(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType, @PathVariable Long scopeId) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     String name;
     try {
       name = URLEncoder.encode("软压板基准清单.xlsx", StandardCharsets.UTF_8.name()).replace("+", "%20");
@@ -76,16 +90,21 @@ public class SoftPressboardListController {
         .body(excelService.exportWorkbook(scopeType, scopeId));
   }
 
-  @PostMapping(value = "/{scopeType}/{scopeId}/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PostMapping(
+      value = {
+          "/api/admin/soft-pressboard-lists/{scopeType}/{scopeId}/import",
+          "/api/teacher/soft-pressboard-lists/{scopeType}/{scopeId}/import"
+      },
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ListResponse importExcel(
       @RequestHeader(value = "Authorization", required = false) String authorization,
       @PathVariable SettingListScopeType scopeType, @PathVariable Long scopeId,
       @RequestParam("file") MultipartFile file) {
-    requireAdmin(authorization);
+    requireTeacherOrAdmin(authorization);
     return excelService.importWorkbook(scopeType, scopeId, file);
   }
 
-  private void requireAdmin(String authorization) {
-    authService.requireRole(authorization, UserRole.ADMIN);
+  private void requireTeacherOrAdmin(String authorization) {
+    authService.requireAnyRole(authorization, UserRole.ADMIN, UserRole.TEACHER);
   }
 }

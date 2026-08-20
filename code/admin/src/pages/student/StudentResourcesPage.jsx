@@ -23,10 +23,11 @@ export default function StudentResourcesPage() {
   const { type, id } = useParams()
   const navigate = useNavigate()
   const { logout, session } = useAuth()
+  const role = session?.role
   const config = TYPES[type]
   const bindId = getDeviceBindId()
   const selectedCabinetId = useStudentCabinetId()
-  const selectedCabinetForAdmin = session?.role === 'ADMIN' ? selectedCabinetId : null
+  const currentCabinetId = role === 'ADMIN' || role === 'STUDENT' ? selectedCabinetId : null
   const [items, setItems] = useState([])
   const [resource, setResource] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -34,18 +35,23 @@ export default function StudentResourcesPage() {
 
   const load = useCallback(async () => {
     if (!config) return
+    if (currentCabinetId === undefined) {
+      setLoading(true)
+      return
+    }
+
     setLoading(true)
     setError('')
     try {
-      if (session?.role === 'ADMIN' && !selectedCabinetForAdmin) throw new Error('请从管理后台选择要查看的屏柜')
-      if (id) setResource(await api.getStudentLearningResource(id, bindId, selectedCabinetForAdmin))
-      else setItems(await api.listStudentLearningResources(config.api, bindId, selectedCabinetForAdmin))
+      if (role === 'ADMIN' && !currentCabinetId) throw new Error('请从管理后台选择要查看的屏柜')
+      if (id) setResource(await api.getStudentLearningResource(id, bindId, currentCabinetId))
+      else setItems(await api.listStudentLearningResources(config.api, bindId, currentCabinetId))
     } catch (err) {
       setError(err.message || '加载学习资料失败')
     } finally {
       setLoading(false)
     }
-  }, [bindId, config, id, selectedCabinetForAdmin, session?.role])
+  }, [bindId, config, currentCabinetId, id, role])
 
   useEffect(() => {
     const timer = window.setTimeout(load, 0)
@@ -61,7 +67,7 @@ export default function StudentResourcesPage() {
       {loading ? <p>加载中…</p> : error ? <div className="student-resources__error"><p>{error}</p><button type="button" onClick={load}>重试</button></div> : id && resource ? <article className="student-resources__detail">
         <p className="student-resources__scope">{resource.cabinetName ? `适用屏柜：${resource.cabinetName}` : '适用范围：所有屏柜'}</p>
         <p className="student-resources__description">{resource.description}</p>
-        {resource.resourceType === 'VIDEO_COURSE' ? <video className="student-resources__video" controls preload="metadata" src={learningResourceContentUrl(resource.id, bindId, selectedCabinetForAdmin)}>当前浏览器不支持视频播放。</video> : <PdfDocumentReader key={resource.id} title={resource.name} fileUrl={learningResourceContentUrl(resource.id, bindId, selectedCabinetForAdmin)} />}
+        {resource.resourceType === 'VIDEO_COURSE' ? <video className="student-resources__video" controls preload="metadata" src={learningResourceContentUrl(resource.id, bindId, currentCabinetId)}>当前浏览器不支持视频播放。</video> : <PdfDocumentReader key={resource.id} title={resource.name} fileUrl={learningResourceContentUrl(resource.id, bindId, currentCabinetId)} />}
       </article> : items.length === 0 ? <p className="student-resources__empty">当前屏柜暂无{config.title}。</p> : <section className="student-resources__list">{items.map((item) => <button key={item.id} type="button" className="student-resources__card" onClick={() => navigate(`/student/resources/${type}/${item.id}`)}><span className="student-resources__card-title">{item.name}</span><span className="student-resources__card-description">{item.description}</span><span className="student-resources__card-meta">{item.cabinetName ? item.cabinetName : '所有屏柜'} · {formatSize(item.fileSize)}</span></button>)}</section>}
     </main>
   </div>

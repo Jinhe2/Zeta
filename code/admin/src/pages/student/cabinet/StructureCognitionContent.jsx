@@ -13,6 +13,11 @@ export default function StructureCognitionContent({ navigationTarget, onPageChan
     let cancelled = false
 
     async function load() {
+      if (selectedCabinetId === undefined) {
+        setLoading(true)
+        return
+      }
+
       setLoading(true)
       setError(null)
       try {

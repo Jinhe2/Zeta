@@ -68,6 +68,11 @@ export default function SamplingTestPage() {
   useEffect(() => {
     let cancelled = false
     async function load() {
+      if (selectedCabinetId === undefined) {
+        setLoading(true)
+        return
+      }
+
       setLoading(true); setError('')
       try {
         const tree = await api.getKnowledgeTree()
@@ -77,8 +82,26 @@ export default function SamplingTestPage() {
           api.listKnowledgeSamplingTestItems(resolvedCabinetId),
           api.listTerminals(resolvedCabinetId),
         ])
-        if (!cancelled) { setCabinetId(resolvedCabinetId); setItems(data); setCabinetTerminals(terminalList); setIndex(0) }
-      } catch (err) { if (!cancelled) setError(err.message || '采样测试加载失败') } finally { if (!cancelled) setLoading(false) }
+        if (!cancelled) {
+          requestRef.current = null
+          setCabinetId(resolvedCabinetId)
+          setItems(data)
+          setCabinetTerminals(terminalList)
+          setIndex(0)
+          setTerminalData(null)
+          setCompleted(false)
+          setAcknowledgedItemId(null)
+          setDialog(null)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setCabinetId(null)
+          setItems([])
+          setCabinetTerminals([])
+          setTerminalData(null)
+          setError(err.message || '采样测试加载失败')
+        }
+      } finally { if (!cancelled) setLoading(false) }
     }
     load()
     return () => { cancelled = true }

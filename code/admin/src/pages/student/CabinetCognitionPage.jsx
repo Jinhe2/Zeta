@@ -137,6 +137,11 @@ export default function CabinetCognitionPage() {
     let cancelled = false
 
     async function loadNavigationPages() {
+      if (selectedCabinetId === undefined) {
+        setNavigationLoading(true)
+        return
+      }
+
       setNavigationLoading(true)
       setNavigationError(null)
       try {
@@ -172,6 +177,16 @@ export default function CabinetCognitionPage() {
 
         if (!cancelled) {
           setNavigationPages(nextPages)
+          const nextPage = nextPages[0]
+          if (nextPage) {
+            setActiveSection(nextPage.sectionId)
+            setCurrentPageKey(nextPage.key)
+            setPageNavigationEvent((prev) => ({
+              pageKey: nextPage.key,
+              source: 'cabinet',
+              sequence: prev.sequence + 1,
+            }))
+          }
         }
       } catch (err) {
         if (!cancelled) {

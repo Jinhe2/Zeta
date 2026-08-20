@@ -17,7 +17,8 @@ const fs = require("fs");
 const RELEASE_DIR = path.resolve(__dirname, "..", "release");
 const UNPACKED_DIR = path.join(RELEASE_DIR, "win-unpacked");
 const PKG = require("../package.json");
-const OUTPUT_NAME = `${PKG.productName || PKG.name}-v${PKG.version}-portable`;
+const PRODUCT_NAME = PKG.build?.productName || PKG.productName || PKG.name;
+const OUTPUT_NAME = `${PRODUCT_NAME}-v${PKG.version}-portable`;
 
 // ---------- 参数解析 ----------
 const args = process.argv.slice(2);
@@ -26,8 +27,8 @@ const format = formatFlag !== -1 ? args[formatFlag + 1] : "zip";
 
 // ---------- 前置检查 ----------
 if (!fs.existsSync(UNPACKED_DIR)) {
-  console.error(`❌ 未找到 unpacked 目录: ${UNPACKED_DIR}`);
-  console.error("   请先运行: npm run build:dir");
+  console.error(`ERROR: unpacked directory not found: ${UNPACKED_DIR}`);
+  console.error("       Run first: npm run build:dir");
   process.exit(1);
 }
 
@@ -49,9 +50,9 @@ function run(cmd, label) {
   console.log(`⏳ ${label} ...`);
   try {
     execSync(cmd, { stdio: "inherit" });
-    console.log(`✅ 完成: ${outputPath}`);
+    console.log(`DONE: ${outputPath}`);
   } catch {
-    console.error(`❌ ${label} 失败`);
+    console.error(`ERROR: ${label} failed`);
     process.exit(1);
   }
 }
@@ -61,14 +62,14 @@ let outputPath;
 
 if (format === "7z") {
   if (!cmdExists("7z")) {
-    console.error("❌ 未找到 7z，请安装 7-Zip: https://www.7-zip.org/");
+    console.error("ERROR: 7z was not found. Install 7-Zip: https://www.7-zip.org/");
     process.exit(1);
   }
   outputPath = path.join(RELEASE_DIR, `${OUTPUT_NAME}.7z`);
   if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
   run(
     `7z a -t7z -mx=9 "${outputPath}" "${UNPACKED_DIR}${path.sep}*"` ,
-    "正在用 7-Zip 压缩"
+    "Compressing with 7-Zip"
   );
 } else {
   // 默认 zip
@@ -77,18 +78,18 @@ if (format === "7z") {
     if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
     run(
       `powershell -NoProfile -Command "Compress-Archive -Path '${UNPACKED_DIR}\\*' -DestinationPath '${outputPath}' -CompressionLevel Optimal"`,
-      "正在用 PowerShell 压缩"
+      "Compressing with PowerShell"
     );
   } else {
     outputPath = path.join(RELEASE_DIR, `${OUTPUT_NAME}.zip`);
     if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
     run(
       `cd "${UNPACKED_DIR}" && zip -r -9 "${outputPath}" .`,
-      "正在用 zip 压缩"
+      "Compressing with zip"
     );
   }
 }
 
 // ---------- 输出文件大小 ----------
 const sizeMB = (fs.statSync(outputPath).size / 1024 / 1024).toFixed(2);
-console.log(`📦 文件大小: ${sizeMB} MB`);
+console.log(`Package size: ${sizeMB} MB`);

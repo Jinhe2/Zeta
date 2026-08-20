@@ -37,6 +37,11 @@ export default function DrawingLearningPage() {
   useEffect(() => {
     let cancelled = false
     async function loadGroups() {
+      if (selectedCabinetId === undefined) {
+        setLoading(true)
+        return
+      }
+
       setLoading(true)
       setError('')
       try {
@@ -44,11 +49,19 @@ export default function DrawingLearningPage() {
         const cabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
         if (!cabinetId) throw new Error('未找到图纸学习数据')
         const data = await api.listKnowledgeDrawingGroups(cabinetId)
-        if (!cancelled) setGroups(data)
+        if (!cancelled) {
+          setGroups(data)
+          setGroupDetails({})
+          setActiveGroupId(null)
+          setCurrentStepKey(null)
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err.message || '加载图纸学习失败')
           setGroups([])
+          setGroupDetails({})
+          setActiveGroupId(null)
+          setCurrentStepKey(null)
         }
       } finally {
         if (!cancelled) setLoading(false)

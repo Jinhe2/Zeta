@@ -15,6 +15,11 @@ export default function useFilteredCabinetCognition(deviceType) {
     let cancelled = false
 
     async function loadCabinetItems() {
+      if (selectedCabinetId === undefined) {
+        setLoading(true)
+        return
+      }
+
       setLoading(true)
       setError(null)
       try {

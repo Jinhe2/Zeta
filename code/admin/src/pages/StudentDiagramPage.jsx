@@ -63,6 +63,30 @@ function parseSnapshotSections(snapshotJson) {
   })
 }
 
+function pickDefaultSectionId(sections, outputNodeIds) {
+  if (!sections.length) return null
+  if (!outputNodeIds?.length) return sections[0].id
+
+  let lastRisingActionIndex = -1
+  let lastActionIndex = -1
+
+  for (let i = 0; i < sections.length; i += 1) {
+    const states = sections[i]?.states ?? {}
+    const previousStates = i > 0 ? sections[i - 1]?.states ?? {} : {}
+
+    for (const nodeId of outputNodeIds) {
+      const isAction = states[nodeId] === true
+      if (isAction) lastActionIndex = i
+      if (isAction && previousStates[nodeId] !== true) {
+        lastRisingActionIndex = i
+      }
+    }
+  }
+
+  const actionIndex = lastRisingActionIndex >= 0 ? lastRisingActionIndex : lastActionIndex
+  return sections[actionIndex >= 0 ? actionIndex : 0]?.id ?? null
+}
+
 function parseTimestampMs(ts) {
   const spaceIdx = ts.indexOf(' ')
   const timePart = spaceIdx >= 0 ? ts.substring(spaceIdx + 1) : ts
@@ -271,6 +295,11 @@ export default function StudentDiagramPage() {
   const pendingPreviousTaskUuidRef = useRef(null)
   const startConfirmationInFlightRef = useRef(false)
 
+  const outputNodeIds = useMemo(
+    () => (detail?.config?.outputs ?? []).map((output) => output.id).filter(Boolean),
+    [detail?.config?.outputs],
+  )
+
   // Load detail + existing snapshots
   useEffect(() => {
     let cancelled = false
@@ -330,10 +359,10 @@ export default function StudentDiagramPage() {
     api.getSnapshotSections(snapshotId)
       .then((secs) => {
         setSections(secs)
-        setSelectedSectionId(secs[0]?.id ?? null)
+        setSelectedSectionId(pickDefaultSectionId(secs, outputNodeIds))
       })
       .catch((err) => setError(err.message))
-  }, [])
+  }, [outputNodeIds])
 
   // View raw JSON
   const handleViewJson = useCallback((snapshotId, label) => {
@@ -361,10 +390,10 @@ export default function StudentDiagramPage() {
       setSelectedSnapshotId(result.id)
       return api.getSnapshotSections(result.id).then((secs) => {
         setSections(secs)
-        setSelectedSectionId(secs[0]?.id ?? null)
+        setSelectedSectionId(pickDefaultSectionId(secs, outputNodeIds))
       })
     })
-  }, [id, detail])
+  }, [id, detail, outputNodeIds])
 
   // 加载 monitor task 结果并渲染断面
   const loadMonitorTaskResult = useCallback(async (snapshotPath) => {
@@ -373,7 +402,7 @@ export default function StudentDiagramPage() {
       if (task.snapshotJson) {
         const secs = parseSnapshotSections(task.snapshotJson)
         setSections(secs)
-        setSelectedSectionId(secs[0]?.id ?? null)
+        setSelectedSectionId(pickDefaultSectionId(secs, outputNodeIds))
 
         // 添加到快照列表（去重）
         setSnapshots((prev) => {
@@ -396,7 +425,7 @@ export default function StudentDiagramPage() {
       setError('加载实验结果失败: ' + err.message)
       return null
     }
-  }, [id, detail])
+  }, [id, detail, outputNodeIds])
 
   const cognitionDeviceId = detail?.cognitionDeviceId
   const screenCabinetId = detail?.screenCabinetId
@@ -659,11 +688,6 @@ export default function StudentDiagramPage() {
   const inputNodeIds = useMemo(
     () => (detail?.config?.inputs ?? []).map((input) => input.id).filter(Boolean),
     [detail?.config?.inputs],
-  )
-
-  const outputNodeIds = useMemo(
-    () => (detail?.config?.outputs ?? []).map((output) => output.id).filter(Boolean),
-    [detail?.config?.outputs],
   )
 
   const configurableNodeMap = useMemo(

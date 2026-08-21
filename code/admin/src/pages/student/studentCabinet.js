@@ -4,7 +4,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { api } from '../../api/client'
 import { getDeviceBindId } from '../../api/deviceBinding'
 
-const BINDING_REFRESH_INTERVAL = 3000
+const BINDING_REFRESH_INTERVAL = 15000
 
 /**
  * 管理员从后台进入学员视图时，屏柜由 URL 显式指定；真实学员仍以设备绑定为准。
@@ -55,6 +55,7 @@ export function useStudentCabinetId() {
       })
 
     const timer = window.setInterval(() => {
+      if (document.hidden) return
       refreshBoundCabinetId()
         .then((nextCabinetId) => {
           if (!cancelled) setBoundCabinetId(nextCabinetId)

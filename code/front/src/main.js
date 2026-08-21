@@ -38,6 +38,7 @@ const DEFAULT_SETTINGS = {
   apiBaseUrl: 'https://zeta-api.qyabc.cn',
   windowTitle: 'CYG继电保护教学系统',
 }
+const ENABLE_RENDERER_LOG = !app.isPackaged || process.env.ZETA_DEBUG_LOG === '1'
 
 function getSettingsPaths() {
   return {
@@ -172,7 +173,9 @@ function createWindow() {
 
   // 捕获页面 JS 错误
   mainWindow.webContents.on('console-message', (event, level, message) => {
-    log(`[renderer:${level}]`, message)
+    if (ENABLE_RENDERER_LOG) {
+      log(`[renderer:${level}]`, message)
+    }
   })
 
   // 准备好后显示，避免白屏闪烁

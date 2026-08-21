@@ -23,7 +23,13 @@ public class MmsSettingClient {
   private final StringRedisTemplate redisTemplate;
   private final ScreenQueueProperties properties;
   private final ObjectMapper objectMapper;
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+  private final ScheduledExecutorService scheduler =
+      Executors.newSingleThreadScheduledExecutor(
+          runnable -> {
+            Thread thread = new Thread(runnable, "zeta-mms-timeout");
+            thread.setDaemon(true);
+            return thread;
+          });
   private final ConcurrentHashMap<String, CompletableFuture<ScreenQueueMessage>> pending =
       new ConcurrentHashMap<>();
 
@@ -161,7 +167,19 @@ public class MmsSettingClient {
 
   @PreDestroy
   void shutdown() {
+    pending.forEach(
+        (reqId, future) ->
+            future.completeExceptionally(new CancellationException("应用正在关闭")));
+    pending.clear();
     scheduler.shutdown();
+    try {
+      if (!scheduler.awaitTermination(3, TimeUnit.SECONDS)) {
+        scheduler.shutdownNow();
+      }
+    } catch (InterruptedException ex) {
+      scheduler.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
   }
 
   public static class SummonResult {

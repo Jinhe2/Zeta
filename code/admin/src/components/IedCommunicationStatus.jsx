@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
-import { getDeviceBindId } from '../api/deviceBinding'
 import { useAuth } from '../auth/AuthContext'
 import { useStudentCabinetId } from '../pages/student/studentCabinet'
 import './IedCommunicationStatus.css'
 
-const POLL_INTERVAL = 5000
+const OPEN_POLL_INTERVAL = 5000
+const CLOSED_POLL_INTERVAL = 30000
 
 function isOnline(device) {
   return String(device?.status || '').toLowerCase() === 'online'
@@ -37,11 +37,11 @@ export default function IedCommunicationStatus() {
         cabinetId = selectedCabinetId
         if (!cabinetId) throw new Error('请从管理后台选择要查看的屏柜')
       } else {
-        const binding = await api.checkBinding(getDeviceBindId())
-        if (binding?.status !== 'BOUND' || !binding?.cabinetId) {
+        cabinetId = selectedCabinetId
+        if (cabinetId === undefined) return
+        if (!cabinetId) {
           throw new Error('当前设备未绑定屏柜')
         }
-        cabinetId = binding.cabinetId
       }
       const data = await api.triggerIedCommStatus(cabinetId)
       setDevices(Array.isArray(data?.devices) ? data.devices : [])
@@ -56,12 +56,14 @@ export default function IedCommunicationStatus() {
 
   useEffect(() => {
     const initialRefresh = window.setTimeout(refresh, 0)
-    const timer = window.setInterval(refresh, POLL_INTERVAL)
+    const timer = window.setInterval(() => {
+      if (!document.hidden) refresh()
+    }, open ? OPEN_POLL_INTERVAL : CLOSED_POLL_INTERVAL)
     return () => {
       window.clearTimeout(initialRefresh)
       window.clearInterval(timer)
     }
-  }, [refresh])
+  }, [open, refresh])
 
   const summaryState = getSummaryState(devices, Boolean(error))
   const summaryText = summaryState === 'ok' ? '通讯正常' : summaryState === 'warning' ? '部分中断' : '通讯中断'

@@ -27,7 +27,13 @@ public class MonitorCommandService {
   private final LogicSnapshotRepository logicSnapshotRepository;
   private final MonitorTaskRepository monitorTaskRepository;
   private final LogicGroupSnapshotService logicGroupSnapshotService;
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+  private final ScheduledExecutorService scheduler =
+      Executors.newSingleThreadScheduledExecutor(
+          runnable -> {
+            Thread thread = new Thread(runnable, "zeta-monitor-timeout");
+            thread.setDaemon(true);
+            return thread;
+          });
 
   /** req_id → 等待响应的 Future */
   private final ConcurrentHashMap<String, CompletableFuture<ScreenQueueMessage>> pendingRequests =
@@ -502,7 +508,20 @@ public class MonitorCommandService {
 
   @PreDestroy
   void shutdown() {
+    pendingRequests.forEach(
+        (reqId, future) ->
+            future.completeExceptionally(new CancellationException("应用正在关闭")));
+    pendingRequests.clear();
+    groupTaskContext.clear();
     scheduler.shutdown();
+    try {
+      if (!scheduler.awaitTermination(3, TimeUnit.SECONDS)) {
+        scheduler.shutdownNow();
+      }
+    } catch (InterruptedException ex) {
+      scheduler.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
   }
 
   private Long extractCabinetId(Map<String, Object> data) {

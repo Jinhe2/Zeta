@@ -3,8 +3,11 @@
 server:
   address: 127.0.0.1
   port: 8080
+  shutdown: graceful
 
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
   config:
     import:
       - optional:file:/opt/zeta/config/mysql.yml

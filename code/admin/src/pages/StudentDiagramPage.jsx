@@ -844,6 +844,22 @@ export default function StudentDiagramPage() {
                       nodeStates={nodeStates}
                       selectedNodeId={selectedLogicNodeId}
                       onNodeSelect={isGroupResultMode ? undefined : handleLogicNodeSelect}
+                      toolbarBeforeZoom={nodeStates ? (
+                        <div className="diagram-canvas__state-legend" aria-label="节点状态图例">
+                          <span className="diagram-canvas__state-legend-item">
+                            <span className="diagram-canvas__state-legend-dot diagram-canvas__state-legend-dot--ok" />
+                            <span>满足</span>
+                          </span>
+                          <span className="diagram-canvas__state-legend-item">
+                            <span className="diagram-canvas__state-legend-dot diagram-canvas__state-legend-dot--fail" />
+                            <span>不满足</span>
+                          </span>
+                          <span className="diagram-canvas__state-legend-item">
+                            <span className="diagram-canvas__state-legend-dot diagram-canvas__state-legend-dot--invalid" />
+                            <span>无效节点</span>
+                          </span>
+                        </div>
+                      ) : null}
                       className="diagram-canvas__preview"
                     />
                   )}

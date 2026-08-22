@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import './SectionSelector.css'
 
+const TIMELINE_WINDOW_THRESHOLD = 20
+const TIMELINE_WINDOW_RADIUS = 5
+
 function formatTime(sec) {
   if (sec == null) return '-'
   if (sec < 1) return `${Math.round(sec * 1000)} ms`
@@ -8,6 +11,16 @@ function formatTime(sec) {
   const m = Math.floor(sec / 60)
   const s = (sec % 60).toFixed(1)
   return `${m} min ${s} s`
+}
+
+function formatTimelineTime(sec) {
+  if (sec == null) return '-'
+  if (sec < 1) return `${Math.round(sec * 1000)}ms`
+  if (sec < 10) return `${sec.toFixed(3)}s`
+  if (sec < 60) return `${sec.toFixed(2)}s`
+  const m = Math.floor(sec / 60)
+  const s = (sec % 60).toFixed(1).padStart(4, '0')
+  return `${m}m${s}s`
 }
 
 function formatTimestamp(ts) {
@@ -117,6 +130,7 @@ function buildTimelineLayout(sections, containerWidth) {
 export default function SectionSelector({ sections, selectedId, onSelect, inputNodeIds = [], outputNodeIds = [] }) {
   const timelineRef = useRef(null)
   const [timelineWidth, setTimelineWidth] = useState(520)
+  const [windowFocusIndex, setWindowFocusIndex] = useState(null)
   const safeSections = sections ?? []
 
   const currentIndex = safeSections.findIndex((s) => s.id === selectedId)
@@ -124,7 +138,35 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
   const hasNext = currentIndex >= 0 && currentIndex < safeSections.length - 1
   const cur = currentIndex >= 0 ? safeSections[currentIndex] : null
   const { ok, total, invalid } = satisfiedCount(cur?.states, inputNodeIds)
-  const timeline = safeSections.length ? buildTimelineLayout(safeSections, timelineWidth) : null
+  const shouldWindowTimeline = safeSections.length > TIMELINE_WINDOW_THRESHOLD && currentIndex >= 0
+  const windowSize = TIMELINE_WINDOW_RADIUS * 2 + 1
+  const clampIndex = (index) => Math.min(safeSections.length - 1, Math.max(0, index))
+  const windowAnchorIndex = safeSections.length && currentIndex >= 0
+    ? clampIndex(windowFocusIndex ?? currentIndex)
+    : currentIndex
+  let visibleStart = 0
+  let visibleEnd = safeSections.length - 1
+  if (shouldWindowTimeline) {
+    visibleStart = Math.max(0, windowAnchorIndex - TIMELINE_WINDOW_RADIUS)
+    visibleEnd = Math.min(safeSections.length - 1, windowAnchorIndex + TIMELINE_WINDOW_RADIUS)
+    if (visibleEnd - visibleStart + 1 < windowSize) {
+      if (visibleStart === 0) {
+        visibleEnd = Math.min(safeSections.length - 1, visibleStart + windowSize - 1)
+      } else if (visibleEnd === safeSections.length - 1) {
+        visibleStart = Math.max(0, visibleEnd - windowSize + 1)
+      }
+    }
+  }
+  const visibleSections = safeSections.slice(visibleStart, visibleEnd + 1).map((section, offset) => ({
+    section,
+    index: visibleStart + offset,
+  }))
+  const timeline = visibleSections.length
+    ? buildTimelineLayout(visibleSections.map((item) => item.section), timelineWidth)
+    : null
+  const overviewWindowLeft = safeSections.length > 1 ? (visibleStart / (safeSections.length - 1)) * 100 : 0
+  const overviewWindowRight = safeSections.length > 1 ? (visibleEnd / (safeSections.length - 1)) * 100 : 100
+  const overviewWindowWidth = Math.max(2, overviewWindowRight - overviewWindowLeft)
 
   useEffect(() => {
     const node = timelineRef.current
@@ -143,10 +185,41 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    if (windowFocusIndex == null && currentIndex >= 0) {
+      setWindowFocusIndex(currentIndex)
+    }
+  }, [currentIndex, windowFocusIndex])
+
   if (!safeSections.length) return null
 
-  const handlePrev = () => { if (hasPrev) onSelect(safeSections[currentIndex - 1].id) }
-  const handleNext = () => { if (hasNext) onSelect(safeSections[currentIndex + 1].id) }
+  const selectByIndex = (index) => {
+    const clampedIndex = clampIndex(index)
+    onSelect(safeSections[clampedIndex].id)
+  }
+  const slideWindowToIndex = (index) => {
+    setWindowFocusIndex(clampIndex(index))
+  }
+  const handlePrev = () => { if (hasPrev) selectByIndex(currentIndex - 1) }
+  const handleNext = () => { if (hasNext) selectByIndex(currentIndex + 1) }
+  const slideOverviewPosition = (clientX, target) => {
+    const track = target.closest?.('.section-selector__overview-track')
+    if (!track || safeSections.length <= 1) return
+    const rect = track.getBoundingClientRect()
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    const targetIndex = Math.round(ratio * (safeSections.length - 1))
+    slideWindowToIndex(targetIndex)
+  }
+  const handleOverviewPointerDown = (event) => {
+    if (!shouldWindowTimeline) return
+    event.preventDefault()
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    slideOverviewPosition(event.clientX, event.currentTarget)
+  }
+  const handleOverviewPointerMove = (event) => {
+    if (!shouldWindowTimeline || !(event.buttons & 1)) return
+    slideOverviewPosition(event.clientX, event.currentTarget)
+  }
 
   return (
     <footer className="section-selector">
@@ -164,12 +237,14 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
 
         <div ref={timelineRef} className="section-selector__timeline" aria-label="断面时间轴">
           <div className="section-selector__timeline-inner" role="list">
+            {visibleStart > 0 && <span className="section-selector__timeline-ellipsis section-selector__timeline-ellipsis--left">…</span>}
+            {visibleEnd < safeSections.length - 1 && <span className="section-selector__timeline-ellipsis section-selector__timeline-ellipsis--right">…</span>}
             <div
               className="section-selector__timeline-line"
               aria-hidden="true"
               style={{ left: `${timeline.lineLeft}px`, width: `${timeline.lineWidth}px` }}
             />
-            {safeSections.map((section, i) => {
+            {visibleSections.map(({ section, index: i }, localIndex) => {
               const { ok: sOk, total: sTotal } = satisfiedCount(section.states, inputNodeIds)
               const isActive = section.id === selectedId
               const isOk = sTotal > 0 && sOk === sTotal
@@ -182,7 +257,7 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
                   type="button"
                   role="listitem"
                   className={`section-selector__timeline-point${isActive ? ' section-selector__timeline-point--active' : ''}${isOk ? ' section-selector__timeline-point--ok' : ' section-selector__timeline-point--fail'}`}
-                  style={{ left: `${timeline.points[i].left}px` }}
+                  style={{ left: `${timeline.points[localIndex].left}px` }}
                   title={title}
                   aria-current={isActive ? 'step' : undefined}
                   onClick={() => onSelect(section.id)}
@@ -193,11 +268,45 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   <span className="section-selector__timeline-time">
-                    {formatTime(section.time)}
+                    {formatTimelineTime(section.time)}
                   </span>
                 </button>
               )
             })}
+            {shouldWindowTimeline && (
+              <div className="section-selector__overview" aria-label="断面全局概览">
+                <div
+                  className="section-selector__overview-track"
+                  onPointerDown={handleOverviewPointerDown}
+                  onPointerMove={handleOverviewPointerMove}
+                >
+                  <span
+                    className="section-selector__overview-window"
+                    style={{ left: `${overviewWindowLeft}%`, width: `${overviewWindowWidth}%` }}
+                  />
+                  {safeSections.map((section, i) => {
+                    const { ok: sOk, total: sTotal, invalid: sInvalid } = satisfiedCount(section.states, inputNodeIds)
+                    const isActive = i === currentIndex
+                    const isAction = isActionSection(safeSections, i, outputNodeIds)
+                    const isInvalid = sInvalid > 0 || sTotal === 0
+                    const isOk = sTotal > 0 && sOk === sTotal
+                    const left = safeSections.length > 1 ? (i / (safeSections.length - 1)) * 100 : 50
+                    return (
+                      <button
+                        key={`overview-${section.id}`}
+                        type="button"
+                        className={`section-selector__overview-point${isActive ? ' section-selector__overview-point--active' : ''}${isAction ? ' section-selector__overview-point--action' : ''}${isInvalid ? ' section-selector__overview-point--invalid' : isOk ? ' section-selector__overview-point--ok' : ' section-selector__overview-point--fail'}`}
+                        style={{ left: `${left}%` }}
+                        title={`选择断面 ${i + 1}${isAction ? ' · 动作' : ''}`}
+                        aria-label={`选择断面 ${i + 1}`}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={() => selectByIndex(i)}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -215,13 +324,19 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
           <div className="section-selector__info">
             <div className="section-selector__info-row">
               <span className="section-selector__info-label">时刻</span>
-              <span className="section-selector__info-value section-selector__info-value--mono">
+              <span
+                className="section-selector__info-value section-selector__info-value--mono"
+                title={formatTimestamp(cur.timestamp)}
+              >
                 {formatTimestamp(cur.timestamp)}
               </span>
             </div>
             <div className="section-selector__info-row">
               <span className="section-selector__info-label">经过</span>
-              <span className="section-selector__info-value section-selector__info-value--mono">
+              <span
+                className="section-selector__info-value section-selector__info-value--mono"
+                title={formatTime(cur.time)}
+              >
                 {formatTime(cur.time)}
               </span>
             </div>
@@ -240,6 +355,7 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
             <span className="section-selector__page-total">{safeSections.length}</span>
           </span>
         </span>
+
       </div>
 
       <span className="section-selector__divider" />
@@ -259,23 +375,6 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
         </div>
       </div>
 
-      <span className="section-selector__divider" />
-
-      {/* ── Legend ── */}
-      <div className="section-selector__legend">
-        <span className="section-selector__legend-item">
-          <span className="section-selector__legend-dot section-selector__legend-dot--ok" />
-          <span>满足</span>
-        </span>
-        <span className="section-selector__legend-item">
-          <span className="section-selector__legend-dot section-selector__legend-dot--fail" />
-          <span>不满足</span>
-        </span>
-        <span className="section-selector__legend-item">
-          <span className="section-selector__legend-dot section-selector__legend-dot--invalid" />
-          <span>无效节点</span>
-        </span>
-      </div>
     </footer>
   )
 }

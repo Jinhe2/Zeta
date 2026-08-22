@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   ReactFlow,
   Background,
@@ -46,6 +46,7 @@ export interface GraphViewProps {
   onNodeSelect?: (id: string | null) => void
   onConnect?: (connection: Connection) => void
   onEdgeClick?: (event: React.MouseEvent, edge: Edge) => void
+  toolbarBeforeZoom?: ReactNode
   className?: string
 }
 
@@ -80,6 +81,7 @@ function GraphFlow({
   onNodeSelect,
   onConnect,
   onEdgeClick,
+  toolbarBeforeZoom,
 }: {
   result: ReactFlowLayoutResult
   showDevInfo: boolean
@@ -89,6 +91,7 @@ function GraphFlow({
   onNodeSelect?: (id: string | null) => void
   onConnect?: (connection: Connection) => void
   onEdgeClick?: (event: React.MouseEvent, edge: Edge) => void
+  toolbarBeforeZoom?: ReactNode
 }) {
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(null)
   const isControlled = onNodeSelect != null
@@ -197,6 +200,7 @@ function GraphFlow({
             <span>连线 {result.stats.edgeCount}</span>
           </>
         )}
+        {toolbarBeforeZoom && <div className="v4-toolbar-before-zoom">{toolbarBeforeZoom}</div>}
         <ZoomControls />
       </div>
 
@@ -234,6 +238,7 @@ export default function GraphView({
   onNodeSelect,
   onConnect,
   onEdgeClick,
+  toolbarBeforeZoom,
   className,
 }: GraphViewProps) {
   const [result, setResult] = useState<ReactFlowLayoutResult | null>(null)
@@ -294,6 +299,7 @@ export default function GraphView({
             onNodeSelect={onNodeSelect}
             onConnect={onConnect}
             onEdgeClick={onEdgeClick}
+            toolbarBeforeZoom={toolbarBeforeZoom}
           />
         </ReactFlowProvider>
       )}

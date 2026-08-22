@@ -37,8 +37,8 @@ export interface GraphViewProps {
   data: GraphData
   /** 是否展示布局引擎等开发信息，学员界面应设为 false */
   showDevInfo?: boolean
-  /** 断面节点状态：nodeId → 是否满足；为 null 时不展示断面状态 */
-  nodeStates?: Record<string, boolean> | null
+  /** 断面节点状态：1 满足，0 不满足，-1 无实际数据；为 null 时不展示断面状态 */
+  nodeStates?: Record<string, boolean | number> | null
   /** 编辑模式：允许拖拽连线、点击边删除 */
   editable?: boolean
   /** 受控选中节点（编辑模式） */
@@ -83,7 +83,7 @@ function GraphFlow({
 }: {
   result: ReactFlowLayoutResult
   showDevInfo: boolean
-  nodeStates?: Record<string, boolean> | null
+  nodeStates?: Record<string, boolean | number> | null
   editable?: boolean
   selectedNodeId?: string | null
   onNodeSelect?: (id: string | null) => void
@@ -133,7 +133,9 @@ function GraphFlow({
         isRelated ? 'v4-rf-node--related' : '',
         isDimmed ? 'v4-rf-node--dimmed' : '',
         sectionSatisfied === true ? 'v4-rf-node--section-ok' : '',
-        sectionSatisfied === false ? 'v4-rf-node--section-fail' : '',
+        sectionSatisfied === 1 ? 'v4-rf-node--section-ok' : '',
+        sectionSatisfied === false || sectionSatisfied === 0 ? 'v4-rf-node--section-fail' : '',
+        sectionSatisfied === -1 ? 'v4-rf-node--section-invalid' : '',
       ]
         .filter(Boolean)
         .join(' ')

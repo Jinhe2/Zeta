@@ -69,8 +69,22 @@
     inset 0 0 12px rgba(255, 45, 45, 0.12) !important;
 }
 
+.v4-flow-pane .react-flow__node.v4-rf-node--section-invalid .v4-node {
+  opacity: 1;
+  filter: grayscale(1);
+  color: #c7cdd3;
+  border-color: #8b949e !important;
+  background: #5f6872 !important;
+  background-image: none !important;
+  box-shadow:
+    0 0 0 2px rgba(139, 148, 158, 0.32),
+    0 0 12px rgba(139, 148, 158, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
+}
+
 .v4-flow-pane .react-flow__node.v4-rf-node--section-ok.v4-rf-node--selected .v4-node,
-.v4-flow-pane .react-flow__node.v4-rf-node--section-fail.v4-rf-node--selected .v4-node {
+.v4-flow-pane .react-flow__node.v4-rf-node--section-fail.v4-rf-node--selected .v4-node,
+.v4-flow-pane .react-flow__node.v4-rf-node--section-invalid.v4-rf-node--selected .v4-node {
   opacity: 1;
   filter: none;
 }

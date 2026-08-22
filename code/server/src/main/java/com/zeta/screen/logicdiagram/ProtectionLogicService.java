@@ -157,15 +157,15 @@ public class ProtectionLogicService {
         long baseMs = parseTimestampMs(timestamps.get(0));
 
         for (int k = 0; k < timestamps.size(); k++) {
-            Map<String, Boolean> states = new LinkedHashMap<>();
+            Map<String, Integer> states = new LinkedHashMap<>();
             for (int i = 0; i < nodes.size() && i < channels.size(); i++) {
                 String nodeId = String.valueOf(nodes.get(i).get("id"));
                 Map<String, Object> channel = channels.get(i);
                 List<Number> values = (List<Number>) channel.get("values");
                 if (values != null && k < values.size()) {
-                    states.put(nodeId, values.get(k).intValue() != 0);
+                    states.put(nodeId, normalizeSectionValue(values.get(k)));
                 } else {
-                    states.put(nodeId, false);
+                    states.put(nodeId, 0);
                 }
             }
 
@@ -261,11 +261,11 @@ public class ProtectionLogicService {
             List<SectionSnapshotResponse> sections = new ArrayList<>();
             for (int i = 0; i < configSections.size(); i++) {
                 SectionDto sec = configSections.get(i);
-                Map<String, Boolean> states = new LinkedHashMap<>();
+                Map<String, Integer> states = new LinkedHashMap<>();
                 Map<String, Boolean> rawStates = sec.getStates() != null ? sec.getStates() : sec.getNodeStates();
                 if (rawStates != null) {
                     for (String nodeId : nodeIds) {
-                        states.put(nodeId, parseBool(rawStates.get(nodeId)));
+                        states.put(nodeId, parseBool(rawStates.get(nodeId)) ? 1 : 0);
                     }
                 }
                 double time = sec.getTime() != null ? sec.getTime() : i * 0.5;
@@ -283,12 +283,12 @@ public class ProtectionLogicService {
         double[] times = {0, 0.2, 0.5, 1.0, 2.0, 5.0};
         List<SectionSnapshotResponse> sections = new ArrayList<>();
         for (int i = 0; i < times.length; i++) {
-            Map<String, Boolean> states = new LinkedHashMap<>();
+            Map<String, Integer> states = new LinkedHashMap<>();
             for (String nodeId : nodeIds) {
                 if (i == 0 && displayState.containsKey(nodeId)) {
-                    states.put(nodeId, parseBool(displayState.get(nodeId)));
+                    states.put(nodeId, parseBool(displayState.get(nodeId)) ? 1 : 0);
                 } else {
-                    states.put(nodeId, (hash(nodeId + "-" + i) % 100) < (28 + i * 12));
+                    states.put(nodeId, (hash(nodeId + "-" + i) % 100) < (28 + i * 12) ? 1 : 0);
                 }
             }
             sections.add(new SectionSnapshotResponse(
@@ -309,6 +309,12 @@ public class ProtectionLogicService {
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    private int normalizeSectionValue(Number value) {
+        if (value == null) return 0;
+        int normalized = value.intValue();
+        return normalized == -1 ? -1 : (normalized == 0 ? 0 : 1);
     }
 
     private int hash(String s) {

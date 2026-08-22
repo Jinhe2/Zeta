@@ -80,11 +80,25 @@ class LogicGroupSnapshotServiceTest {
     assertThat(third.getSections()).hasSize(6);
     assertThat(first.getSections().get(1).getTimestamp())
         .isEqualTo(root.path("timestamps").get(1).asText());
-    assertThat(first.getSections().get(1).getStates().get("input_1")).isTrue();
+    assertThat(first.getSections().get(1).getStates().get("input_1")).isEqualTo(1);
     assertThat(second.getSections().get(13).getTimestamp())
         .isEqualTo(root.path("timestamps").get(17).asText());
     assertThat(third.getSections().get(5).getTimestamp())
         .isEqualTo(root.path("timestamps").get(20).asText());
+  }
+
+  @Test
+  void 应保留无实际数据节点的负一状态() throws Exception {
+    JsonNode root = objectMapper.readTree(fixtureJson);
+    com.fasterxml.jackson.databind.node.ArrayNode values =
+        (com.fasterxml.jackson.databind.node.ArrayNode) root.path("logics").get(0)
+            .path("channels").get(0).path("values");
+    values.set(1, com.fasterxml.jackson.databind.node.IntNode.valueOf(-1));
+    LogicGroupSnapshotService service = serviceFor(root.toString(), realParser());
+
+    MemberDetailResponse first = service.getMember(USER_ID, SNAPSHOT_ID, 1L);
+
+    assertThat(first.getSections().get(1).getStates().get("input_1")).isEqualTo(-1);
   }
 
   @Test

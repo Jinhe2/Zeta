@@ -390,6 +390,13 @@
   font-size: 16.56px;
 }
 
+.section-selector__invalid-count {
+  margin-left: 4px;
+  color: #9aa3ad;
+  font-size: 13.8px;
+  font-weight: 700;
+}
+
 .section-selector__legend {
   display: flex;
   align-items: center;
@@ -414,4 +421,10 @@
 .section-selector__legend-dot--fail {
   border: 2px solid #ff2d2d;
   box-shadow: 0 0 6px rgba(255, 45, 45, 0.36);
+}
+
+.section-selector__legend-dot--invalid {
+  border: 2px solid #8b949e;
+  background: #5f6872;
+  box-shadow: 0 0 6px rgba(139, 148, 158, 0.28);
 }

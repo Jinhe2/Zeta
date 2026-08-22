@@ -221,15 +221,16 @@ public class LogicSnapshotService {
 
             List<SectionSnapshotResponse> sections = new ArrayList<>();
             for (int k = 0; k < timestamps.size(); k++) {
-                Map<String, Boolean> states = new LinkedHashMap<>();
+                Map<String, Integer> states = new LinkedHashMap<>();
                 for (int i = 0; i < nodes.size() && i < channels.size(); i++) {
                     String nodeId = String.valueOf(nodes.get(i).get("id"));
                     Map<String, Object> channel = channels.get(i);
                     List<Number> values = (List<Number>) channel.get("values");
                     if (values != null && k < values.size()) {
-                        states.put(nodeId, values.get(k).intValue() != 0);
+                        int value = values.get(k).intValue();
+                        states.put(nodeId, value == -1 ? -1 : (value == 0 ? 0 : 1));
                     } else {
-                        states.put(nodeId, false);
+                        states.put(nodeId, 0);
                     }
                 }
 

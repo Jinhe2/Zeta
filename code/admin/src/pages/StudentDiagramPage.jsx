@@ -27,6 +27,17 @@ const EXPERIMENT_SUCCESS_MESSAGE = '恭喜成功完成实验'
 const EXPERIMENT_FAILED_MESSAGE = '装置未正确动作，请结合逻辑框图分析学习'
 const EXPERIMENT_DIAGNOSIS_MESSAGE = '实验失败了，请重新学习逻辑框图和相关操作'
 
+/** 统一断面节点状态：1 满足，0 不满足，-1 表示节点无实际数据。 */
+function normalizeSectionState(value) {
+  const numericValue = Number(value)
+  if (numericValue === -1) return -1
+  return numericValue === 0 ? 0 : 1
+}
+
+function isSatisfiedSectionState(value) {
+  return value === true || value === 1
+}
+
 /** 将 v2.3 snapshot JSON 解析为 sections 数组 */
 function parseSnapshotSections(snapshotJson) {
   let data
@@ -49,7 +60,7 @@ function parseSnapshotSections(snapshotJson) {
     for (let i = 0; i < nodes.length && i < channels.length; i++) {
       const nodeId = nodes[i].id
       const values = channels[i]?.values
-      states[nodeId] = values && k < values.length ? values[k] !== 0 : false
+      states[nodeId] = values && k < values.length ? normalizeSectionState(values[k]) : 0
     }
     const elapsedSec = (parseTimestampMs(ts) - baseTime) / 1000
     return {
@@ -74,9 +85,9 @@ function pickDefaultSectionId(sections, outputNodeIds) {
     const previousStates = i > 0 ? sections[i - 1]?.states ?? {} : {}
 
     for (const nodeId of outputNodeIds) {
-      const isAction = states[nodeId] === true
+      const isAction = isSatisfiedSectionState(states[nodeId])
       if (isAction) lastActionIndex = i
-      if (isAction && previousStates[nodeId] !== true) {
+      if (isAction && !isSatisfiedSectionState(previousStates[nodeId])) {
         lastRisingActionIndex = i
       }
     }

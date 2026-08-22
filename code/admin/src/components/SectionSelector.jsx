@@ -18,15 +18,22 @@ function formatTimestamp(ts) {
 }
 
 function satisfiedCount(states, nodeIds) {
-  if (!states) return { ok: 0, total: 0 }
+  if (!states) return { ok: 0, total: 0, invalid: 0 }
   if (nodeIds?.length) {
+    const validNodeIds = nodeIds.filter((nodeId) => states[nodeId] !== -1)
     return {
-      ok: nodeIds.filter((nodeId) => states[nodeId] === true).length,
-      total: nodeIds.length,
+      ok: validNodeIds.filter((nodeId) => isNodeOn(states, nodeId)).length,
+      total: validNodeIds.length,
+      invalid: nodeIds.length - validNodeIds.length,
     }
   }
   const vals = Object.values(states)
-  return { ok: vals.filter(Boolean).length, total: vals.length }
+  const validVals = vals.filter((value) => value !== -1)
+  return {
+    ok: validVals.filter((value) => value === true || value === 1).length,
+    total: validVals.length,
+    invalid: vals.length - validVals.length,
+  }
 }
 
 function isNodeOn(states, nodeId) {
@@ -116,7 +123,7 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
   const hasPrev = currentIndex > 0
   const hasNext = currentIndex >= 0 && currentIndex < safeSections.length - 1
   const cur = currentIndex >= 0 ? safeSections[currentIndex] : null
-  const { ok, total } = satisfiedCount(cur?.states, inputNodeIds)
+  const { ok, total, invalid } = satisfiedCount(cur?.states, inputNodeIds)
   const timeline = safeSections.length ? buildTimelineLayout(safeSections, timelineWidth) : null
 
   useEffect(() => {
@@ -250,14 +257,17 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
           <span className="section-selector__satisfy-label">满足节点数</span>
           <span className="section-selector__satisfy-ok">{ok}</span>
           <span className="section-selector__satisfy-sep">/</span>
-          <span className="section-selector__satisfy-label">输入节点数</span>
+          <span className="section-selector__satisfy-label">有效输入节点数</span>
           <span className="section-selector__satisfy-total">{total}</span>
+          {invalid > 0 && <span className="section-selector__invalid-count">无效 {invalid}</span>}
         </div>
         <div className="section-selector__legend">
           <span className="section-selector__legend-dot section-selector__legend-dot--ok" />
           <span>满足</span>
           <span className="section-selector__legend-dot section-selector__legend-dot--fail" />
           <span>不满足</span>
+          <span className="section-selector__legend-dot section-selector__legend-dot--invalid" />
+          <span>灰色表示该节点无效</span>
         </div>
       </div>
     </footer>

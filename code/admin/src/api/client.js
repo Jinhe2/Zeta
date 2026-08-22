@@ -620,6 +620,14 @@ export const api = {
     return request(`/api/logic-group-snapshots/${id}`)
   },
 
+  listLogicGroupSnapshotMembers(id) {
+    return request(`/api/logic-group-snapshots/${id}/members`)
+  },
+
+  getLogicGroupSnapshotMember(id, logicDiagramId) {
+    return request(`/api/logic-group-snapshots/${id}/members/${logicDiagramId}`)
+  },
+
   getMonitorTaskResult(taskUuid) {
     return request(`/api/monitor/tasks/${taskUuid}/result`)
   },

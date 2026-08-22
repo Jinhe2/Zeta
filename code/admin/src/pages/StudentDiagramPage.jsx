@@ -24,9 +24,8 @@ const EXPERIMENT_REMINDER_INTERVAL = 10 * 60 * 1000
 const EXPERIMENT_AUTO_STOP_GRACE = 60 * 1000
 const APP_TITLE = '继电保护智慧实操教学系统'
 const EXPERIMENT_SUCCESS_MESSAGE = '恭喜成功完成实验'
-const EXPERIMENT_FAILED_MESSAGE = '实验失败了，请结合中间文件分析结果进一步确认原因'
+const EXPERIMENT_FAILED_MESSAGE = '装置未正确动作，请结合逻辑框图分析学习'
 const EXPERIMENT_DIAGNOSIS_MESSAGE = '实验失败了，请重新学习逻辑框图和相关操作'
-const EXPERIMENT_NO_WAVEFORM_MESSAGE = '未获取到录波，请结合定值和功能压板状态排查'
 
 /** 将 v2.3 snapshot JSON 解析为 sections 数组 */
 function parseSnapshotSections(snapshotJson) {
@@ -144,88 +143,6 @@ function getExperimentDialogMessage(result, task) {
   return ''
 }
 
-function readFirstValue(source, keys) {
-  for (const key of keys) {
-    const value = source?.[key]
-    if (value != null && value !== '') return value
-  }
-  return ''
-}
-
-function hasBinaryData(value) {
-  if (value == null) return false
-  if (typeof value === 'string') return value.trim().length > 0
-  if (Array.isArray(value)) return value.length > 0
-  return true
-}
-
-function isNoWaveformResult(result, task) {
-  const errorText = `${result?.error_code ?? result?.errorCode ?? ''} ${result?.error_message ?? result?.errorMessage ?? task?.errorMessage ?? ''}`.toLowerCase()
-  const noWaveformHint = /无录波|未录波|没有录波|no.?wave|no.?record|record.*not|comtrade/.test(errorText)
-  const hasSnapshot = Boolean(task?.snapshotJson)
-  const hasComtrade = ['comtradeCfg', 'comtradeDat', 'comtradeMid', 'comtradeDes', 'comtradeHdr']
-    .some((key) => hasBinaryData(task?.[key]))
-  const transitionCount = Number(task?.totalTransitions ?? result?.total_transitions ?? result?.totalTransitions ?? 0)
-  return noWaveformHint || (!hasSnapshot && !hasComtrade && transitionCount === 0)
-}
-
-function normalizePressboardStateValue(state) {
-  if (state === true || state === 1) return '投入'
-  if (state === false || state === 0) return '退出'
-  const text = String(state ?? '').trim()
-  const normalized = text.toUpperCase()
-  if (!text) return ''
-  if (['ON', 'CONNECTED', 'CLOSE', 'CLOSED', '1', 'TRUE', 'YES', 'Y', '合闸', '闭合', '合位', '投入', '投'].includes(normalized) || ['合闸', '闭合', '合位', '投入', '投'].includes(text)) return '投入'
-  if (['OFF', 'DISCONNECTED', 'OPEN', 'OPENED', '0', 'FALSE', 'NO', 'N', '分闸', '断开', '分位', '退出', '退'].includes(normalized) || ['分闸', '断开', '分位', '退出', '退'].includes(text)) return '退出'
-  return text
-}
-
-function readPressboardStatusId(pressboardStatus) {
-  return pressboardStatus?.pressboard_id
-    ?? pressboardStatus?.pressboardId
-    ?? pressboardStatus?.id
-}
-
-function readPressboardStatusValue(pressboardStatus) {
-  return pressboardStatus?.state
-    ?? pressboardStatus?.status
-    ?? pressboardStatus?.value
-    ?? pressboardStatus?.position
-    ?? pressboardStatus?.switch_state
-    ?? pressboardStatus?.switchState
-}
-
-function normalizeBaselineItems(result) {
-  const items = result?.items ?? result?.settings ?? result?.results ?? []
-  if (!Array.isArray(items)) return []
-  return items.map((item, index) => ({
-    key: `${readFirstValue(item, ['setting_ref', 'settingRef', 'description', 'name'])}-${index}`,
-    name: readFirstValue(item, ['description', 'name', 'setting_name', 'settingName', 'setting_ref', 'settingRef']) || `定值 ${index + 1}`,
-    baselineValue: readFirstValue(item, ['baselineValue', 'baseline_value', 'expectedValue', 'expected_value', 'referenceValue', 'reference_value']),
-    actualValue: readFirstValue(item, ['actualValue', 'actual_value', 'currentValue', 'current_value', 'realValue', 'real_value']),
-    matched: item.equal ?? item.matched ?? item.pass ?? item.passed,
-  })).filter((item) => item.baselineValue !== '' || item.actualValue !== '')
-}
-
-function buildPressboardRows(pressboards, statusResponse) {
-  const functionPressboards = (Array.isArray(pressboards) ? pressboards : [])
-    .filter((pressboard) => pressboard.pressboardType === 'FUNCTION')
-  const statusItems = Array.isArray(statusResponse?.pressboards) ? statusResponse.pressboards : []
-  const statesById = new Map()
-  const statesByName = new Map()
-  for (const item of statusItems) {
-    const state = normalizePressboardStateValue(readPressboardStatusValue(item))
-    const id = readPressboardStatusId(item)
-    if (id != null) statesById.set(String(id), state)
-    if (item?.name) statesByName.set(String(item.name), state)
-  }
-  return functionPressboards.map((pressboard) => ({
-    id: pressboard.id,
-    name: pressboard.name || `功能压板 ${pressboard.id}`,
-    actualValue: statesById.get(String(pressboard.id)) ?? statesByName.get(String(pressboard.name)) ?? '',
-  })).filter((item) => item.actualValue)
-}
-
 function buildConfigurableNodeMap(config) {
   const map = new Map()
   const addNode = (node, type) => {
@@ -264,6 +181,12 @@ export default function StudentDiagramPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { logout } = useAuth()
+  const groupSnapshotId = useMemo(
+    () => new URLSearchParams(location.search).get('groupSnapshotId'),
+    [location.search],
+  )
+  const isGroupResultMode = Boolean(groupSnapshotId)
+  const [groupMemberResult, setGroupMemberResult] = useState(null)
   const [detail, setDetail] = useState(null)
   const [snapshots, setSnapshots] = useState([])
   const [selectedSnapshotId, setSelectedSnapshotId] = useState(null)
@@ -300,17 +223,45 @@ export default function StudentDiagramPage() {
     [detail?.config?.outputs],
   )
 
+  const applyGroupMemberResult = useCallback((detailData, memberResult) => {
+    const groupSections = memberResult?.status === 'failed' ? [] : (memberResult?.sections ?? [])
+    const groupOutputNodeIds = (detailData?.config?.outputs ?? []).map((output) => output.id).filter(Boolean)
+    const syntheticSnapshotId = `group-${memberResult.groupSnapshotId}`
+    setGroupMemberResult(memberResult)
+    setSnapshots([{
+      id: syntheticSnapshotId,
+      totalTransitions: memberResult.totalTransitions ?? 0,
+      status: memberResult.status === 'failed' || memberResult.experimentPassed === false
+        ? 'FAILED'
+        : 'COMPLETED',
+      source: 'GROUP',
+    }])
+    setSelectedSnapshotId(syntheticSnapshotId)
+    setSections(groupSections)
+    setSelectedSectionId(pickDefaultSectionId(groupSections, groupOutputNodeIds))
+  }, [])
+
   // Load detail + existing snapshots
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
 
-    Promise.all([api.getProtectionLogic(id), api.listSnapshotsByLogic(id)])
-      .then(([detailData, snapshotData]) => {
+    Promise.all([
+      api.getProtectionLogic(id),
+      isGroupResultMode
+        ? api.getLogicGroupSnapshotMember(groupSnapshotId, id)
+        : api.listSnapshotsByLogic(id),
+    ])
+      .then(([detailData, resultData]) => {
         if (cancelled) return
         setDetail(detailData)
-        setSnapshots(snapshotData)
+        if (isGroupResultMode) {
+          applyGroupMemberResult(detailData, resultData)
+        } else {
+          setGroupMemberResult(null)
+          setSnapshots(resultData)
+        }
       })
       .catch((err) => {
         if (!cancelled) setError(err.message)
@@ -320,7 +271,7 @@ export default function StudentDiagramPage() {
       })
 
     return () => { cancelled = true }
-  }, [id])
+  }, [applyGroupMemberResult, groupSnapshotId, id, isGroupResultMode])
 
   // 清理：组件卸载时停止心跳和轮询
   const clearMonitorTimers = useCallback(() => {
@@ -427,61 +378,22 @@ export default function StudentDiagramPage() {
     }
   }, [id, detail, outputNodeIds])
 
-  const cognitionDeviceId = detail?.cognitionDeviceId
-  const screenCabinetId = detail?.screenCabinetId
-
-  const loadExperimentDiagnostics = useCallback(async () => {
-    const [baselineResult, pressboardResult] = await Promise.allSettled([
-      cognitionDeviceId ? api.compareCognitionDeviceBaselineSettings(cognitionDeviceId) : Promise.resolve(null),
-      screenCabinetId
-        ? Promise.all([
-          api.listHardPressboards(screenCabinetId),
-          api.triggerPressboardStatus(screenCabinetId),
-        ])
-        : Promise.resolve(null),
-    ])
-
-    const baselineItems = baselineResult.status === 'fulfilled'
-      ? normalizeBaselineItems(baselineResult.value)
-      : []
-    const pressboardItems = pressboardResult.status === 'fulfilled' && pressboardResult.value
-      ? buildPressboardRows(pressboardResult.value[0], pressboardResult.value[1])
-      : []
-
-    return {
-      baselineItems,
-      pressboardItems,
-      errors: [
-        baselineResult.status === 'rejected' ? `定值读取失败：${baselineResult.reason?.message || '未知错误'}` : '',
-        pressboardResult.status === 'rejected' ? `功能压板读取失败：${pressboardResult.reason?.message || '未知错误'}` : '',
-      ].filter(Boolean),
-    }
-  }, [cognitionDeviceId, screenCabinetId])
-
-  const showExperimentResultDialog = useCallback(async (result, task, fallbackMessage) => {
-    const noWaveform = isNoWaveformResult(result, task)
-    const diagnostics = await loadExperimentDiagnostics()
+  const showExperimentResultDialog = useCallback((result, task, fallbackMessage) => {
     const snapshotMeta = parseSnapshotMeta(task?.snapshotJson)
-    const message = noWaveform
-      ? EXPERIMENT_NO_WAVEFORM_MESSAGE
-      : fallbackMessage || getExperimentDialogMessage(result, task) || (result?.result === 'failed' ? EXPERIMENT_FAILED_MESSAGE : '实验已结束')
+    const message = fallbackMessage || getExperimentDialogMessage(result, task) || (result?.result === 'failed' ? EXPERIMENT_FAILED_MESSAGE : '实验已结束')
 
     setExperimentDialog({
       open: true,
-      title: noWaveform ? '无录波辅助排查' : '实验结果',
+      title: '实验结果',
       message,
-      noWaveform,
       summary: {
         result: result?.result,
         resultType: result?.result_type ?? result?.resultType ?? task?.resultType ?? snapshotMeta.resultType,
         totalTransitions: task?.totalTransitions ?? result?.total_transitions ?? result?.totalTransitions,
         sectionCount: task?.snapshotJson ? parseSnapshotSections(task.snapshotJson).length : 0,
       },
-      baselineItems: diagnostics.baselineItems,
-      pressboardItems: diagnostics.pressboardItems,
-      diagnosticErrors: diagnostics.errors,
     })
-  }, [loadExperimentDiagnostics])
+  }, [])
 
   // 轮询任务结果
   const startResultPolling = useCallback((taskUuid) => {
@@ -664,14 +576,24 @@ export default function StudentDiagramPage() {
     setSections([])
     setSelectedSectionId(null)
     setSelectedSnapshotId(null)
-    Promise.all([api.getProtectionLogic(id), api.listSnapshotsByLogic(id)])
-      .then(([detailData, snapshotData]) => {
+    Promise.all([
+      api.getProtectionLogic(id),
+      isGroupResultMode
+        ? api.getLogicGroupSnapshotMember(groupSnapshotId, id)
+        : api.listSnapshotsByLogic(id),
+    ])
+      .then(([detailData, resultData]) => {
         setDetail(detailData)
-        setSnapshots(snapshotData)
+        if (isGroupResultMode) {
+          applyGroupMemberResult(detailData, resultData)
+        } else {
+          setGroupMemberResult(null)
+          setSnapshots(resultData)
+        }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [applyGroupMemberResult, groupSnapshotId, id, isGroupResultMode])
 
   useEffect(() => {
     if (detail?.title) document.title = detail.title
@@ -795,7 +717,7 @@ export default function StudentDiagramPage() {
             type="button"
             className="tablet-shell__back"
             onClick={() => {
-              const groupId = location.state?.groupId
+              const groupId = groupMemberResult?.groupId ?? location.state?.groupId
               if (groupId != null) {
                 navigate(`/student/modes/panorama/groups/${groupId}`, { state: listState })
               } else {
@@ -843,7 +765,11 @@ export default function StudentDiagramPage() {
               <>
                 <div className="diagram-canvas__header">
                   <span>逻辑框图</span>
-                  {monitoring ? (
+                  {isGroupResultMode ? (
+                    <span className={`logic-group__overall${groupMemberResult?.experimentPassed === true ? ' logic-group__overall--ok' : groupMemberResult?.experimentPassed === false || groupMemberResult?.status === 'failed' ? ' logic-group__overall--error' : ''}`}>
+                      组合实验结果{groupMemberResult?.status === 'failed' ? ' · 计算失败' : groupMemberResult?.experimentPassed === true ? ' · 通过' : groupMemberResult?.experimentPassed === false ? ' · 未通过' : ''}
+                    </span>
+                  ) : monitoring ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ color: '#ffd54f', fontSize: 12 }}>● {statusLabel[monitorStatus] || '监视中'}</span>
                       {monitorStatus !== 'checking' && (
@@ -895,14 +821,21 @@ export default function StudentDiagramPage() {
                   )}
                 </div>
                 <div className="diagram-canvas__area">
-                  <ZetaGraphView
-                    config={detail.config}
-                    showDevInfo={false}
-                    nodeStates={nodeStates}
-                    selectedNodeId={selectedLogicNodeId}
-                    onNodeSelect={handleLogicNodeSelect}
-                    className="diagram-canvas__preview"
-                  />
+                  {isGroupResultMode && groupMemberResult?.status === 'failed' ? (
+                    <div className="diagram-canvas__placeholder">
+                      <p>该基础逻辑计算失败，未生成断面数据</p>
+                      <p>{groupMemberResult.errorCode || 'UNKNOWN_ERROR'}：{groupMemberResult.errorMessage || '未提供错误详情'}</p>
+                    </div>
+                  ) : (
+                    <ZetaGraphView
+                      config={detail.config}
+                      showDevInfo={false}
+                      nodeStates={nodeStates}
+                      selectedNodeId={selectedLogicNodeId}
+                      onNodeSelect={isGroupResultMode ? undefined : handleLogicNodeSelect}
+                      className="diagram-canvas__preview"
+                    />
+                  )}
                 </div>
               </>
             )}
@@ -926,24 +859,26 @@ export default function StudentDiagramPage() {
           <div className="diagram-page__history">
             <div className="diagram-page__history-header">
               <span>实验记录</span>
-              <div className="diagram-page__history-actions">
-                <button
-                  type="button"
-                  className="diagram-page__history-import-btn"
-                  onClick={() => setImportOpen(true)}
-                  title="导入断面 JSON"
-                >
-                  导入
-                </button>
-                <button
-                  type="button"
-                  className="diagram-page__history-trigger"
-                  disabled={monitoring}
-                  onClick={handleStartExperiment}
-                >
-                  {monitoring ? '…' : '+ 新实验'}
-                </button>
-              </div>
+              {!isGroupResultMode && (
+                <div className="diagram-page__history-actions">
+                  <button
+                    type="button"
+                    className="diagram-page__history-import-btn"
+                    onClick={() => setImportOpen(true)}
+                    title="导入断面 JSON"
+                  >
+                    导入
+                  </button>
+                  <button
+                    type="button"
+                    className="diagram-page__history-trigger"
+                    disabled={monitoring}
+                    onClick={handleStartExperiment}
+                  >
+                    {monitoring ? '…' : '+ 新实验'}
+                  </button>
+                </div>
+              )}
             </div>
             {snapshots.length === 0 ? (
               <p className="diagram-page__history-empty">暂无记录</p>
@@ -953,21 +888,25 @@ export default function StudentDiagramPage() {
                   <li
                     key={snap.id}
                     className={`diagram-page__history-item${snap.id === selectedSnapshotId ? ' diagram-page__history-item--active' : ''}`}
-                    onClick={() => loadSnapshotSections(snap.id)}
+                    onClick={isGroupResultMode ? undefined : () => loadSnapshotSections(snap.id)}
                   >
-                    <span className="diagram-page__history-time">{formatSnapTime(snap.createdAt)}</span>
+                    <span className="diagram-page__history-time">
+                      {isGroupResultMode ? `组合记录 #${groupSnapshotId}` : formatSnapTime(snap.createdAt)}
+                    </span>
                     <span className="diagram-page__history-transitions">{snap.totalTransitions} 次变位</span>
-                    <button
-                      type="button"
-                      className="diagram-page__history-json-btn"
-                      title="查看原始 JSON"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleViewJson(snap.id, `断面 #${snap.id} · ${formatSnapTime(snap.createdAt)}`)
-                      }}
-                    >
-                      {'{ }'}
-                    </button>
+                    {!isGroupResultMode && (
+                      <button
+                        type="button"
+                        className="diagram-page__history-json-btn"
+                        title="查看原始 JSON"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleViewJson(snap.id, `断面 #${snap.id} · ${formatSnapTime(snap.createdAt)}`)
+                        }}
+                      >
+                        {'{ }'}
+                      </button>
+                    )}
                     {snap.source === 'MANUAL' && (
                       <span className="diagram-page__history-source diagram-page__history-source--manual" title="手动导入">
                         M
@@ -1044,22 +983,6 @@ export default function StudentDiagramPage() {
                 </table>
               </section>
             )}
-            {experimentDialog.pressboardItems?.length > 0 && (
-              <section className="experiment-result-dialog__section">
-                <h3>功能压板状态</h3>
-                <table className="experiment-result-dialog__table">
-                  <thead><tr><th>名称</th><th>实际状态</th></tr></thead>
-                  <tbody>
-                    {experimentDialog.pressboardItems.map((item) => (
-                      <tr key={item.id}>
-                        <td>{item.name}</td>
-                        <td>{item.actualValue}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            )}
             {experimentDialog.softPressboardItems?.length > 0 && (
               <section className="experiment-result-dialog__section">
                 <h3>软压板比对</h3>
@@ -1098,11 +1021,6 @@ export default function StudentDiagramPage() {
                   </tbody>
                 </table>
               </section>
-            )}
-            {experimentDialog.diagnosticErrors?.length > 0 && (
-              <div className="experiment-result-dialog__errors">
-                {experimentDialog.diagnosticErrors.map((item) => <p key={item}>{item}</p>)}
-              </div>
             )}
             {experimentDialog.kind === 'start-confirm' ? (
               <div className="experiment-result-dialog__actions">

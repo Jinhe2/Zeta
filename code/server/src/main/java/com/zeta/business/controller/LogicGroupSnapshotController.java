@@ -2,6 +2,8 @@ package com.zeta.business.controller;
 
 import com.zeta.business.auth.AuthService;
 import com.zeta.business.entities.logicgroup.LogicGroupSnapshot;
+import com.zeta.business.entities.logicgroup.dto.LogicGroupSnapshotDtos.MemberDetailResponse;
+import com.zeta.business.entities.logicgroup.dto.LogicGroupSnapshotDtos.MemberSummaryResponse;
 import com.zeta.business.entities.user.User;
 import com.zeta.business.service.LogicGroupSnapshotService;
 import java.util.ArrayList;
@@ -41,6 +43,22 @@ public class LogicGroupSnapshotController {
     return toDetail(service.get(user.getId(), id));
   }
 
+  @GetMapping("/{id}/members")
+  public List<MemberSummaryResponse> listMembers(
+      @RequestHeader("Authorization") String authorization, @PathVariable Long id) {
+    User user = authService.requireUser(authorization);
+    return service.listMembers(user.getId(), id);
+  }
+
+  @GetMapping("/{id}/members/{logicDiagramId}")
+  public MemberDetailResponse getMember(
+      @RequestHeader("Authorization") String authorization,
+      @PathVariable Long id,
+      @PathVariable Long logicDiagramId) {
+    User user = authService.requireUser(authorization);
+    return service.getMember(user.getId(), id, logicDiagramId);
+  }
+
   private Map<String, Object> toSummary(LogicGroupSnapshot snapshot) {
     Map<String, Object> map = new LinkedHashMap<>();
     map.put("id", snapshot.getId());
@@ -52,6 +70,7 @@ public class LogicGroupSnapshotController {
     map.put("source", snapshot.getSource());
     map.put("createdAt", snapshot.getCreatedAt());
     map.put("completedAt", snapshot.getCompletedAt());
+    map.put("resultStatus", service.resolveResultStatus(snapshot));
     return map;
   }
 

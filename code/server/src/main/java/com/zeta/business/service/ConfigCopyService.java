@@ -16,23 +16,40 @@ import com.zeta.business.entities.configcopy.dto.*;
 import com.zeta.business.entities.devicedisplay.*;
 import com.zeta.business.entities.drawinglearning.*;
 import com.zeta.business.entities.experimentguide.*;
+import com.zeta.business.entities.hardpressboardlist.HardPressboardListItem;
+import com.zeta.business.entities.hardpressboardlist.HardPressboardListItemRepository;
 import com.zeta.business.entities.learningresource.LearningResource;
 import com.zeta.business.entities.learningresource.LearningResourceRepository;
 import com.zeta.business.entities.logiclearning.LogicLearningConfig;
 import com.zeta.business.entities.logiclearning.LogicLearningConfigRepository;
 import com.zeta.business.entities.logicnodecognition.LogicNodeCognitionItem;
 import com.zeta.business.entities.logicnodecognition.LogicNodeCognitionItemRepository;
+import com.zeta.business.entities.logicgroup.LogicGroup;
+import com.zeta.business.entities.logicgroup.LogicGroupMember;
+import com.zeta.business.entities.logicgroup.LogicGroupMemberRepository;
+import com.zeta.business.entities.logicgroup.LogicGroupRepository;
 import com.zeta.business.entities.samplingtest.*;
+import com.zeta.business.entities.settinglist.SettingListItem;
+import com.zeta.business.entities.settinglist.SettingListItemRepository;
 import com.zeta.business.entities.settinglist.SettingListScopeType;
+import com.zeta.business.entities.softpressboardlist.SoftPressboardListItem;
+import com.zeta.business.entities.softpressboardlist.SoftPressboardListItemRepository;
+import com.zeta.business.entities.wiringrequirement.WiringRequirementConfig;
+import com.zeta.business.entities.wiringrequirement.WiringRequirementConfigRepository;
+import com.zeta.business.entities.wiringrequirement.WiringRequirementGroup;
+import com.zeta.business.entities.wiringrequirement.WiringRequirementGroupRepository;
 import com.zeta.business.media.CognitionMediaType;
 import com.zeta.screen.baseline.IedBaselineSettingItem;
 import com.zeta.screen.baseline.IedBaselineSettingItemRepository;
 import com.zeta.screen.cabinet.Cabinet;
 import com.zeta.screen.cabinet.CabinetRepository;
+import com.zeta.screen.hardpressboard.HardPressboard;
 import com.zeta.screen.ieddevice.Device;
 import com.zeta.screen.ieddevice.DeviceRepository;
+import com.zeta.screen.iedsetting.IedSettingItem;
 import com.zeta.screen.logicdiagram.ProtectionLogic;
 import com.zeta.screen.logicdiagram.ProtectionLogicRepository;
+import com.zeta.screen.softpressboard.IedSoftPressboardItem;
 import com.zeta.screen.terminal.Terminal;
 import com.zeta.screen.terminal.TerminalRepository;
 import com.zeta.screen.terminal.TerminalStrip;
@@ -69,6 +86,17 @@ public class ConfigCopyService {
   private final SamplingTestItemRepository samplingItemRepository;
   private final SamplingTestChannelRepository samplingChannelRepository;
   private final LearningResourceRepository resourceRepository;
+  private final SettingListItemRepository settingItemRepository;
+  private final SoftPressboardListItemRepository softPressboardItemRepository;
+  private final HardPressboardListItemRepository hardPressboardItemRepository;
+  private final WiringRequirementConfigRepository wiringConfigRepository;
+  private final WiringRequirementGroupRepository wiringGroupRepository;
+  private final LogicGroupRepository logicGroupRepository;
+  private final LogicGroupMemberRepository logicGroupMemberRepository;
+  private final SettingCatalogService settingCatalogService;
+  private final SoftPressboardCatalogService softPressboardCatalogService;
+  private final HardPressboardCatalogService hardPressboardCatalogService;
+  private final SettingListTargetService targetService;
   private final SharedMediaCleanupService mediaCleanupService;
   private final ObjectMapper objectMapper;
 
@@ -93,6 +121,17 @@ public class ConfigCopyService {
       SamplingTestItemRepository samplingItemRepository,
       SamplingTestChannelRepository samplingChannelRepository,
       LearningResourceRepository resourceRepository,
+      SettingListItemRepository settingItemRepository,
+      SoftPressboardListItemRepository softPressboardItemRepository,
+      HardPressboardListItemRepository hardPressboardItemRepository,
+      WiringRequirementConfigRepository wiringConfigRepository,
+      WiringRequirementGroupRepository wiringGroupRepository,
+      LogicGroupRepository logicGroupRepository,
+      LogicGroupMemberRepository logicGroupMemberRepository,
+      SettingCatalogService settingCatalogService,
+      SoftPressboardCatalogService softPressboardCatalogService,
+      HardPressboardCatalogService hardPressboardCatalogService,
+      SettingListTargetService targetService,
       SharedMediaCleanupService mediaCleanupService,
       ObjectMapper objectMapper) {
     this.cabinetRepository = cabinetRepository;
@@ -115,6 +154,17 @@ public class ConfigCopyService {
     this.samplingItemRepository = samplingItemRepository;
     this.samplingChannelRepository = samplingChannelRepository;
     this.resourceRepository = resourceRepository;
+    this.settingItemRepository = settingItemRepository;
+    this.softPressboardItemRepository = softPressboardItemRepository;
+    this.hardPressboardItemRepository = hardPressboardItemRepository;
+    this.wiringConfigRepository = wiringConfigRepository;
+    this.wiringGroupRepository = wiringGroupRepository;
+    this.logicGroupRepository = logicGroupRepository;
+    this.logicGroupMemberRepository = logicGroupMemberRepository;
+    this.settingCatalogService = settingCatalogService;
+    this.softPressboardCatalogService = softPressboardCatalogService;
+    this.hardPressboardCatalogService = hardPressboardCatalogService;
+    this.targetService = targetService;
     this.mediaCleanupService = mediaCleanupService;
     this.objectMapper = objectMapper;
   }
@@ -149,6 +199,15 @@ public class ConfigCopyService {
           deleteLogicLearning(logicIdsForCabinet(targetCabinetId));
           copied.put(ConfigCopyModule.LOGIC_LEARNING, copyLogicLearning(target.logicMap));
         }
+        if (request.getModules().contains(ConfigCopyModule.LOGIC_GROUP)) {
+          deleteLogicGroups(target.deviceMap.values());
+          copied.put(ConfigCopyModule.LOGIC_GROUP, copyLogicGroups(target));
+        }
+        if (request.getModules().contains(ConfigCopyModule.BASELINE_CONFIG)) {
+          deleteBaselineConfig(request.getScope(), target.targetId);
+          copied.put(ConfigCopyModule.BASELINE_CONFIG,
+              copyBaselineConfig(request.getScope(), request.getSourceId(), target));
+        }
         if (request.getModules().contains(ConfigCopyModule.SAMPLING_TEST)) {
           deleteSamplingTests(targetCabinetId);
           copied.put(ConfigCopyModule.SAMPLING_TEST,
@@ -159,8 +218,19 @@ public class ConfigCopyService {
           copied.put(ConfigCopyModule.LEARNING_RESOURCE, copyLearningResources(sourceCabinetId, targetCabinetId));
         }
       } else {
-        deleteLogicLearning(logicIdsForDevice(target.targetId));
-        copied.put(ConfigCopyModule.LOGIC_LEARNING, copyLogicLearning(target.logicMap));
+        if (request.getModules().contains(ConfigCopyModule.LOGIC_LEARNING)) {
+          deleteLogicLearning(logicIdsForDevice(target.targetId));
+          copied.put(ConfigCopyModule.LOGIC_LEARNING, copyLogicLearning(target.logicMap));
+        }
+        if (request.getModules().contains(ConfigCopyModule.LOGIC_GROUP)) {
+          deleteLogicGroups(target.deviceMap.values());
+          copied.put(ConfigCopyModule.LOGIC_GROUP, copyLogicGroups(target));
+        }
+        if (request.getModules().contains(ConfigCopyModule.BASELINE_CONFIG)) {
+          deleteBaselineConfig(request.getScope(), target.targetId);
+          copied.put(ConfigCopyModule.BASELINE_CONFIG,
+              copyBaselineConfig(request.getScope(), request.getSourceId(), target));
+        }
       }
       results.add(new ConfigCopyExecuteResponse.TargetExecutionResponse(
           target.targetId, target.targetName, copied));
@@ -188,9 +258,15 @@ public class ConfigCopyService {
   }
 
   private void validateRequest(ConfigCopyRequest request) {
-    if (request.getScope() == ConfigCopyScope.DEVICE
-        && (!request.getModules().equals(EnumSet.of(ConfigCopyModule.LOGIC_LEARNING)))) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "装置级复制仅支持逻辑学习");
+    if (request.getScope() == ConfigCopyScope.DEVICE) {
+      Set<ConfigCopyModule> allowed = EnumSet.of(
+          ConfigCopyModule.LOGIC_LEARNING, ConfigCopyModule.BASELINE_CONFIG, ConfigCopyModule.LOGIC_GROUP);
+      for (ConfigCopyModule module : request.getModules()) {
+        if (!allowed.contains(module)) {
+          throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+              "装置级复制仅支持逻辑学习、基准配置和组合逻辑");
+        }
+      }
     }
     if (request.getScope() == ConfigCopyScope.CABINET) {
       requireCabinet(request.getSourceId());
@@ -215,9 +291,16 @@ public class ConfigCopyService {
         validateBaselines(request.getSourceId(), result);
       }
       if (request.getModules().contains(ConfigCopyModule.LOGIC_LEARNING)) validateLogics(result);
+      if (request.getModules().contains(ConfigCopyModule.LOGIC_GROUP)) validateLogicGroups(result);
+      if (request.getModules().contains(ConfigCopyModule.BASELINE_CONFIG)) {
+        resolveBaselineLogicMappings(result);
+        validateSettingPressboards(result);
+        validateHardPressboards(result);
+      }
       if (request.getModules().contains(ConfigCopyModule.CABINET_LEARNING)
-          || request.getModules().contains(ConfigCopyModule.SAMPLING_TEST)) {
-        validateTerminals(request.getSourceId(), targetCabinet.getId(), request.getModules(), result);
+          || request.getModules().contains(ConfigCopyModule.SAMPLING_TEST)
+          || request.getModules().contains(ConfigCopyModule.BASELINE_CONFIG)) {
+        validateTerminals(ConfigCopyScope.CABINET, request.getSourceId(), targetCabinet.getId(), request.getModules(), result);
       }
     }
     return finishCounts(request, result);
@@ -236,7 +319,14 @@ public class ConfigCopyService {
     } else {
       result.deviceMap.put(source.getId(), target.getId());
       result.mappingResponses.add(mappingResponse(source, target, false, Collections.emptyList()));
-      validateLogics(result);
+      if (request.getModules().contains(ConfigCopyModule.LOGIC_LEARNING)) validateLogics(result);
+      if (request.getModules().contains(ConfigCopyModule.LOGIC_GROUP)) validateLogicGroups(result);
+      if (request.getModules().contains(ConfigCopyModule.BASELINE_CONFIG)) {
+        resolveBaselineLogicMappings(result);
+        validateSettingPressboards(result);
+        validateHardPressboards(result);
+        validateTerminals(ConfigCopyScope.DEVICE, source.getId(), target.getId(), request.getModules(), result);
+      }
     }
     return finishCounts(request, result);
   }
@@ -267,9 +357,23 @@ public class ConfigCopyService {
         }
       }
     }
+    if (modules.contains(ConfigCopyModule.BASELINE_CONFIG)) {
+      for (Device device : deviceRepository.findByCabinetIdOrderByIdAsc(cabinetId)) {
+        if (hasBaselineConfigAtDevice(device.getId())) ids.add(device.getId());
+      }
+    }
+    if (modules.contains(ConfigCopyModule.LOGIC_GROUP)) {
+      List<Long> allDeviceIds = deviceRepository.findByCabinetIdOrderByIdAsc(cabinetId).stream()
+          .map(Device::getId).collect(Collectors.toList());
+      if (!allDeviceIds.isEmpty()) {
+        logicGroupRepository.findByIedDeviceIdIn(allDeviceIds).stream()
+            .map(LogicGroup::getIedDeviceId).forEach(ids::add);
+      }
+    }
     if (modules.contains(ConfigCopyModule.CABINET_LEARNING)
-        || modules.contains(ConfigCopyModule.SAMPLING_TEST)) {
-      Set<Long> terminalIds = referencedTerminalIds(cabinetId, modules);
+        || modules.contains(ConfigCopyModule.SAMPLING_TEST)
+        || modules.contains(ConfigCopyModule.BASELINE_CONFIG)) {
+      Set<Long> terminalIds = referencedTerminalIds(ConfigCopyScope.CABINET, cabinetId, modules);
       if (!terminalIds.isEmpty()) {
         terminalRepository.findAllWithCabinetAndStripByIdIn(terminalIds).stream()
             .map(Terminal::getIedDevice).filter(Objects::nonNull).map(Device::getId).forEach(ids::add);
@@ -413,6 +517,138 @@ public class ConfigCopyService {
     }
   }
 
+  private void validateLogicGroups(TargetAnalysis result) {
+    for (Map.Entry<Long, Long> mapping : result.deviceMap.entrySet()) {
+      Long sourceDeviceId = mapping.getKey();
+      Long targetDeviceId = mapping.getValue();
+      List<LogicGroup> sourceGroups = logicGroupRepository
+          .findByIedDeviceIdOrderBySortOrderAscIdAsc(sourceDeviceId);
+      if (sourceGroups.isEmpty()) continue;
+      List<ProtectionLogic> targetLogics = logicRepository.findByDeviceIdOrderByIdAsc(targetDeviceId);
+      for (LogicGroup group : sourceGroups) {
+        for (LogicGroupMember member : logicGroupMemberRepository
+            .findByGroupIdOrderBySortOrderAscIdAsc(group.getId())) {
+          Long sourceLogicId = member.getLogicDiagramId();
+          if (result.groupLogicMap.containsKey(sourceLogicId)) continue;
+          ProtectionLogic sourceLogic = requireLogic(sourceLogicId);
+          List<ProtectionLogic> matched = targetLogics.stream()
+              .filter(item -> Objects.equals(sourceLogic.getLogicName(), item.getLogicName()))
+              .collect(Collectors.toList());
+          if (matched.size() != 1) {
+            result.incompatible(matched.isEmpty() ? "LOGIC_MISSING" : "LOGIC_AMBIGUOUS",
+                "目标装置无法唯一匹配组合逻辑所需的基础逻辑：" + sourceLogic.getLogicName(), sourceDeviceId);
+            continue;
+          }
+          result.groupLogicMap.put(sourceLogicId, matched.get(0).getId());
+        }
+      }
+    }
+  }
+
+  private void validateSettingPressboards(TargetAnalysis result) {
+    for (Map.Entry<Long, Long> mapping : result.deviceMap.entrySet()) {
+      Device sourceDevice = requireDevice(mapping.getKey());
+      Device targetDevice = requireDevice(mapping.getValue());
+      validateSettingItems(sourceDevice, targetDevice, result);
+      validateSoftPressboardItems(sourceDevice, targetDevice, result);
+    }
+  }
+
+  private void validateSettingItems(Device sourceDevice, Device targetDevice, TargetAnalysis result) {
+    List<SettingListItem> sourceItems = settingItemRepository
+        .findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(SettingListScopeType.IED_DEVICE, sourceDevice.getId());
+    if (sourceItems.isEmpty()) return;
+    Map<String, IedSettingItem> targetByRelRef = new LinkedHashMap<>();
+    for (IedSettingItem item : settingCatalogService.list(targetDevice.getId())) {
+      targetByRelRef.put(stripIedName(item.getSettingRef(), targetDevice.getIedName()), item);
+    }
+    for (SettingListItem item : sourceItems) {
+      String relRef = stripIedName(item.getSettingRef(), sourceDevice.getIedName());
+      IedSettingItem target = targetByRelRef.get(relRef);
+      if (target == null || !Objects.equals(item.getSettingName(), target.getSettingName())) {
+        result.incompatible("BASELINE_ITEM_MISSING",
+            "目标装置缺少定值项：" + item.getSettingName(), sourceDevice.getId());
+      }
+    }
+  }
+
+  private void validateSoftPressboardItems(Device sourceDevice, Device targetDevice, TargetAnalysis result) {
+    List<SoftPressboardListItem> sourceItems = softPressboardItemRepository
+        .findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(SettingListScopeType.IED_DEVICE, sourceDevice.getId());
+    if (sourceItems.isEmpty()) return;
+    Map<String, IedSoftPressboardItem> targetByRelRef = new LinkedHashMap<>();
+    for (IedSoftPressboardItem item : softPressboardCatalogService.list(targetDevice.getId())) {
+      targetByRelRef.put(stripIedName(item.getPressboardRef(), targetDevice.getIedName()), item);
+    }
+    for (SoftPressboardListItem item : sourceItems) {
+      String relRef = stripIedName(item.getPressboardRef(), sourceDevice.getIedName());
+      IedSoftPressboardItem target = targetByRelRef.get(relRef);
+      if (target == null || !Objects.equals(item.getPressboardName(), target.getPressboardName())) {
+        result.incompatible("BASELINE_ITEM_MISSING",
+            "目标装置缺少软压板项：" + item.getPressboardName(), sourceDevice.getId());
+      }
+    }
+  }
+
+  private void validateHardPressboards(TargetAnalysis result) {
+    for (Map.Entry<Long, Long> mapping : result.deviceMap.entrySet()) {
+      Long sourceDeviceId = mapping.getKey();
+      List<HardPressboardListItem> sourceItems = hardPressboardItemRepository
+          .findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(SettingListScopeType.IED_DEVICE, sourceDeviceId);
+      if (sourceItems.isEmpty()) continue;
+      Long targetCabinetId = targetService
+          .require(SettingListScopeType.IED_DEVICE, mapping.getValue()).getCabinetId();
+      Map<String, HardPressboard> targetByName = new LinkedHashMap<>();
+      for (HardPressboard pb : hardPressboardCatalogService.list(targetCabinetId)) {
+        targetByName.put(pb.getName(), pb);
+      }
+      for (HardPressboardListItem item : sourceItems) {
+        if (!targetByName.containsKey(item.getPressboardName())) {
+          result.incompatible("HARD_PRESSBOARD_MISSING",
+              "目标屏柜缺少硬压板：" + item.getPressboardName(), sourceDeviceId);
+        }
+      }
+    }
+  }
+
+  private void resolveBaselineLogicMappings(TargetAnalysis result) {
+    for (Map.Entry<Long, Long> mapping : result.deviceMap.entrySet()) {
+      Long sourceDeviceId = mapping.getKey();
+      Long targetDeviceId = mapping.getValue();
+      List<ProtectionLogic> sourceLogics = logicRepository.findByDeviceIdOrderByIdAsc(sourceDeviceId);
+      List<ProtectionLogic> targetLogics = logicRepository.findByDeviceIdOrderByIdAsc(targetDeviceId);
+      for (ProtectionLogic source : sourceLogics) {
+        if (result.logicMap.containsKey(source.getId())) continue;
+        if (!hasBaselineConfigAtLogic(source.getId())) continue;
+        List<ProtectionLogic> matched = targetLogics.stream()
+            .filter(item -> Objects.equals(source.getLogicId(), item.getLogicId()))
+            .collect(Collectors.toList());
+        if (matched.size() != 1) {
+          result.incompatible(matched.isEmpty() ? "LOGIC_MISSING" : "LOGIC_AMBIGUOUS",
+              "目标装置无法唯一匹配逻辑图：" + source.getLogicName(), source.getId());
+          continue;
+        }
+        result.logicMap.put(source.getId(), matched.get(0).getId());
+      }
+    }
+  }
+
+  private boolean hasBaselineConfigAtLogic(Long logicId) {
+    return !settingItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+        SettingListScopeType.LOGIC_DIAGRAM, logicId).isEmpty()
+        || !softPressboardItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+        SettingListScopeType.LOGIC_DIAGRAM, logicId).isEmpty()
+        || !hardPressboardItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+        SettingListScopeType.LOGIC_DIAGRAM, logicId).isEmpty()
+        || !wiringConfigRepository.findByScopeTypeAndScopeIdOrderByIdAsc(
+        SettingListScopeType.LOGIC_DIAGRAM, logicId).isEmpty();
+  }
+
+  private ProtectionLogic requireLogic(Long id) {
+    return logicRepository.findById(id)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "逻辑框图不存在"));
+  }
+
   private List<ProtectionLogic> configuredLogics(List<ProtectionLogic> candidates) {
     if (candidates.isEmpty()) return Collections.emptyList();
     Set<Long> ids = candidates.stream().map(ProtectionLogic::getId).collect(Collectors.toSet());
@@ -440,10 +676,14 @@ public class ConfigCopyService {
     }
   }
 
-  private void validateTerminals(Long sourceCabinetId, Long targetCabinetId,
+  private void validateTerminals(ConfigCopyScope scope, Long sourceId, Long targetId,
                                  Set<ConfigCopyModule> modules, TargetAnalysis result) {
-    Set<Long> terminalIds = referencedTerminalIds(sourceCabinetId, modules);
+    Set<Long> terminalIds = referencedTerminalIds(scope, sourceId, modules);
     if (terminalIds.isEmpty()) return;
+    Long sourceCabinetId = scope == ConfigCopyScope.CABINET
+        ? sourceId : targetService.require(SettingListScopeType.IED_DEVICE, sourceId).getCabinetId();
+    Long targetCabinetId = scope == ConfigCopyScope.CABINET
+        ? targetId : targetService.require(SettingListScopeType.IED_DEVICE, targetId).getCabinetId();
     Map<Long, Terminal> sourceTerminals = terminalRepository.findAllWithCabinetAndStripByIdIn(terminalIds).stream()
         .collect(Collectors.toMap(Terminal::getId, Function.identity()));
     List<TerminalStrip> targetStrips = stripRepository.findByCabinetIdOrderBySortOrderAsc(targetCabinetId);
@@ -483,11 +723,11 @@ public class ConfigCopyService {
     }
   }
 
-  private Set<Long> referencedTerminalIds(Long sourceCabinetId, Set<ConfigCopyModule> modules) {
+  private Set<Long> referencedTerminalIds(ConfigCopyScope scope, Long sourceId, Set<ConfigCopyModule> modules) {
     Set<Long> terminalIds = new LinkedHashSet<>();
     if (modules.contains(ConfigCopyModule.CABINET_LEARNING)) {
       List<CabinetDisplayItem> parents = cabinetItemRepository
-          .findByScreenCabinetIdOrderBySortOrderAscIdAsc(sourceCabinetId);
+          .findByScreenCabinetIdOrderBySortOrderAscIdAsc(sourceId);
       if (!parents.isEmpty()) {
         List<CognitionDevice> devices = cognitionDeviceRepository.findByCabinetDisplayItemIdIn(
             parents.stream().map(CabinetDisplayItem::getId).collect(Collectors.toList()));
@@ -507,12 +747,85 @@ public class ConfigCopyService {
     }
     if (modules.contains(ConfigCopyModule.SAMPLING_TEST)) {
       for (SamplingTestItem item : samplingItemRepository
-          .findByScreenCabinetIdOrderBySortOrderAscIdAsc(sourceCabinetId)) {
+          .findByScreenCabinetIdOrderBySortOrderAscIdAsc(sourceId)) {
         samplingChannelRepository.findBySamplingTestItemIdOrderBySortOrderAscIdAsc(item.getId()).stream()
             .map(SamplingTestChannel::getTerminalId).forEach(terminalIds::add);
       }
     }
+    if (modules.contains(ConfigCopyModule.BASELINE_CONFIG)) {
+      collectWiringTerminalIds(scope, sourceId, terminalIds);
+    }
     return terminalIds;
+  }
+
+  private boolean hasBaselineConfigAtDevice(Long deviceId) {
+    return !settingItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+        SettingListScopeType.IED_DEVICE, deviceId).isEmpty()
+        || !softPressboardItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+        SettingListScopeType.IED_DEVICE, deviceId).isEmpty()
+        || !hardPressboardItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+        SettingListScopeType.IED_DEVICE, deviceId).isEmpty()
+        || !wiringConfigRepository.findByScopeTypeAndScopeIdOrderByIdAsc(
+        SettingListScopeType.IED_DEVICE, deviceId).isEmpty();
+  }
+
+  private void collectSourceScopeIds(ConfigCopyScope scope, Long sourceId,
+                                     Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
+    if (scope == ConfigCopyScope.CABINET) {
+      deviceIds.addAll(deviceRepository.findByCabinetIdOrderByIdAsc(sourceId).stream()
+          .map(Device::getId).collect(Collectors.toList()));
+      logicIds.addAll(logicRepository.findByDeviceCabinetIdOrderByIdAsc(sourceId).stream()
+          .map(ProtectionLogic::getId).collect(Collectors.toList()));
+    } else {
+      deviceIds.add(sourceId);
+      logicIds.addAll(logicRepository.findByDeviceIdOrderByIdAsc(sourceId).stream()
+          .map(ProtectionLogic::getId).collect(Collectors.toList()));
+    }
+    if (!deviceIds.isEmpty()) {
+      groupIds.addAll(logicGroupRepository.findByIedDeviceIdIn(deviceIds).stream()
+          .map(LogicGroup::getId).collect(Collectors.toList()));
+    }
+  }
+
+  private void collectWiringTerminalIds(ConfigCopyScope scope, Long sourceId, Set<Long> terminalIds) {
+    Set<Long> deviceIds = new LinkedHashSet<>();
+    Set<Long> logicIds = new LinkedHashSet<>();
+    Set<Long> groupIds = new LinkedHashSet<>();
+    collectSourceScopeIds(scope, sourceId, deviceIds, logicIds, groupIds);
+    collectWiringConfigTerminals(SettingListScopeType.IED_DEVICE, deviceIds, terminalIds);
+    collectWiringConfigTerminals(SettingListScopeType.LOGIC_DIAGRAM, logicIds, terminalIds);
+    collectWiringConfigTerminals(SettingListScopeType.LOGIC_GROUP, groupIds, terminalIds);
+  }
+
+  private void collectWiringConfigTerminals(SettingListScopeType scopeType, Set<Long> scopeIds,
+                                            Set<Long> terminalIds) {
+    if (scopeIds.isEmpty()) return;
+    for (WiringRequirementConfig config : wiringConfigRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds)) {
+      for (WiringRequirementGroup group : wiringGroupRepository
+          .findByConfigIdOrderByGroupNoAscIdAsc(config.getId())) {
+        addTerminalId(terminalIds, group.getTerminalAId());
+        addTerminalId(terminalIds, group.getTerminalBId());
+        addTerminalId(terminalIds, group.getTerminalCId());
+        addTerminalId(terminalIds, group.getTerminalNId());
+      }
+    }
+  }
+
+  private void addTerminalId(Set<Long> ids, Long id) {
+    if (id != null) ids.add(id);
+  }
+
+  private String stripIedName(String ref, String iedName) {
+    if (ref == null) return null;
+    String trimmed = ref.trim();
+    if (!StringUtils.hasText(iedName)) return trimmed;
+    String prefix = iedName + "/";
+    if (trimmed.startsWith(prefix)) return trimmed.substring(prefix.length());
+    if (trimmed.startsWith(iedName) && trimmed.length() > iedName.length()
+        && trimmed.charAt(iedName.length()) != '/') {
+      return trimmed.substring(iedName.length());
+    }
+    return trimmed;
   }
 
   private int copyCabinetLearning(Long sourceCabinetId, Long targetCabinetId,
@@ -671,6 +984,227 @@ public class ConfigCopyService {
     return copied;
   }
 
+  private int copyLogicGroups(TargetAnalysis target) {
+    int copied = 0;
+    for (Map.Entry<Long, Long> deviceEntry : target.deviceMap.entrySet()) {
+      Long sourceDeviceId = deviceEntry.getKey();
+      Long targetDeviceId = deviceEntry.getValue();
+      for (LogicGroup sourceGroup : logicGroupRepository
+          .findByIedDeviceIdOrderBySortOrderAscIdAsc(sourceDeviceId)) {
+        LogicGroup targetGroup = new LogicGroup();
+        targetGroup.setIedDeviceId(targetDeviceId);
+        targetGroup.setName(sourceGroup.getName());
+        targetGroup.setSortOrder(sourceGroup.getSortOrder());
+        targetGroup = logicGroupRepository.save(targetGroup);
+        target.logicGroupMap.put(sourceGroup.getId(), targetGroup.getId());
+        for (LogicGroupMember sourceMember : logicGroupMemberRepository
+            .findByGroupIdOrderBySortOrderAscIdAsc(sourceGroup.getId())) {
+          Long targetLogicId = target.groupLogicMap.get(sourceMember.getLogicDiagramId());
+          if (targetLogicId == null) {
+            throw new IllegalStateException("预检后的组合逻辑成员基础逻辑映射不存在");
+          }
+          LogicGroupMember member = new LogicGroupMember();
+          member.setGroupId(targetGroup.getId());
+          member.setLogicDiagramId(targetLogicId);
+          member.setSortOrder(sourceMember.getSortOrder());
+          logicGroupMemberRepository.save(member);
+        }
+        copyGroupGuides(sourceGroup.getId(), targetGroup.getId());
+        copied++;
+      }
+    }
+    return copied;
+  }
+
+  private void copyGroupGuides(Long sourceGroupId, Long targetGroupId) {
+    for (ExperimentGuideItem source : experimentGuideItemRepository
+        .findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(SettingListScopeType.LOGIC_GROUP, sourceGroupId)) {
+      ExperimentGuideItem guide = new ExperimentGuideItem();
+      guide.setScopeType(SettingListScopeType.LOGIC_GROUP);
+      guide.setScopeId(targetGroupId);
+      guide.setType(source.getType());
+      guide.setTitle(source.getTitle());
+      guide.setImageUrl(source.getImageUrl());
+      guide.setImageData(copyBytes(source.getImageData()));
+      guide.setImageContentType(source.getImageContentType());
+      guide.setContent(source.getContent());
+      guide.setSortOrder(source.getSortOrder());
+      guide.setEnabled(source.getEnabled());
+      guide.setCreatedAt(Instant.now());
+      experimentGuideItemRepository.save(guide);
+    }
+  }
+
+  private int copyBaselineConfig(ConfigCopyScope scope, Long sourceId, TargetAnalysis target) {
+    Set<Long> deviceIds = new LinkedHashSet<>();
+    Set<Long> logicIds = new LinkedHashSet<>();
+    Set<Long> groupIds = new LinkedHashSet<>();
+    collectSourceScopeIds(scope, sourceId, deviceIds, logicIds, groupIds);
+    int copied = 0;
+    copied += copySettingItems(target, deviceIds, logicIds, groupIds);
+    copied += copySoftPressboardItems(target, deviceIds, logicIds, groupIds);
+    copied += copyHardPressboardItems(target, deviceIds, logicIds, groupIds);
+    copied += copyWiringConfigs(target, deviceIds, logicIds, groupIds);
+    return copied;
+  }
+
+  private int copySettingItems(TargetAnalysis target, Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
+    int copied = 0;
+    copied += copySettingItemsForScope(target, SettingListScopeType.IED_DEVICE, deviceIds);
+    copied += copySettingItemsForScope(target, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    copied += copySettingItemsForScope(target, SettingListScopeType.LOGIC_GROUP, groupIds);
+    return copied;
+  }
+
+  private int copySettingItemsForScope(TargetAnalysis target, SettingListScopeType scopeType, Set<Long> sourceScopeIds) {
+    if (sourceScopeIds.isEmpty()) return 0;
+    int copied = 0;
+    for (SettingListItem source : settingItemRepository.findByScopeTypeAndScopeIdIn(scopeType, sourceScopeIds)) {
+      Long targetScopeId = mapScopeId(target, scopeType, source.getScopeId());
+      if (targetScopeId == null) continue;
+      SettingListItem item = new SettingListItem();
+      item.setScopeType(scopeType);
+      item.setScopeId(targetScopeId);
+      item.setSettingRef(remapRef(target, scopeType, source.getScopeId(), source.getSettingRef()));
+      item.setSettingFc(source.getSettingFc());
+      item.setSettingName(source.getSettingName());
+      item.setValueType(source.getValueType());
+      item.setCompareEnabled(source.getCompareEnabled());
+      item.setBaselineValue(source.getBaselineValue());
+      item.setSortOrder(source.getSortOrder());
+      settingItemRepository.save(item);
+      copied++;
+    }
+    return copied;
+  }
+
+  private int copySoftPressboardItems(TargetAnalysis target, Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
+    int copied = 0;
+    copied += copySoftPressboardItemsForScope(target, SettingListScopeType.IED_DEVICE, deviceIds);
+    copied += copySoftPressboardItemsForScope(target, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    copied += copySoftPressboardItemsForScope(target, SettingListScopeType.LOGIC_GROUP, groupIds);
+    return copied;
+  }
+
+  private int copySoftPressboardItemsForScope(TargetAnalysis target, SettingListScopeType scopeType, Set<Long> sourceScopeIds) {
+    if (sourceScopeIds.isEmpty()) return 0;
+    int copied = 0;
+    for (SoftPressboardListItem source : softPressboardItemRepository.findByScopeTypeAndScopeIdIn(scopeType, sourceScopeIds)) {
+      Long targetScopeId = mapScopeId(target, scopeType, source.getScopeId());
+      if (targetScopeId == null) continue;
+      SoftPressboardListItem item = new SoftPressboardListItem();
+      item.setScopeType(scopeType);
+      item.setScopeId(targetScopeId);
+      item.setPressboardRef(remapRef(target, scopeType, source.getScopeId(), source.getPressboardRef()));
+      item.setPressboardName(source.getPressboardName());
+      item.setBaselineValue(source.getBaselineValue());
+      item.setCompareEnabled(source.getCompareEnabled());
+      item.setSortOrder(source.getSortOrder());
+      softPressboardItemRepository.save(item);
+      copied++;
+    }
+    return copied;
+  }
+
+  private int copyHardPressboardItems(TargetAnalysis target, Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
+    int copied = 0;
+    copied += copyHardPressboardItemsForScope(target, SettingListScopeType.IED_DEVICE, deviceIds);
+    copied += copyHardPressboardItemsForScope(target, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    copied += copyHardPressboardItemsForScope(target, SettingListScopeType.LOGIC_GROUP, groupIds);
+    return copied;
+  }
+
+  private int copyHardPressboardItemsForScope(TargetAnalysis target, SettingListScopeType scopeType, Set<Long> sourceScopeIds) {
+    if (sourceScopeIds.isEmpty()) return 0;
+    int copied = 0;
+    for (HardPressboardListItem source : hardPressboardItemRepository.findByScopeTypeAndScopeIdIn(scopeType, sourceScopeIds)) {
+      Long targetScopeId = mapScopeId(target, scopeType, source.getScopeId());
+      if (targetScopeId == null) continue;
+      Long targetCabinetId = targetService.require(scopeType, targetScopeId).getCabinetId();
+      Map<String, HardPressboard> targetByName = new LinkedHashMap<>();
+      for (HardPressboard pb : hardPressboardCatalogService.list(targetCabinetId)) {
+        targetByName.put(pb.getName(), pb);
+      }
+      HardPressboard targetPb = targetByName.get(source.getPressboardName());
+      if (targetPb == null) continue;
+      HardPressboardListItem item = new HardPressboardListItem();
+      item.setScopeType(scopeType);
+      item.setScopeId(targetScopeId);
+      item.setPressboardRef(String.valueOf(targetPb.getId()));
+      item.setPressboardName(targetPb.getName());
+      item.setBaselineValue(source.getBaselineValue());
+      item.setCompareEnabled(source.getCompareEnabled());
+      item.setSortOrder(source.getSortOrder());
+      hardPressboardItemRepository.save(item);
+      copied++;
+    }
+    return copied;
+  }
+
+  private int copyWiringConfigs(TargetAnalysis target, Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
+    int copied = 0;
+    copied += copyWiringConfigsForScope(target, SettingListScopeType.IED_DEVICE, deviceIds);
+    copied += copyWiringConfigsForScope(target, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    copied += copyWiringConfigsForScope(target, SettingListScopeType.LOGIC_GROUP, groupIds);
+    return copied;
+  }
+
+  private int copyWiringConfigsForScope(TargetAnalysis target, SettingListScopeType scopeType, Set<Long> sourceScopeIds) {
+    if (sourceScopeIds.isEmpty()) return 0;
+    int copied = 0;
+    for (WiringRequirementConfig source : wiringConfigRepository.findByScopeTypeAndScopeIdIn(scopeType, sourceScopeIds)) {
+      Long targetScopeId = mapScopeId(target, scopeType, source.getScopeId());
+      if (targetScopeId == null) continue;
+      WiringRequirementConfig config = new WiringRequirementConfig();
+      config.setScopeType(scopeType);
+      config.setScopeId(targetScopeId);
+      config.setCategory(source.getCategory());
+      config.setRequired(source.getRequired());
+      config.setPhaseMode(source.getPhaseMode());
+      config = wiringConfigRepository.save(config);
+      for (WiringRequirementGroup sourceGroup : wiringGroupRepository
+          .findByConfigIdOrderByGroupNoAscIdAsc(source.getId())) {
+        WiringRequirementGroup group = new WiringRequirementGroup();
+        group.setConfigId(config.getId());
+        group.setGroupNo(sourceGroup.getGroupNo());
+        group.setTerminalAId(mapTerminal(target.terminalMap, sourceGroup.getTerminalAId()));
+        group.setTerminalBId(mapTerminal(target.terminalMap, sourceGroup.getTerminalBId()));
+        group.setTerminalCId(mapTerminal(target.terminalMap, sourceGroup.getTerminalCId()));
+        group.setTerminalNId(mapTerminal(target.terminalMap, sourceGroup.getTerminalNId()));
+        wiringGroupRepository.save(group);
+      }
+      copied++;
+    }
+    return copied;
+  }
+
+  private Long mapScopeId(TargetAnalysis target, SettingListScopeType scopeType, Long sourceScopeId) {
+    if (scopeType == SettingListScopeType.IED_DEVICE) return target.deviceMap.get(sourceScopeId);
+    if (scopeType == SettingListScopeType.LOGIC_DIAGRAM) return target.logicMap.get(sourceScopeId);
+    return target.logicGroupMap.get(sourceScopeId);
+  }
+
+  private Long mapTerminal(Map<Long, Long> terminalMap, Long sourceTerminalId) {
+    return sourceTerminalId == null ? null : terminalMap.get(sourceTerminalId);
+  }
+
+  private String remapRef(TargetAnalysis target, SettingListScopeType scopeType, Long sourceScopeId, String ref) {
+    Long targetScopeId = mapScopeId(target, scopeType, sourceScopeId);
+    if (targetScopeId == null) return ref;
+    String sourceIedName = targetService.require(scopeType, sourceScopeId).getIedName();
+    String targetIedName = targetService.require(scopeType, targetScopeId).getIedName();
+    return replaceIedName(ref, sourceIedName, targetIedName);
+  }
+
+  private String replaceIedName(String ref, String sourceIedName, String targetIedName) {
+    if (ref == null || !StringUtils.hasText(sourceIedName) || !StringUtils.hasText(targetIedName)) {
+      return ref;
+    }
+    String rel = stripIedName(ref, sourceIedName);
+    if (Objects.equals(rel, ref.trim())) return ref;
+    return targetIedName + "/" + rel;
+  }
+
   private int copySamplingTests(Long sourceCabinetId, Long targetCabinetId, Map<Long, Long> terminalMap) {
     int copied = 0;
     for (SamplingTestItem source : samplingItemRepository
@@ -786,9 +1320,78 @@ public class ConfigCopyService {
     resourceRepository.deleteByScreenCabinetId(cabinetId);
   }
 
+  private void deleteLogicGroups(Collection<Long> targetDeviceIds) {
+    if (targetDeviceIds == null || targetDeviceIds.isEmpty()) return;
+    List<LogicGroup> groups = logicGroupRepository.findByIedDeviceIdIn(targetDeviceIds);
+    if (groups.isEmpty()) return;
+    List<Long> groupIds = groups.stream().map(LogicGroup::getId).collect(Collectors.toList());
+    experimentGuideItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_GROUP, groupIds);
+    for (Long groupId : groupIds) {
+      logicGroupMemberRepository.deleteByGroupId(groupId);
+    }
+    logicGroupRepository.deleteByIedDeviceIdIn(targetDeviceIds);
+  }
+
+  private void deleteBaselineConfig(ConfigCopyScope scope, Long targetId) {
+    Set<Long> deviceIds = new LinkedHashSet<>();
+    Set<Long> logicIds = new LinkedHashSet<>();
+    Set<Long> groupIds = new LinkedHashSet<>();
+    collectSourceScopeIds(scope, targetId, deviceIds, logicIds, groupIds);
+    deleteSettingItems(deviceIds, logicIds, groupIds);
+    deleteSoftPressboardItems(deviceIds, logicIds, groupIds);
+    deleteHardPressboardItems(deviceIds, logicIds, groupIds);
+    deleteWiringConfigs(deviceIds, logicIds, groupIds);
+    settingItemRepository.flush();
+    softPressboardItemRepository.flush();
+    hardPressboardItemRepository.flush();
+    wiringConfigRepository.flush();
+  }
+
+  private void deleteSettingItems(Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
+    if (!deviceIds.isEmpty()) settingItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.IED_DEVICE, deviceIds);
+    if (!logicIds.isEmpty()) settingItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    if (!groupIds.isEmpty()) settingItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_GROUP, groupIds);
+  }
+
+  private void deleteSoftPressboardItems(Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
+    if (!deviceIds.isEmpty()) softPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.IED_DEVICE, deviceIds);
+    if (!logicIds.isEmpty()) softPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    if (!groupIds.isEmpty()) softPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_GROUP, groupIds);
+  }
+
+  private void deleteHardPressboardItems(Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
+    if (!deviceIds.isEmpty()) hardPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.IED_DEVICE, deviceIds);
+    if (!logicIds.isEmpty()) hardPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    if (!groupIds.isEmpty()) hardPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_GROUP, groupIds);
+  }
+
+  private void deleteWiringConfigs(Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
+    deleteWiringConfigsForScope(SettingListScopeType.IED_DEVICE, deviceIds);
+    deleteWiringConfigsForScope(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    deleteWiringConfigsForScope(SettingListScopeType.LOGIC_GROUP, groupIds);
+  }
+
+  private void deleteWiringConfigsForScope(SettingListScopeType scopeType, Set<Long> scopeIds) {
+    if (scopeIds.isEmpty()) return;
+    List<WiringRequirementConfig> configs = wiringConfigRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds);
+    if (configs.isEmpty()) return;
+    List<Long> configIds = configs.stream().map(WiringRequirementConfig::getId).collect(Collectors.toList());
+    wiringGroupRepository.deleteByConfigIdIn(configIds);
+    wiringConfigRepository.deleteByScopeTypeAndScopeIdIn(scopeType, scopeIds);
+  }
+
   private int countModule(ConfigCopyScope scope, Long id, ConfigCopyModule module) {
     if (scope == ConfigCopyScope.DEVICE) {
-      return configuredLogics(logicRepository.findByDeviceIdOrderByIdAsc(id)).size();
+      switch (module) {
+        case LOGIC_LEARNING:
+          return configuredLogics(logicRepository.findByDeviceIdOrderByIdAsc(id)).size();
+        case LOGIC_GROUP:
+          return logicGroupRepository.findByIedDeviceIdOrderBySortOrderAscIdAsc(id).size();
+        case BASELINE_CONFIG:
+          return countBaselineConfigAtDevice(id);
+        default:
+          return 0;
+      }
     }
     switch (module) {
       case CABINET_LEARNING:
@@ -797,6 +1400,10 @@ public class ConfigCopyService {
         return drawingGroupRepository.findByScreenCabinetIdOrderByDrawingTypeAscSortOrderAscIdAsc(id).size();
       case LOGIC_LEARNING:
         return configuredLogics(logicRepository.findByDeviceCabinetIdOrderByIdAsc(id)).size();
+      case LOGIC_GROUP:
+        return countLogicGroups(id);
+      case BASELINE_CONFIG:
+        return countBaselineConfig(id);
       case SAMPLING_TEST:
         return samplingItemRepository.findByScreenCabinetIdOrderBySortOrderAscIdAsc(id).size();
       case LEARNING_RESOURCE:
@@ -804,6 +1411,45 @@ public class ConfigCopyService {
       default:
         return 0;
     }
+  }
+
+  private int countLogicGroups(Long cabinetId) {
+    List<Long> deviceIds = deviceRepository.findByCabinetIdOrderByIdAsc(cabinetId).stream()
+        .map(Device::getId).collect(Collectors.toList());
+    if (deviceIds.isEmpty()) return 0;
+    return logicGroupRepository.findByIedDeviceIdIn(deviceIds).size();
+  }
+
+  private int countBaselineConfig(Long cabinetId) {
+    Set<Long> deviceIds = new LinkedHashSet<>();
+    Set<Long> logicIds = new LinkedHashSet<>();
+    Set<Long> groupIds = new LinkedHashSet<>();
+    collectSourceScopeIds(ConfigCopyScope.CABINET, cabinetId, deviceIds, logicIds, groupIds);
+    return countBaselineItems(deviceIds, logicIds, groupIds);
+  }
+
+  private int countBaselineConfigAtDevice(Long deviceId) {
+    Set<Long> deviceIds = new LinkedHashSet<>();
+    Set<Long> logicIds = new LinkedHashSet<>();
+    Set<Long> groupIds = new LinkedHashSet<>();
+    collectSourceScopeIds(ConfigCopyScope.DEVICE, deviceId, deviceIds, logicIds, groupIds);
+    return countBaselineItems(deviceIds, logicIds, groupIds);
+  }
+
+  private int countBaselineItems(Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
+    int count = 0;
+    count += countBaselineScope(SettingListScopeType.IED_DEVICE, deviceIds);
+    count += countBaselineScope(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    count += countBaselineScope(SettingListScopeType.LOGIC_GROUP, groupIds);
+    return count;
+  }
+
+  private int countBaselineScope(SettingListScopeType scopeType, Set<Long> scopeIds) {
+    if (scopeIds.isEmpty()) return 0;
+    return settingItemRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size()
+        + softPressboardItemRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size()
+        + hardPressboardItemRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size()
+        + wiringConfigRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size();
   }
 
   private List<Long> logicIdsForCabinet(Long cabinetId) {
@@ -900,6 +1546,8 @@ public class ConfigCopyService {
     final Map<Long, Long> deviceMap = new LinkedHashMap<>();
     final Map<Long, Long> logicMap = new LinkedHashMap<>();
     final Map<Long, Long> terminalMap = new LinkedHashMap<>();
+    final Map<Long, Long> groupLogicMap = new LinkedHashMap<>();
+    final Map<Long, Long> logicGroupMap = new LinkedHashMap<>();
     final EnumMap<ConfigCopyModule, Integer> sourceCounts = new EnumMap<>(ConfigCopyModule.class);
     final EnumMap<ConfigCopyModule, Integer> overwriteCounts = new EnumMap<>(ConfigCopyModule.class);
     boolean needsMapping;

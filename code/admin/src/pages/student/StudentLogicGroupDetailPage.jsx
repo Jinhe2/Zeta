@@ -25,16 +25,35 @@ const statusLabel = {
   failed: '实验失败',
 }
 
-function mapLogicResults(logicResults) {
+function findMemberForLogicResult(result, members) {
+  const diagramId = result.logic_diagram_id ?? result.logicDiagramId
+  if (diagramId != null) {
+    return members.find((member) => String(member.logicDiagramId) === String(diagramId))
+  }
+  const logicCode = result.logic_id ?? result.logicId ?? result.logic_code ?? result.logicCode ?? result.code
+  if (logicCode != null) {
+    return members.find((member) => String(member.code) === String(logicCode))
+  }
+  return null
+}
+
+function mapLogicResults(logicResults, members = []) {
   const map = {}
   for (const r of (logicResults || [])) {
-    const key = r.logic_diagram_id ?? r.logicDiagramId
+    const member = findMemberForLogicResult(r, members)
+    const key = member?.logicDiagramId ?? r.logic_diagram_id ?? r.logicDiagramId
     if (key == null) continue
+    const status = String(r.status ?? '').toLowerCase()
+    const statusSuccess = status === 'success'
+      ? true
+      : (status === 'failed' || status === 'error' ? false : undefined)
     map[String(key)] = {
-      success: r.success,
-      experimentPassed: r.experiment_passed ?? r.experimentPassed,
+      status,
+      success: r.success ?? statusSuccess,
+      experimentPassed: r.experiment_result?.passed ?? r.experimentResult?.passed ?? r.experiment_passed ?? r.experimentPassed,
       totalTransitions: r.total_transitions ?? r.totalTransitions,
       error: r.error ?? r.errorMessage ?? r.error_message,
+      errorCode: r.errorCode ?? r.error_code,
     }
   }
   return map
@@ -69,6 +88,7 @@ export default function StudentLogicGroupDetailPage() {
 
   const [experimentDialog, setExperimentDialog] = useState({ open: false, title: '', message: '' })
   const [snapshots, setSnapshots] = useState([])
+  const [selectedSnapshotId, setSelectedSnapshotId] = useState(null)
 
   const [guideOpen, setGuideOpen] = useState(false)
   const [guideItems, setGuideItems] = useState([])
@@ -83,6 +103,9 @@ export default function StudentLogicGroupDetailPage() {
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setSelectedSnapshotId(null)
+    setMemberResults({})
+    setOverallPassed(null)
     try {
       const [detailData, snapshotData] = await Promise.all([
         api.getKnowledgeLogicGroup(groupId),
@@ -97,14 +120,24 @@ export default function StudentLogicGroupDetailPage() {
     }
   }, [groupId])
 
-  const loadSnapshots = useCallback(async () => {
+  const loadSnapshots = useCallback(async (selectLatest = false) => {
     try {
       const snapshotData = await api.listLogicGroupSnapshots(groupId).catch(() => [])
       setSnapshots(snapshotData)
+      if (selectLatest && snapshotData.length > 0) {
+        const latest = snapshotData[0]
+        setSelectedSnapshotId(latest.id)
+        setMemberResults({})
+        setOverallPassed(null)
+        if (latest.resultStatus && latest.resultStatus !== 'SNAPSHOT_READY') return
+        const members = await api.listLogicGroupSnapshotMembers(latest.id)
+        setMemberResults(mapLogicResults(members, detail?.members ?? []))
+        setOverallPassed(readPassed(latest.experimentPassed))
+      }
     } catch {
       // 忽略刷新失败
     }
-  }, [groupId])
+  }, [detail, groupId])
 
   useEffect(() => {
     load()
@@ -143,7 +176,7 @@ export default function StudentLogicGroupDetailPage() {
         }
 
         const logicResults = result?.logic_results ?? result?.logicResults ?? []
-        setMemberResults(mapLogicResults(logicResults))
+        setMemberResults(mapLogicResults(logicResults, detail?.members ?? []))
         setOverallPassed(readPassed(result?.experiment_passed ?? result?.experimentPassed))
 
         if (result?.result === 'success') {
@@ -160,12 +193,12 @@ export default function StudentLogicGroupDetailPage() {
           setExperimentDialog({ open: true, title: '实验结果', message: '组合实验已结束' })
         }
         if (taskUuidRef.current === taskUuid) taskUuidRef.current = null
-        loadSnapshots()
+        loadSnapshots(true)
       } catch {
         // 404 = 结果尚未返回，继续轮询
       }
     }, POLL_INTERVAL)
-  }, [loadSnapshots])
+  }, [detail, loadSnapshots])
 
   const startExperimentAfterConfirmation = useCallback(async () => {
     if (startConfirmationInFlightRef.current) return
@@ -176,6 +209,7 @@ export default function StudentLogicGroupDetailPage() {
     setMonitorStatus('starting')
     setError(null)
     setMemberResults({})
+    setSelectedSnapshotId(null)
     setOverallPassed(null)
     try {
       const response = await api.startLogicGroupMonitor(Number(groupId))
@@ -255,19 +289,19 @@ export default function StudentLogicGroupDetailPage() {
     setGuideItems([])
   }, [])
 
-  const viewSnapshot = (snapshot) => {
-    const meta = typeof snapshot.snapshotJson === 'string'
-      ? (() => { try { return JSON.parse(snapshot.snapshotJson) } catch { return {} } })()
-      : snapshot.snapshotJson ?? {}
-    const logics = meta.logics ?? []
-    const results = logics.map((l) => ({
-      logic_diagram_id: l.logicDiagramId,
-      experiment_passed: l.experimentResult?.passed ?? l.experimentPassed,
-      success: l.status === 'success',
-      total_transitions: l.totalTransitions,
-    }))
-    setMemberResults(mapLogicResults(results))
-    setOverallPassed(readPassed(meta.experimentPassed))
+  const viewSnapshot = async (snapshot) => {
+    setError(null)
+    setSelectedSnapshotId(snapshot.id)
+    setMemberResults({})
+    setOverallPassed(null)
+    if (snapshot.resultStatus && snapshot.resultStatus !== 'SNAPSHOT_READY') return
+    try {
+      const members = await api.listLogicGroupSnapshotMembers(snapshot.id)
+      setMemberResults(mapLogicResults(members, detail?.members ?? []))
+      setOverallPassed(readPassed(snapshot.experimentPassed))
+    } catch (err) {
+      setError(err.message || '加载组合实验结果失败')
+    }
   }
 
   const items = useMemo(
@@ -279,7 +313,7 @@ export default function StudentLogicGroupDetailPage() {
     const states = {}
     for (const [id, result] of Object.entries(memberResults)) {
       const passed = readPassed(result.experimentPassed)
-      if (result.success === false) {
+      if (result.status === 'failed' || result.success === false) {
         states[id] = false
       } else if (passed === true) {
         states[id] = true
@@ -291,8 +325,26 @@ export default function StudentLogicGroupDetailPage() {
   }, [memberResults])
 
   const openMemberById = (logicDiagramId) => {
-    navigate(`/student/modes/panorama/${logicDiagramId}`, {
-      state: { from: 'coach', section: 'logic', deviceId: detail?.iedDeviceId, groupId: Number(groupId) },
+    if (selectedSnapshotId == null) {
+      setError('请先选择一条组合实验记录')
+      return
+    }
+    const selectedSnapshot = snapshots.find((snapshot) => snapshot.id === selectedSnapshotId)
+    if (selectedSnapshot?.resultStatus === 'DEVICE_NOT_STARTED') {
+      setError('该实验记录未生成断面数据，保护装置未启动')
+      return
+    }
+    if (selectedSnapshot?.resultStatus === 'INVALID_SNAPSHOT') {
+      setError('该实验记录的断面数据异常，无法查看')
+      return
+    }
+    navigate(`/student/modes/panorama/${logicDiagramId}?groupSnapshotId=${selectedSnapshotId}`, {
+      state: {
+        from: 'coach',
+        section: 'logic',
+        deviceId: detail?.iedDeviceId,
+        groupId: Number(groupId),
+      },
     })
   }
 
@@ -325,74 +377,107 @@ export default function StudentLogicGroupDetailPage() {
 
       {error && <div className="diagram-page__error">{error}</div>}
 
-      <main className="tablet-shell__main logic-group">
+      <div className="diagram-page__body logic-group">
         {loading ? (
           <p className="panorama-list__status">加载中…</p>
         ) : !detail ? (
           <p className="panorama-list__empty">组合逻辑不存在</p>
         ) : (
           <>
-            <div className="logic-group__toolbar">
-              <div>
-                <p className="logic-group__hint">组合逻辑由以下基础逻辑按序拼接，点击名称进入对应逻辑框图。</p>
-                {monitoring && (
-                  <span className="logic-group__status">● {statusLabel[monitorStatus] || '监视中'}</span>
-                )}
-                {overallPassed != null && (
-                  <span className={`logic-group__overall${overallPassed ? ' logic-group__overall--ok' : ' logic-group__overall--error'}`}>
-                    整体{overallPassed ? '通过' : '未通过'}
-                  </span>
-                )}
-              </div>
-              <div className="logic-group__actions">
-                {monitoring ? (
-                  monitorStatus !== 'checking' && (
-                    <button type="button" className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--stop" onClick={handleStopExperiment}>
-                      ■ 停止实验
-                    </button>
-                  )
-                ) : (
-                  <>
-                    <button type="button" className="diagram-canvas__trigger-btn" onClick={handleStartExperiment}>
-                      ▶ 开始实验
-                    </button>
-                    <button type="button" className="diagram-canvas__trigger-btn" onClick={handleOpenGuide} disabled={guideLoading}>
-                      {guideLoading ? '加载中…' : '试验引导'}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="logic-group__canvas">
-              <LogicGroupView
-                items={items}
-                nodeStates={nodeStates}
-                onNodeClick={openMemberById}
-                className="logic-group__graph"
-              />
-            </div>
-
-            {snapshots.length > 0 && (
-              <section className="logic-group__history">
-                <h3>实验记录</h3>
-                <ul>
-                  {snapshots.map((snap) => (
-                    <li key={snap.id}>
-                      <button type="button" className="users-page__link" onClick={() => viewSnapshot(snap)}>
-                        {snap.createdAt ? new Date(snap.createdAt).toLocaleString() : `#${snap.id}`}
-                        {snap.experimentPassed != null && (
-                          <span>{snap.experimentPassed ? ' · 通过' : ' · 未通过'}</span>
+            <div className="diagram-page__workspace">
+              <div className="diagram-canvas">
+                <div className="diagram-canvas__header">
+                  <div>
+                    <span>组合逻辑框图</span>
+                    <span className="logic-group__hint">点击基础逻辑节点查看当前记录的节点断面</span>
+                  </div>
+                  <div className="logic-group__actions">
+                    {overallPassed != null && !monitoring && (
+                      <span className={`logic-group__overall${overallPassed ? ' logic-group__overall--ok' : ' logic-group__overall--error'}`}>
+                        整体{overallPassed ? '通过' : '未通过'}
+                      </span>
+                    )}
+                    {monitoring ? (
+                      <>
+                        <span className="logic-group__status">● {statusLabel[monitorStatus] || '监视中'}</span>
+                        {monitorStatus !== 'checking' && (
+                          <button type="button" className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline diagram-canvas__trigger-btn--stop" onClick={handleStopExperiment}>
+                            ■ 停止实验
+                          </button>
                         )}
-                      </button>
+                      </>
+                    ) : (
+                      <>
+                        <button type="button" className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline" onClick={handleStartExperiment}>
+                          ▶ 开始实验
+                        </button>
+                        <button type="button" className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline" onClick={handleOpenGuide} disabled={guideLoading}>
+                          {guideLoading ? '加载中…' : '试验引导'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="diagram-canvas__area">
+                  <LogicGroupView
+                    items={items}
+                    nodeStates={nodeStates}
+                    onNodeClick={openMemberById}
+                    className="diagram-canvas__preview logic-group__graph"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <aside className="diagram-page__sidebar">
+              <section className="diagram-page__history">
+                <div className="diagram-page__history-header">
+                  <span>组合实验记录</span>
+                  <button
+                    type="button"
+                    className="diagram-page__history-trigger"
+                    disabled={monitoring}
+                    onClick={handleStartExperiment}
+                  >
+                    {monitoring ? '…' : '+ 新实验'}
+                  </button>
+                </div>
+                {snapshots.length === 0 ? (
+                  <p className="diagram-page__history-empty">暂无记录</p>
+                ) : (
+                  <ul className="diagram-page__history-list">
+                  {snapshots.map((snap) => (
+                    <li
+                      key={snap.id}
+                      className={`diagram-page__history-item${snap.id === selectedSnapshotId ? ' diagram-page__history-item--active' : ''}`}
+                      onClick={() => viewSnapshot(snap)}
+                    >
+                      <span className="diagram-page__history-time">
+                        {snap.createdAt ? new Date(snap.createdAt).toLocaleString() : `#${snap.id}`}
+                      </span>
+                      <span className="diagram-page__history-transitions">{snap.totalTransitions ?? 0} 次变位</span>
+                      {snap.resultStatus === 'DEVICE_NOT_STARTED' ? (
+                        <span className="diagram-page__history-status diagram-page__history-status--failed">
+                          装置未启动
+                        </span>
+                      ) : snap.resultStatus === 'INVALID_SNAPSHOT' ? (
+                        <span className="diagram-page__history-status diagram-page__history-status--failed">
+                          断面异常
+                        </span>
+                      ) : snap.experimentPassed != null && (
+                        <span className={`diagram-page__history-status diagram-page__history-status--${snap.experimentPassed ? 'completed' : 'failed'}`}>
+                          {snap.experimentPassed ? '通过' : '未通过'}
+                        </span>
+                      )}
                     </li>
                   ))}
-                </ul>
+                  </ul>
+                )}
               </section>
-            )}
+            </aside>
           </>
         )}
-      </main>
+      </div>
 
       {experimentDialog.open && (
         <div className="experiment-result-dialog" role="dialog" aria-modal="true" aria-labelledby="logic-group-result-message">
@@ -409,6 +494,62 @@ export default function StudentLogicGroupDetailPage() {
             <p id="logic-group-result-message" className="experiment-result-dialog__message">
               {experimentDialog.message}
             </p>
+            {experimentDialog.baselineItems?.length > 0 && (
+              <section className="experiment-result-dialog__section">
+                <h3>定值比对</h3>
+                <table className="experiment-result-dialog__table">
+                  <thead><tr><th>名称</th><th>基准值</th><th>实际值</th></tr></thead>
+                  <tbody>
+                    {experimentDialog.baselineItems.map((item) => (
+                      <tr key={item.key}>
+                        <td>{item.name}</td>
+                        <td>{item.baselineValue || '—'}</td>
+                        <td>{item.actualValue || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
+            {experimentDialog.softPressboardItems?.length > 0 && (
+              <section className="experiment-result-dialog__section">
+                <h3>软压板比对</h3>
+                <table className="experiment-result-dialog__table">
+                  <thead><tr><th>名称</th><th>基准状态</th><th>实际状态</th></tr></thead>
+                  <tbody>
+                    {experimentDialog.softPressboardItems.map((item) => (
+                      <tr key={item.key}><td>{item.name}</td><td>{item.baselineValue}</td><td>{item.actualValue}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
+            {experimentDialog.hardPressboardItems?.length > 0 && (
+              <section className="experiment-result-dialog__section">
+                <h3>硬压板比对</h3>
+                <table className="experiment-result-dialog__table">
+                  <thead><tr><th>名称</th><th>基准状态</th><th>实际状态</th></tr></thead>
+                  <tbody>
+                    {experimentDialog.hardPressboardItems.map((item) => (
+                      <tr key={item.key}><td>{item.name}</td><td>{item.baselineValue}</td><td>{item.actualValue}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
+            {experimentDialog.wiringItems?.length > 0 && (
+              <section className="experiment-result-dialog__section">
+                <h3>试验仪接线</h3>
+                <table className="experiment-result-dialog__table">
+                  <thead><tr><th>分组</th><th>结果</th><th>接线明细</th></tr></thead>
+                  <tbody>
+                    {experimentDialog.wiringItems.map((item) => (
+                      <tr key={item.key}><td>{item.name}</td><td>{item.message}</td><td>{item.detail}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
             {experimentDialog.kind === 'start-confirm' ? (
               <div className="experiment-result-dialog__actions">
                 <button type="button" className="experiment-result-dialog__btn experiment-result-dialog__btn--secondary" onClick={() => { startConfirmationInFlightRef.current = false; setExperimentDialog({ open: false, title: '', message: '' }) }}>取消</button>

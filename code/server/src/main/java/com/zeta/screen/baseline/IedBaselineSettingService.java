@@ -2,6 +2,8 @@ package com.zeta.screen.baseline;
 
 import com.zeta.business.entities.cognitiondevice.CognitionDevice;
 import com.zeta.business.entities.cognitiondevice.CognitionDeviceType;
+import com.zeta.business.entities.settinglist.SettingListItemRepository;
+import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.service.CognitionDeviceService;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,19 +15,23 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class IedBaselineSettingService {
     private final CognitionDeviceService cognitionDeviceService;
-    private final IedBaselineSettingItemRepository repository;
+    private final SettingListItemRepository settingListItemRepository;
 
     public IedBaselineSettingService(CognitionDeviceService cognitionDeviceService,
-                                     IedBaselineSettingItemRepository repository) {
+                                     SettingListItemRepository settingListItemRepository) {
         this.cognitionDeviceService = cognitionDeviceService;
-        this.repository = repository;
+        this.settingListItemRepository = settingListItemRepository;
     }
 
-    @Transactional(value = "screenTransactionManager", readOnly = true)
+    @Transactional(value = "businessTransactionManager", readOnly = true)
     public List<IedBaselineSettingResponse> listForCognitionDevice(Long cognitionDeviceId) {
         CognitionDevice device = requireIedOperationDevice(cognitionDeviceId);
-        return repository.findByIedDeviceIdOrderBySortOrderAsc(device.getScreenDeviceId()).stream()
-                .map(item -> new IedBaselineSettingResponse(item.getSettingDescription(), item.getBaselineValue()))
+        return settingListItemRepository
+                .findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+                        SettingListScopeType.IED_DEVICE, device.getScreenDeviceId())
+                .stream()
+                .filter(item -> !Boolean.FALSE.equals(item.getCompareEnabled()))
+                .map(item -> new IedBaselineSettingResponse(item.getSettingName(), item.getBaselineValue()))
                 .collect(Collectors.toList());
     }
 

@@ -8,6 +8,14 @@ const MODULES = [
   ['LOGIC_LEARNING', '逻辑学习'],
   ['SAMPLING_TEST', '采样测试'],
   ['LEARNING_RESOURCE', '学习资料'],
+  ['BASELINE_CONFIG', '基准配置'],
+  ['LOGIC_GROUP', '组合逻辑'],
+]
+
+const DEVICE_MODULES = [
+  ['LOGIC_LEARNING', '逻辑学习'],
+  ['BASELINE_CONFIG', '基准配置'],
+  ['LOGIC_GROUP', '组合逻辑'],
 ]
 
 const STATUS_LABELS = {
@@ -19,7 +27,9 @@ const STATUS_LABELS = {
 export default function ConfigCopyDialog({ scope, sourceId, sourceName, onClose, onSuccess }) {
   const [tree, setTree] = useState({ cabinets: [] })
   const [selectedTargets, setSelectedTargets] = useState([])
-  const [modules, setModules] = useState(scope === 'DEVICE' ? ['LOGIC_LEARNING'] : MODULES.map(([key]) => key))
+  const [modules, setModules] = useState(
+    scope === 'DEVICE' ? DEVICE_MODULES.map(([key]) => key) : MODULES.map(([key]) => key),
+  )
   const [mappings, setMappings] = useState({})
   const [report, setReport] = useState(null)
   const [result, setResult] = useState(null)
@@ -136,17 +146,17 @@ export default function ConfigCopyDialog({ scope, sourceId, sourceName, onClose,
               </label>)}
           </div>
         </section>
-        {scope === 'CABINET' && <section>
+        <section>
           <h4>2. 选择复制内容</h4>
           <div className="config-copy-dialog__modules">
-            {MODULES.map(([key, label]) => <label className="users-page__checkbox" key={key}>
+            {(scope === 'CABINET' ? MODULES : DEVICE_MODULES).map(([key, label]) => <label className="users-page__checkbox" key={key}>
               <input type="checkbox" checked={modules.includes(key)} onChange={() => toggleModule(key)} />
               <span>{label}</span>
             </label>)}
           </div>
-        </section>}
+        </section>
         {report && <section>
-          <h4>{scope === 'CABINET' ? '3' : '2'}. 预检结果</h4>
+          <h4>3. 预检结果</h4>
           {report.targets.map((target) => <div className={`config-copy-dialog__target config-copy-dialog__target--${target.status.toLowerCase()}`} key={target.targetId}>
             <div className="config-copy-dialog__target-head">
               <strong>{target.targetName}</strong><span>{STATUS_LABELS[target.status] || target.status}</span>

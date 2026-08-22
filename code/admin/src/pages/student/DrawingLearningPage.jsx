@@ -9,7 +9,7 @@ import './TabletShell.css'
 import './DrawingLearningPage.css'
 
 const TYPE_LABELS = { BLUEPRINT: '蓝图', WHITEPRINT: '白图' }
-const DISPLAY_TYPES = ['WHITEPRINT', 'BLUEPRINT']
+const DISPLAY_TYPES = ['WHITEPRINT']
 
 function makeStep(group, page, item, pageIndex, itemIndex) {
   return {
@@ -276,7 +276,6 @@ export default function DrawingLearningPage() {
         ) : (
           <div className="drawing-learning__overview">
             {renderOverviewTable('WHITEPRINT')}
-            {renderOverviewTable('BLUEPRINT')}
           </div>
         )}
       </main>

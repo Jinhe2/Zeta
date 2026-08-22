@@ -844,6 +844,37 @@
   color: #ef9a9a;
 }
 
+.pressboard-grid__zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 4px 0 8px;
+  color: #bdd0e1;
+  font-size: 15.18px;
+}
+
+.pressboard-grid__zoom input {
+  width: min(260px, 34vw);
+  accent-color: #64b5f6;
+}
+
+.pressboard-grid__zoom span:last-child {
+  min-width: 42px;
+  color: #8ec5f8;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pressboard-grid__viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
 .pressboard-grid__board {
   display: flex;
   flex-direction: column;
@@ -857,14 +888,55 @@
 .pressboard-grid--full .pressboard-grid__board {
   display: grid;
   grid-template-rows: repeat(var(--pressboard-row-count), minmax(0, 1fr));
-  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
   min-height: 0;
   min-width: 0;
   align-items: stretch;
   justify-content: center;
   overflow: hidden;
-  padding: 12px;
-  gap: clamp(1px, 0.5vh, 4px);
+  padding: 2px;
+  gap: 0;
+  transform: translate(var(--pressboard-translate-x, 0), var(--pressboard-translate-y, 0)) scale(var(--pressboard-zoom, 1));
+  transform-origin: 0 0;
+  transition: transform 0.08s ease;
+}
+
+.pressboard-grid__mini {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  width: 150px;
+  height: 108px;
+  border: 1px solid rgba(142, 197, 248, 0.48);
+  border-radius: 10px;
+  background:
+    linear-gradient(90deg, rgba(142, 197, 248, 0.12) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(142, 197, 248, 0.12) 1px, transparent 1px),
+    rgba(8, 16, 28, 0.52);
+  background-size: 20px 20px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.pressboard-grid__mini:active {
+  cursor: grabbing;
+}
+
+.pressboard-grid__mini-window {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #64b5f6;
+  border-radius: 6px;
+  background: rgba(100, 181, 246, 0.2);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 12px rgba(100, 181, 246, 0.62);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
 .pressboard-grid__row {
@@ -895,12 +967,17 @@
 }
 
 .pressboard-grid--full .pressboard-grid__cell {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) clamp(20px, 2.8vh, 32px);
+  justify-items: center;
+  align-items: center;
+  gap: 0;
   width: auto;
   min-width: 0;
   max-width: none;
   min-height: 0;
-  justify-content: center;
-  padding: clamp(2px, 0.7vh, 6px) 2px;
+  overflow: hidden;
+  padding: 0;
 }
 
 .pressboard-grid__cell--empty {
@@ -914,9 +991,14 @@
 }
 
 .pressboard-grid--full .pressboard-grid__svg {
-  width: min(64%, 44px);
-  height: min(74%, 84px);
+  width: min(100%, 148px);
+  height: min(100%, 232px);
+  max-height: 100%;
   min-height: 0;
+  align-self: center;
+  justify-self: center;
+  transform: scale(1.28);
+  transform-origin: center;
 }
 
 .pressboard-grid__label {
@@ -932,9 +1014,22 @@
 }
 
 .pressboard-grid--full .pressboard-grid__label {
-  font-size: 12.42px;
+  font-size: 10.8px;
+  line-height: 1.05;
   width: 100%;
   max-width: 100%;
+  max-height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  align-self: end;
+  scrollbar-width: none;
+}
+
+.pressboard-grid--full .pressboard-grid__label::-webkit-scrollbar {
+  display: none;
 }
 
 @media (max-width: 768px) {
@@ -952,6 +1047,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pressboard-grid--full .pressboard-grid__label-line {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* ── 压板操作练习提示 ── */

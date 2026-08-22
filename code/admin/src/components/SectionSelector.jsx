@@ -150,13 +150,6 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
 
   return (
     <footer className="section-selector">
-      {/* ── Left: title ── */}
-      <div className="section-selector__head">
-        <span className="section-selector__title">断面选择</span>
-      </div>
-
-      <span className="section-selector__divider" />
-
       {/* ── Center: timeline + nav ── */}
       <div className="section-selector__controls">
         <button
@@ -218,57 +211,70 @@ export default function SectionSelector({ sections, selectedId, onSelect, inputN
           下一点 ›
         </button>
 
+        {cur && (
+          <div className="section-selector__info">
+            <div className="section-selector__info-row">
+              <span className="section-selector__info-label">时刻</span>
+              <span className="section-selector__info-value section-selector__info-value--mono">
+                {formatTimestamp(cur.timestamp)}
+              </span>
+            </div>
+            <div className="section-selector__info-row">
+              <span className="section-selector__info-label">经过</span>
+              <span className="section-selector__info-value section-selector__info-value--mono">
+                {formatTime(cur.time)}
+              </span>
+            </div>
+          </div>
+        )}
+
         <span className="section-selector__page-pill" aria-label="当前断面页码">
-          <span className="section-selector__page-label">当前断面</span>
-          <span className="section-selector__page-current">
-            {currentIndex >= 0 ? currentIndex + 1 : '-'}
+          <span className="section-selector__page-row">
+            <span className="section-selector__page-label">当前断面</span>
+            <span className="section-selector__page-current">
+              {currentIndex >= 0 ? currentIndex + 1 : '-'}
+            </span>
           </span>
-          <span className="section-selector__page-sep">/</span>
-          <span className="section-selector__page-label">断面总数</span>
-          <span className="section-selector__page-total">{safeSections.length}</span>
+          <span className="section-selector__page-row">
+            <span className="section-selector__page-label">断面总数</span>
+            <span className="section-selector__page-total">{safeSections.length}</span>
+          </span>
         </span>
       </div>
 
       <span className="section-selector__divider" />
 
-      {/* ── Right: info panel ── */}
-      {cur && (
-        <div className="section-selector__info">
-          <div className="section-selector__info-row">
-            <span className="section-selector__info-label">时刻</span>
-            <span className="section-selector__info-value section-selector__info-value--mono">
-              {formatTimestamp(cur.timestamp)}
-            </span>
-          </div>
-          <div className="section-selector__info-row">
-            <span className="section-selector__info-label">经过</span>
-            <span className="section-selector__info-value section-selector__info-value--mono">
-              {formatTime(cur.time)}
-            </span>
-          </div>
+      {/* ── Summary ── */}
+      <div className="section-selector__meta">
+        <div className="section-selector__satisfy-summary">
+          <span className="section-selector__satisfy-row">
+            <span className="section-selector__satisfy-label">满足节点数</span>
+            <span className="section-selector__satisfy-ok">{ok}</span>
+          </span>
+          <span className="section-selector__satisfy-row">
+            <span className="section-selector__satisfy-label">有效输入节点数</span>
+            <span className="section-selector__satisfy-total">{total}</span>
+          </span>
+          {invalid > 0 && <span className="section-selector__invalid-count">无效节点 {invalid}</span>}
         </div>
-      )}
+      </div>
 
       <span className="section-selector__divider" />
 
       {/* ── Legend ── */}
-      <div className="section-selector__meta">
-        <div className="section-selector__satisfy-summary">
-          <span className="section-selector__satisfy-label">满足节点数</span>
-          <span className="section-selector__satisfy-ok">{ok}</span>
-          <span className="section-selector__satisfy-sep">/</span>
-          <span className="section-selector__satisfy-label">有效输入节点数</span>
-          <span className="section-selector__satisfy-total">{total}</span>
-          {invalid > 0 && <span className="section-selector__invalid-count">无效 {invalid}</span>}
-        </div>
-        <div className="section-selector__legend">
+      <div className="section-selector__legend">
+        <span className="section-selector__legend-item">
           <span className="section-selector__legend-dot section-selector__legend-dot--ok" />
           <span>满足</span>
+        </span>
+        <span className="section-selector__legend-item">
           <span className="section-selector__legend-dot section-selector__legend-dot--fail" />
           <span>不满足</span>
+        </span>
+        <span className="section-selector__legend-item">
           <span className="section-selector__legend-dot section-selector__legend-dot--invalid" />
-          <span>灰色表示该节点无效</span>
-        </div>
+          <span>无效节点</span>
+        </span>
       </div>
     </footer>
   )

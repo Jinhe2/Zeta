@@ -148,6 +148,54 @@ function initialPracticeState() {
   }
 }
 
+function PressboardGridBoard({ pressboardGrid, maxCol, pressboardStates }) {
+  return (
+    <div
+      className="pressboard-grid__board"
+      style={{
+        '--pressboard-row-count': pressboardGrid.length,
+        '--pressboard-col-count': maxCol + 1,
+      }}
+    >
+      {pressboardGrid.map((row, ri) => (
+        <div key={ri} className="pressboard-grid__row">
+          {row.map((pb, ci) => {
+            const nameParts = pb ? splitPressboardName(pb.name) : null
+            const state = pb ? readPressboardState(pb, pressboardStates) : ''
+            return (
+              <div
+                key={ci}
+                className={`pressboard-grid__cell${pb ? '' : ' pressboard-grid__cell--empty'}`}
+                title={pb ? `${pb.name} (${pb.pressboardType})\n前端压板ID: ${pb.id}\n匹配状态: ${state || '未匹配'}` : ''}
+                data-pressboard-id={pb?.id ?? undefined}
+                data-pressboard-name={pb?.name ?? undefined}
+                data-pressboard-type={pb?.pressboardType ?? undefined}
+                data-pressboard-state={state || undefined}
+              >
+                {pb && (
+                  <>
+                    <img
+                      src={pressboardSvg(pb.pressboardType, state)}
+                      alt={pb.name}
+                      className="pressboard-grid__svg"
+                    />
+                    <span className="pressboard-grid__label">
+                      <span className="pressboard-grid__label-line">{nameParts.prefix}</span>
+                      {nameParts.suffix && (
+                        <span className="pressboard-grid__label-line">{nameParts.suffix}</span>
+                      )}
+                    </span>
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function PlateCognitionContent({ navigationTarget, navigationEvent, onPageChange }) {
   const [displayItemsState, setDisplayItemsState] = useState({ deviceId: null, items: [] })
   const [selectedDeviceId, setSelectedDeviceId] = useState(null)
@@ -168,9 +216,19 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
   const [statusRefreshVersion, setStatusRefreshVersion] = useState(0)
   const [statusError, setStatusError] = useState(null)
   const [practiceDialog, setPracticeDialog] = useState(null)
+  const [pressboardExpanded, setPressboardExpanded] = useState(false)
   const pollRef = useRef(null)
   const statusRequestRef = useRef(null)
   const practiceRef = useRef(initialPracticeState())
+
+  useEffect(() => {
+    if (!pressboardExpanded) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setPressboardExpanded(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [pressboardExpanded])
 
   const selectedDevice =
     cognitionDevices.find((d) => d.id === selectedDeviceId) ?? cognitionDevices[0] ?? null
@@ -601,6 +659,17 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
           <div className="pressboard-grid pressboard-grid--full pressboard-grid--slide">
             <div className="pressboard-grid__header">
               <span>屏柜压板状态</span>
+              {pressboards.length > 0 && (
+                <button
+                  type="button"
+                  className="pressboard-grid__expand-btn"
+                  onClick={() => setPressboardExpanded(true)}
+                  aria-label="展开软压板实时状态"
+                >
+                  <span aria-hidden="true">↗</span>
+                  展开
+                </button>
+              )}
             </div>
             {statusError && (
               <p className="pressboard-grid__error">{statusError}</p>
@@ -608,49 +677,11 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
             {pressboards.length === 0 ? (
               <p className="cabinet-section__paragraph">暂无可渲染的压板状态数据</p>
             ) : (
-              <div
-                className="pressboard-grid__board"
-                style={{
-                  '--pressboard-row-count': pressboardGrid.length,
-                  '--pressboard-col-count': maxCol + 1,
-                }}
-              >
-                {pressboardGrid.map((row, ri) => (
-                  <div key={ri} className="pressboard-grid__row">
-                    {row.map((pb, ci) => {
-                      const nameParts = pb ? splitPressboardName(pb.name) : null
-                      const state = pb ? readPressboardState(pb, pressboardStates) : ''
-                      return (
-                        <div
-                          key={ci}
-                          className={`pressboard-grid__cell${pb ? '' : ' pressboard-grid__cell--empty'}`}
-                          title={pb ? `${pb.name} (${pb.pressboardType})\n前端压板ID: ${pb.id}\n匹配状态: ${state || '未匹配'}` : ''}
-                          data-pressboard-id={pb?.id ?? undefined}
-                          data-pressboard-name={pb?.name ?? undefined}
-                          data-pressboard-type={pb?.pressboardType ?? undefined}
-                          data-pressboard-state={state || undefined}
-                        >
-                          {pb && (
-                            <>
-                              <img
-                                src={pressboardSvg(pb.pressboardType, state)}
-                                alt={pb.name}
-                                className="pressboard-grid__svg"
-                              />
-                              <span className="pressboard-grid__label">
-                                <span className="pressboard-grid__label-line">{nameParts.prefix}</span>
-                                {nameParts.suffix && (
-                                  <span className="pressboard-grid__label-line">{nameParts.suffix}</span>
-                                )}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
+              <PressboardGridBoard
+                pressboardGrid={pressboardGrid}
+                maxCol={maxCol}
+                pressboardStates={pressboardStates}
+              />
             )}
           </div>
         )}
@@ -690,6 +721,43 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
           </div>
         )}
       </div>
+
+      {pressboardExpanded && (
+        <div
+          className="pressboard-expand-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pressboard-expand-dialog-title"
+        >
+          <button
+            type="button"
+            className="pressboard-expand-dialog__mask"
+            onClick={() => setPressboardExpanded(false)}
+            aria-label="关闭软压板实时状态弹窗"
+          />
+          <div className="pressboard-expand-dialog__panel">
+            <div className="pressboard-expand-dialog__header">
+              <h2 id="pressboard-expand-dialog-title">软压板实时状态</h2>
+              <button
+                type="button"
+                className="pressboard-expand-dialog__close"
+                onClick={() => setPressboardExpanded(false)}
+                aria-label="关闭"
+              >
+                ×
+              </button>
+            </div>
+            {statusError && <p className="pressboard-grid__error">{statusError}</p>}
+            <div className="pressboard-grid pressboard-grid--full pressboard-expand-dialog__grid">
+              <PressboardGridBoard
+                pressboardGrid={pressboardGrid}
+                maxCol={maxCol}
+                pressboardStates={pressboardStates}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {visiblePracticeDialog && (
         <div className="pressboard-practice-dialog" role="dialog" aria-modal="true" aria-labelledby="pressboard-practice-dialog-message">

@@ -1,7 +1,9 @@
 package com.zeta.integration.monitor;
 
 import com.zeta.business.auth.AuthService;
+import com.zeta.business.entities.settinglist.dto.SettingCheckResponse;
 import com.zeta.business.service.LogicGroupService;
+import com.zeta.business.service.SettingComparisonService;
 import com.zeta.integration.queue.ScreenQueueMessage;
 import com.zeta.integration.queue.ScreenQueueProperties;
 import com.zeta.screen.baseline.IedBaselineSettingService;
@@ -23,6 +25,7 @@ public class MonitorCommandController {
   private final StringRedisTemplate redisTemplate;
   private final ScreenQueueProperties queueProperties;
   private final IedBaselineSettingService iedBaselineSettingService;
+  private final SettingComparisonService settingComparisonService;
   private final LogicGroupService logicGroupService;
 
   public MonitorCommandController(
@@ -31,12 +34,14 @@ public class MonitorCommandController {
       StringRedisTemplate redisTemplate,
       ScreenQueueProperties queueProperties,
       IedBaselineSettingService iedBaselineSettingService,
+      SettingComparisonService settingComparisonService,
       LogicGroupService logicGroupService) {
     this.commandService = commandService;
     this.authService = authService;
     this.redisTemplate = redisTemplate;
     this.queueProperties = queueProperties;
     this.iedBaselineSettingService = iedBaselineSettingService;
+    this.settingComparisonService = settingComparisonService;
     this.logicGroupService = logicGroupService;
   }
 
@@ -97,7 +102,7 @@ public class MonitorCommandController {
 
   /** 触发 IED 设备操作认知关联装置的基准定值比对。 */
   @PostMapping("/commands/baseline-settings-compare")
-  public Map<String, Object> compareBaselineSettings(
+  public SettingCheckResponse compareBaselineSettings(
       @RequestHeader("Authorization") String authorization, @RequestBody Map<String, Object> body) {
     authService.requireUser(authorization);
     Object value = body.get("cognitionDeviceId");
@@ -105,8 +110,7 @@ public class MonitorCommandController {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 cognitionDeviceId 参数");
     }
     Long iedDeviceId = iedBaselineSettingService.requireIedDeviceId(((Number) value).longValue());
-    return awaitResponse(
-        commandService.compareIedBaselineSettings(iedDeviceId), "compare_baseline_settings");
+    return settingComparisonService.checkForDevice(iedDeviceId);
   }
 
   /** 查询最近一次压板状态 */

@@ -31,8 +31,17 @@ public class SettingComparisonService {
     this.mmsSettingClient = mmsSettingClient;
   }
 
+  public SettingCheckResponse checkForDevice(Long iedDeviceId) {
+    ResolvedSettingList resolved = settingListService.resolveForDevice(iedDeviceId);
+    return checkResolved(resolved);
+  }
+
   public SettingCheckResponse checkForLogic(Long logicDiagramId) {
     ResolvedSettingList resolved = settingListService.resolveForLogic(logicDiagramId);
+    return checkResolved(resolved);
+  }
+
+  private SettingCheckResponse checkResolved(ResolvedSettingList resolved) {
     if (!hasEnabledItems(resolved)) {
       return skipped(resolved);
     }

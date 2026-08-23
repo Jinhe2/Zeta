@@ -80,6 +80,17 @@ public class SettingListService {
   }
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
+  public ResolvedSettingList resolveForDevice(Long iedDeviceId) {
+    Target target = targetService.require(SettingListScopeType.IED_DEVICE, iedDeviceId);
+    List<SettingListItem> items = find(SettingListScopeType.IED_DEVICE, iedDeviceId);
+    return new ResolvedSettingList(
+        target,
+        items.isEmpty() ? null : SettingListScopeType.IED_DEVICE,
+        items.isEmpty() ? null : iedDeviceId,
+        items);
+  }
+
+  @Transactional(value = "businessTransactionManager", readOnly = true)
   public ResolvedSettingList resolveForLogic(Long logicDiagramId) {
     Target target = targetService.require(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
     List<SettingListItem> items = find(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);

@@ -47,7 +47,7 @@ export default function IedBaselineSettingContent({
       if (failedItems.length) {
         setDialog({
           type: 'result',
-          message: failedItems.map((entry) => `${entry.description || entry.setting_ref || '该定值'} 还存在问题，请重新进行整定`).join('\n'),
+          message: failedItems.map((entry) => `${entry.settingName || entry.description || entry.settingRef || entry.setting_ref || '该定值'} 还存在问题，请重新进行整定`).join('\n'),
         })
       } else {
         setDialog({ type: 'result', message: '定值整定正确，请继续学习' })

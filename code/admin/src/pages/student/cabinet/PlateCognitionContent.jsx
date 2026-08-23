@@ -32,16 +32,6 @@ function pressboardSvg(type, state) {
   return publicUrl(`images/pressboard/${stateName}_${typeSuffix}.svg`)
 }
 
-/** 压板类型颜色标识 */
-function pressboardColor(type) {
-  switch (type) {
-    case 'FUNCTION': return '#fdd835' // 黄色
-    case 'EXPORT': return '#e53935'   // 红色
-    case 'SPARE': return '#bcaaa4'    // 驼色
-    default: return '#90a4ae'
-  }
-}
-
 /** 按首个中文字符拆分压板名称 */
 function splitPressboardName(name) {
   const text = String(name ?? '')
@@ -178,11 +168,8 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
   const [statusRefreshVersion, setStatusRefreshVersion] = useState(0)
   const [statusError, setStatusError] = useState(null)
   const [practiceDialog, setPracticeDialog] = useState(null)
-  const [pressboardZoom, setPressboardZoom] = useState(3)
-  const [pressboardViewport, setPressboardViewport] = useState({ x: 50, y: 50 })
   const pollRef = useRef(null)
   const statusRequestRef = useRef(null)
-  const pressboardMiniRef = useRef(null)
   const practiceRef = useRef(initialPracticeState())
 
   const selectedDevice =
@@ -503,42 +490,6 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
     }
     pressboardGrid.push(row)
   }
-  const miniWindowSize = Math.max(24, Math.min(100, 100 / pressboardZoom))
-  const viewportMin = miniWindowSize / 2
-  const viewportMax = 100 - viewportMin
-  const clampViewport = useCallback((value) => Math.min(viewportMax, Math.max(viewportMin, value)), [viewportMax, viewportMin])
-  const pressboardTranslateX = 50 / pressboardZoom - pressboardViewport.x
-  const pressboardTranslateY = 50 / pressboardZoom - pressboardViewport.y
-
-  const updatePressboardViewport = useCallback((clientX, clientY) => {
-    const node = pressboardMiniRef.current
-    if (!node) return
-    const rect = node.getBoundingClientRect()
-    const x = clampViewport(((clientX - rect.left) / rect.width) * 100)
-    const y = clampViewport(((clientY - rect.top) / rect.height) * 100)
-    setPressboardViewport({ x, y })
-  }, [clampViewport])
-
-  const handlePressboardMiniPointerDown = useCallback((event) => {
-    event.preventDefault()
-    event.currentTarget.setPointerCapture?.(event.pointerId)
-    updatePressboardViewport(event.clientX, event.clientY)
-  }, [updatePressboardViewport])
-
-  const handlePressboardMiniPointerMove = useCallback((event) => {
-    if (!(event.buttons & 1)) return
-    updatePressboardViewport(event.clientX, event.clientY)
-  }, [updatePressboardViewport])
-
-  useEffect(() => {
-    setPressboardViewport((current) => {
-      const next = {
-        x: clampViewport(current.x),
-        y: clampViewport(current.y),
-      }
-      return next.x === current.x && next.y === current.y ? current : next
-    })
-  }, [clampViewport])
 
   const highlightRegion =
     selectedCabinetItem && selectedDevice && cognitionDevices.length > 0
@@ -657,94 +608,49 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
             {pressboards.length === 0 ? (
               <p className="cabinet-section__paragraph">暂无可渲染的压板状态数据</p>
             ) : (
-              <>
-                <div className="pressboard-grid__zoom">
-                  <span>缩放</span>
-                  <input
-                    type="range"
-                    min="1"
-                    max="6"
-                    step="0.25"
-                    value={pressboardZoom}
-                    onChange={(event) => setPressboardZoom(Number(event.target.value))}
-                    aria-label="压板状态图缩放"
-                  />
-                  <span>{pressboardZoom.toFixed(1)}×</span>
-                </div>
-                <div className="pressboard-grid__viewport">
-                  <div
-                    className="pressboard-grid__board"
-                    style={{
-                      '--pressboard-row-count': pressboardGrid.length,
-                      '--pressboard-col-count': maxCol + 1,
-                      '--pressboard-zoom': pressboardZoom,
-                      '--pressboard-translate-x': `${pressboardTranslateX}%`,
-                      '--pressboard-translate-y': `${pressboardTranslateY}%`,
-                    }}
-                  >
-                    {pressboardGrid.map((row, ri) => (
-                      <div key={ri} className="pressboard-grid__row">
-                        {row.map((pb, ci) => {
-                          const nameParts = pb ? splitPressboardName(pb.name) : null
-                          const state = pb ? readPressboardState(pb, pressboardStates) : ''
-                          return (
-                            <div
-                              key={ci}
-                              className={`pressboard-grid__cell${pb ? '' : ' pressboard-grid__cell--empty'}`}
-                              title={pb ? `${pb.name} (${pb.pressboardType})\n前端压板ID: ${pb.id}\n匹配状态: ${state || '未匹配'}` : ''}
-                              data-pressboard-id={pb?.id ?? undefined}
-                              data-pressboard-name={pb?.name ?? undefined}
-                              data-pressboard-type={pb?.pressboardType ?? undefined}
-                              data-pressboard-state={state || undefined}
-                            >
-                              {pb && (
-                                <>
-                                  <img
-                                    src={pressboardSvg(pb.pressboardType, state)}
-                                    alt={pb.name}
-                                    className="pressboard-grid__svg"
-                                  />
-                                  <span
-                                    className="pressboard-grid__label"
-                                    style={{ borderBottomColor: pressboardColor(pb.pressboardType) }}
-                                  >
-                                    <span className="pressboard-grid__label-line">{nameParts.prefix}</span>
-                                    {nameParts.suffix && (
-                                      <span className="pressboard-grid__label-line">{nameParts.suffix}</span>
-                                    )}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ))}
+              <div
+                className="pressboard-grid__board"
+                style={{
+                  '--pressboard-row-count': pressboardGrid.length,
+                  '--pressboard-col-count': maxCol + 1,
+                }}
+              >
+                {pressboardGrid.map((row, ri) => (
+                  <div key={ri} className="pressboard-grid__row">
+                    {row.map((pb, ci) => {
+                      const nameParts = pb ? splitPressboardName(pb.name) : null
+                      const state = pb ? readPressboardState(pb, pressboardStates) : ''
+                      return (
+                        <div
+                          key={ci}
+                          className={`pressboard-grid__cell${pb ? '' : ' pressboard-grid__cell--empty'}`}
+                          title={pb ? `${pb.name} (${pb.pressboardType})\n前端压板ID: ${pb.id}\n匹配状态: ${state || '未匹配'}` : ''}
+                          data-pressboard-id={pb?.id ?? undefined}
+                          data-pressboard-name={pb?.name ?? undefined}
+                          data-pressboard-type={pb?.pressboardType ?? undefined}
+                          data-pressboard-state={state || undefined}
+                        >
+                          {pb && (
+                            <>
+                              <img
+                                src={pressboardSvg(pb.pressboardType, state)}
+                                alt={pb.name}
+                                className="pressboard-grid__svg"
+                              />
+                              <span className="pressboard-grid__label">
+                                <span className="pressboard-grid__label-line">{nameParts.prefix}</span>
+                                {nameParts.suffix && (
+                                  <span className="pressboard-grid__label-line">{nameParts.suffix}</span>
+                                )}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
-                  {pressboardZoom > 1 && (
-                    <div
-                      ref={pressboardMiniRef}
-                      className="pressboard-grid__mini"
-                      role="slider"
-                      tabIndex={0}
-                      aria-label="压板状态图缩略导航"
-                      aria-valuetext={`视窗中心 ${Math.round(pressboardViewport.x)}%, ${Math.round(pressboardViewport.y)}%`}
-                      onPointerDown={handlePressboardMiniPointerDown}
-                      onPointerMove={handlePressboardMiniPointerMove}
-                    >
-                      <span
-                        className="pressboard-grid__mini-window"
-                        style={{
-                          width: `${miniWindowSize}%`,
-                          height: `${miniWindowSize}%`,
-                          left: `${pressboardViewport.x}%`,
-                          top: `${pressboardViewport.y}%`,
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </>
+                ))}
+              </div>
             )}
           </div>
         )}

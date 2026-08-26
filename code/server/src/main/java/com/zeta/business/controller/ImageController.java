@@ -39,6 +39,7 @@ import com.zeta.business.media.*;
 import com.zeta.business.service.*;
 import com.zeta.business.storage.*;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -51,6 +52,9 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/images")
 public class ImageController {
+
+  private static final CacheControl IMAGE_CACHE_CONTROL =
+      CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic();
 
   private final CabinetDisplayItemRepository cabinetRepository;
   private final DeviceDisplayItemRepository deviceRepository;
@@ -85,7 +89,7 @@ public class ImageController {
       if (StringUtils.hasText(item.getImageUrl())) {
         return ResponseEntity.status(HttpStatus.FOUND)
             .location(URI.create(item.getImageUrl()))
-            .cacheControl(CacheControl.noStore())
+            .cacheControl(IMAGE_CACHE_CONTROL)
             .build();
       }
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
@@ -96,7 +100,7 @@ public class ImageController {
 
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType(contentType))
-        .cacheControl(CacheControl.noStore())
+        .cacheControl(IMAGE_CACHE_CONTROL)
         .body(item.getImageData());
   }
 
@@ -111,7 +115,7 @@ public class ImageController {
       if (StringUtils.hasText(item.getImageUrl())) {
         return ResponseEntity.status(HttpStatus.FOUND)
             .location(URI.create(item.getImageUrl()))
-            .cacheControl(CacheControl.noStore())
+            .cacheControl(IMAGE_CACHE_CONTROL)
             .build();
       }
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
@@ -122,7 +126,7 @@ public class ImageController {
 
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType(contentType))
-        .cacheControl(CacheControl.noStore())
+        .cacheControl(IMAGE_CACHE_CONTROL)
         .body(item.getImageData());
   }
 
@@ -137,7 +141,7 @@ public class ImageController {
       if (StringUtils.hasText(item.getImageUrl())) {
         return ResponseEntity.status(HttpStatus.FOUND)
             .location(URI.create(item.getImageUrl()))
-            .cacheControl(CacheControl.noStore())
+            .cacheControl(IMAGE_CACHE_CONTROL)
             .build();
       }
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
@@ -148,7 +152,7 @@ public class ImageController {
 
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType(contentType))
-        .cacheControl(CacheControl.noStore())
+        .cacheControl(IMAGE_CACHE_CONTROL)
         .body(item.getImageData());
   }
 
@@ -163,7 +167,7 @@ public class ImageController {
       if (StringUtils.hasText(page.getImageUrl())) {
         return ResponseEntity.status(HttpStatus.FOUND)
             .location(URI.create(page.getImageUrl()))
-            .cacheControl(CacheControl.noStore())
+            .cacheControl(IMAGE_CACHE_CONTROL)
             .build();
       }
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
@@ -174,7 +178,7 @@ public class ImageController {
 
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType(contentType))
-        .cacheControl(CacheControl.noStore())
+        .cacheControl(IMAGE_CACHE_CONTROL)
         .body(page.getImageData());
   }
 
@@ -185,13 +189,13 @@ public class ImageController {
     if (item.getImageData() == null || item.getImageData().length == 0) {
       if (StringUtils.hasText(item.getImageUrl())) {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(item.getImageUrl()))
-            .cacheControl(CacheControl.noStore()).build();
+            .cacheControl(IMAGE_CACHE_CONTROL).build();
       }
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
     }
     String contentType = item.getImageContentType() != null ? item.getImageContentType() : "image/jpeg";
     return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
-        .cacheControl(CacheControl.noStore()).body(item.getImageData());
+        .cacheControl(IMAGE_CACHE_CONTROL).body(item.getImageData());
   }
 
   @GetMapping("/experiment-guide/{id}")
@@ -201,12 +205,12 @@ public class ImageController {
     if (item.getImageData() == null || item.getImageData().length == 0) {
       if (StringUtils.hasText(item.getImageUrl())) {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(item.getImageUrl()))
-            .cacheControl(CacheControl.noStore()).build();
+            .cacheControl(IMAGE_CACHE_CONTROL).build();
       }
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "图片数据为空");
     }
     String contentType = item.getImageContentType() != null ? item.getImageContentType() : "image/jpeg";
     return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
-        .cacheControl(CacheControl.noStore()).body(item.getImageData());
+        .cacheControl(IMAGE_CACHE_CONTROL).body(item.getImageData());
   }
 }

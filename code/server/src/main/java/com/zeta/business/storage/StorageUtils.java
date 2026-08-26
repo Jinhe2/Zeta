@@ -20,6 +20,25 @@ final class StorageUtils {
     }
   }
 
+  static void requireMaxSize(MultipartFile file, long maxBytes, String label) {
+    if (file != null && file.getSize() > maxBytes) {
+      throw new ResponseStatusException(
+          HttpStatus.PAYLOAD_TOO_LARGE,
+          label + "不能超过 " + formatSize(maxBytes) + "，当前约 " + formatSize(file.getSize()));
+    }
+  }
+
+  private static String formatSize(long bytes) {
+    long mb = 1024L * 1024L;
+    if (bytes >= mb) {
+      long value = (bytes + mb - 1) / mb;
+      return value + "MB";
+    }
+    long kb = 1024L;
+    long value = (bytes + kb - 1) / kb;
+    return value + "KB";
+  }
+
   static String cleanFilename(String originalFilename) {
     if (!StringUtils.hasText(originalFilename)) {
       return "upload";

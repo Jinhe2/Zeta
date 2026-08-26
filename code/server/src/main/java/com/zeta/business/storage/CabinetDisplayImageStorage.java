@@ -27,6 +27,7 @@ public class CabinetDisplayImageStorage {
 
     private static final Set<String> ALLOWED_EXTENSIONS = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "gif", "webp", "svg")));
+    private static final long MAX_IMAGE_BYTES = 20L * 1024L * 1024L;
 
     private final UploadProperties uploadProperties;
     private final Path storageRoot;
@@ -40,6 +41,7 @@ public class CabinetDisplayImageStorage {
         if (file == null || file.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择图片文件");
         }
+        StorageUtils.requireMaxSize(file, MAX_IMAGE_BYTES, "图片");
         String extension = resolveExtension(file.getOriginalFilename());
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "仅支持 JPG、PNG、GIF、WebP、SVG 图片");
@@ -73,6 +75,7 @@ public class CabinetDisplayImageStorage {
         if (file == null || file.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择图片文件");
         }
+        StorageUtils.requireMaxSize(file, MAX_IMAGE_BYTES, "图片");
         String extension = resolveExtension(file.getOriginalFilename());
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "仅支持 JPG、PNG、GIF、WebP、SVG 图片");

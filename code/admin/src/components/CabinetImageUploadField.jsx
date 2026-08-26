@@ -7,6 +7,13 @@ import {
   loadImageSourceFromUrl,
 } from '../utils/cropImage'
 
+const MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024
+
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0MB'
+  return `${(bytes / 1024 / 1024).toFixed(bytes >= 10 * 1024 * 1024 ? 0 : 1)}MB`
+}
+
 export default function CabinetImageUploadField({
   imageUrl,
   previewUrl,
@@ -88,6 +95,10 @@ export default function CabinetImageUploadField({
     if (!file) return
 
     setUploadError('')
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+      setUploadError(`图片不能超过 ${formatFileSize(MAX_IMAGE_UPLOAD_BYTES)}，当前约 ${formatFileSize(file.size)}`)
+      return
+    }
     if (isSvgFile(file)) {
       await uploadFile(file)
       return
@@ -170,7 +181,7 @@ export default function CabinetImageUploadField({
           </>
         ) : (
           <span className="cabinet-display-items__upload-hint">
-            支持 JPG、PNG、GIF、WebP（可裁切、旋转、翻转）；SVG 将直接上传
+            支持 JPG、PNG、GIF、WebP（可裁切、旋转、翻转）；SVG 将直接上传，最大 20MB
           </span>
         )}
       </div>

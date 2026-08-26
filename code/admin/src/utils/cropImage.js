@@ -7,6 +7,9 @@ const createImage = (url) =>
     image.src = url
   })
 
+export const DEFAULT_IMAGE_OUTPUT_MAX_SIZE = 1600
+export const DEFAULT_IMAGE_OUTPUT_QUALITY = 0.86
+
 function getRadianAngle(degreeValue) {
   return (degreeValue * Math.PI) / 180
 }
@@ -26,13 +29,15 @@ function rotateSize(width, height, rotation) {
  * @param {number} rotation 角度
  * @param {{ horizontal?: boolean, vertical?: boolean }} flip
  * @param {number} maxOutputSize 最长边上限（像素）
+ * @param {number} quality JPEG 输出质量
  */
 export async function getCroppedImageBlob(
   imageSrc,
   pixelCrop,
   rotation = 0,
   flip = { horizontal: false, vertical: false },
-  maxOutputSize = 1920,
+  maxOutputSize = DEFAULT_IMAGE_OUTPUT_MAX_SIZE,
+  quality = DEFAULT_IMAGE_OUTPUT_QUALITY,
 ) {
   const image = await createImage(imageSrc)
   const canvas = document.createElement('canvas')
@@ -93,7 +98,7 @@ export async function getCroppedImageBlob(
         }
       },
       'image/jpeg',
-      0.92,
+      quality,
     )
   })
 }

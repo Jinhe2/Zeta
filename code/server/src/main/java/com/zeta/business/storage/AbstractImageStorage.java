@@ -17,6 +17,7 @@ abstract class AbstractImageStorage {
 
   private static final Set<String> SUPPORTED_EXTENSIONS =
       new HashSet<String>(Arrays.asList("jpg", "jpeg", "png", "gif", "webp", "svg"));
+  private static final long MAX_IMAGE_BYTES = 20L * 1024L * 1024L;
 
   private final Path storageDir;
   private final String publicPathPrefix;
@@ -28,6 +29,7 @@ abstract class AbstractImageStorage {
 
   public byte[] readImageBytes(MultipartFile file) {
     StorageUtils.requireNotEmpty(file, "图片不能为空");
+    StorageUtils.requireMaxSize(file, MAX_IMAGE_BYTES, "图片");
     resolveContentType(file.getOriginalFilename());
     try {
       return file.getBytes();

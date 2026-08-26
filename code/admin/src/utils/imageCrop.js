@@ -1,4 +1,6 @@
 const TO_RADIANS = Math.PI / 180
+const DEFAULT_OUTPUT_MAX_SIZE = 1600
+const DEFAULT_JPEG_QUALITY = 0.86
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -26,7 +28,8 @@ export async function getCroppedImageBlob(
   pixelCrop,
   rotation = 0,
   outputType = 'image/jpeg',
-  quality = 0.92,
+  quality = DEFAULT_JPEG_QUALITY,
+  maxOutputSize = DEFAULT_OUTPUT_MAX_SIZE,
 ) {
   const image = await loadImage(imageSrc)
   const canvas = document.createElement('canvas')
@@ -52,8 +55,17 @@ export async function getCroppedImageBlob(
     throw new Error('无法创建画布')
   }
 
-  croppedCanvas.width = pixelCrop.width
-  croppedCanvas.height = pixelCrop.height
+  let outW = pixelCrop.width
+  let outH = pixelCrop.height
+  const longest = Math.max(outW, outH)
+  if (longest > maxOutputSize) {
+    const scale = maxOutputSize / longest
+    outW = Math.round(outW * scale)
+    outH = Math.round(outH * scale)
+  }
+
+  croppedCanvas.width = outW
+  croppedCanvas.height = outH
 
   croppedCtx.drawImage(
     canvas,
@@ -63,8 +75,8 @@ export async function getCroppedImageBlob(
     pixelCrop.height,
     0,
     0,
-    pixelCrop.width,
-    pixelCrop.height,
+    outW,
+    outH,
   )
 
   return new Promise((resolve, reject) => {
@@ -94,9 +106,9 @@ export function pickOutputType(file) {
     return { mime: 'image/png', ext: 'png', quality: undefined }
   }
   if (file?.type === 'image/webp') {
-    return { mime: 'image/webp', ext: 'webp', quality: 0.92 }
+    return { mime: 'image/webp', ext: 'webp', quality: DEFAULT_JPEG_QUALITY }
   }
-  return { mime: 'image/jpeg', ext: 'jpg', quality: 0.92 }
+  return { mime: 'image/jpeg', ext: 'jpg', quality: DEFAULT_JPEG_QUALITY }
 }
 
 export function blobToFile(blob, baseName, ext) {

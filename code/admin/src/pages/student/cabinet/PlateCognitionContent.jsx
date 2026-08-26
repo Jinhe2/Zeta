@@ -664,7 +664,7 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
                   type="button"
                   className="pressboard-grid__expand-btn"
                   onClick={() => setPressboardExpanded(true)}
-                  aria-label="展开软压板实时状态"
+                  aria-label="展开压板实时状态"
                 >
                   <span aria-hidden="true">↗</span>
                   展开
@@ -733,11 +733,11 @@ export default function PlateCognitionContent({ navigationTarget, navigationEven
             type="button"
             className="pressboard-expand-dialog__mask"
             onClick={() => setPressboardExpanded(false)}
-            aria-label="关闭软压板实时状态弹窗"
+            aria-label="关闭压板实时状态弹窗"
           />
           <div className="pressboard-expand-dialog__panel">
             <div className="pressboard-expand-dialog__header">
-              <h2 id="pressboard-expand-dialog-title">软压板实时状态</h2>
+              <h2 id="pressboard-expand-dialog-title">硬压板实时状态</h2>
               <button
                 type="button"
                 className="pressboard-expand-dialog__close"

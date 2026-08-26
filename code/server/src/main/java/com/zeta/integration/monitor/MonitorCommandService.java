@@ -114,7 +114,7 @@ public class MonitorCommandService {
     return sendCommand("summon_ied_comm_status", null, data, "ied-comm:" + cabinetId);
   }
 
-  /** 读取指定 IED 的软压板实时状态。 */
+  /** 读取指定 IED 的硬压板实时状态。 */
   public CompletableFuture<ScreenQueueMessage> sendIedSoftPressboardStatusRequest(Long iedDeviceId) {
     Map<String, Object> data = new LinkedHashMap<>();
     data.put("ied_device_id", iedDeviceId);

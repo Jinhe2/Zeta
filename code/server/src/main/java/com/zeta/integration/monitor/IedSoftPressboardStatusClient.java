@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-/** 调用 monitord 读取 IED 软压板实时状态，并转换为可比对的引用/状态映射。 */
+/** 调用 monitord 读取 IED 硬压板实时状态，并转换为可比对的引用/状态映射。 */
 @Service
 public class IedSoftPressboardStatusClient {
   private static final long AWAIT_SECONDS = 31;

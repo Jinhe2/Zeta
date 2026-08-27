@@ -2,6 +2,7 @@ package com.zeta.business.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -10,10 +11,12 @@ import static org.mockito.Mockito.when;
 import com.zeta.business.entities.settinglist.SettingListItem;
 import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.entities.settinglist.dto.SettingCheckResponse;
+import com.zeta.business.entities.settinglist.dto.SettingSummonResponse;
 import com.zeta.business.service.SettingListService.ResolvedSettingList;
 import com.zeta.business.service.SettingListTargetService.Target;
 import com.zeta.integration.mms.MmsSettingClient;
 import com.zeta.integration.mms.MmsSettingClient.SummonResult;
+import com.zeta.screen.iedsetting.IedSettingItem;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -74,6 +77,64 @@ class SettingComparisonServiceTest {
     assertEquals("SKIPPED", response.getStatus());
     assertEquals(0, response.getTotal());
     verifyNoInteractions(mmsClient);
+  }
+
+  @Test
+  void tmmsIntegerBaselineMatchesConvertedSecondsAndReturnsFloatType() {
+    SettingListService listService = mock(SettingListService.class);
+    MmsSettingClient mmsClient = mock(MmsSettingClient.class);
+    SettingComparisonService service = new SettingComparisonService(
+        listService,
+        mock(SettingListTargetService.class),
+        mock(SettingCatalogService.class),
+        mmsClient);
+
+    SettingListItem item = item("IED_A/LD0/PTOC$SG$OpDlTmms", "动作延时", "0.25", true);
+    item.setValueType("INTEGER");
+    when(listService.resolveForDevice(12L)).thenReturn(new ResolvedSettingList(
+        new Target(SettingListScopeType.IED_DEVICE, 12L, "保护装置", 12L, "IED_A", 3L),
+        SettingListScopeType.IED_DEVICE,
+        12L,
+        Collections.singletonList(item)));
+    Map<String, Double> actual = new LinkedHashMap<>();
+    actual.put("IED_A/LD0/PTOC$SG$OpDlTmms", 250D);
+    when(mmsClient.summon("IED_A")).thenReturn(new SummonResult(actual));
+
+    SettingCheckResponse response = service.checkForDevice(12L);
+
+    assertEquals("MATCHED", response.getStatus());
+    assertEquals("FLOAT", response.getItems().get(0).getValueType());
+    assertEquals("0.25", response.getItems().get(0).getActualValue());
+    assertTrue(response.getItems().get(0).isEqual());
+  }
+
+  @Test
+  void summonConvertsTmmsToSecondsAndReturnsFloatType() {
+    SettingListService listService = mock(SettingListService.class);
+    SettingListTargetService targetService = mock(SettingListTargetService.class);
+    SettingCatalogService catalogService = mock(SettingCatalogService.class);
+    MmsSettingClient mmsClient = mock(MmsSettingClient.class);
+    SettingComparisonService service =
+        new SettingComparisonService(listService, targetService, catalogService, mmsClient);
+    when(targetService.require(SettingListScopeType.IED_DEVICE, 12L))
+        .thenReturn(new Target(
+            SettingListScopeType.IED_DEVICE, 12L, "保护装置", 12L, "IED_A", 3L));
+    IedSettingItem catalogItem = new IedSettingItem();
+    catalogItem.setIedDeviceId(12L);
+    catalogItem.setSettingName("动作延时");
+    catalogItem.setSettingRef("IED_A/LD0/PTOC$SG$OpDlTmms");
+    catalogItem.setValueType("INTEGER");
+    when(catalogService.list(12L)).thenReturn(Collections.singletonList(catalogItem));
+    Map<String, Double> actual = new LinkedHashMap<>();
+    actual.put("IED_A/LD0/PTOC$SG$OpDlTmms", 250D);
+    when(mmsClient.summon("IED_A")).thenReturn(new SummonResult(actual));
+
+    SettingSummonResponse response =
+        service.summonPreview(SettingListScopeType.IED_DEVICE, 12L);
+
+    assertEquals(1, response.getMatchedCount());
+    assertEquals("FLOAT", response.getItems().get(0).getValueType());
+    assertEquals("0.25", response.getItems().get(0).getBaselineValue());
   }
 
   private SettingListItem item(String ref, String name, String baseline, boolean compareEnabled) {

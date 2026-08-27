@@ -1,6 +1,7 @@
 package com.zeta.business.entities.settinglist.dto;
 
 import com.zeta.business.entities.settinglist.SettingListItem;
+import com.zeta.business.entities.settinglist.SettingValueTypePolicy;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -20,7 +21,7 @@ public class SettingListItemResponse {
         item.getSettingRef(),
         item.getSettingFc(),
         item.getSettingName(),
-        item.getValueType(),
+        SettingValueTypePolicy.effectiveType(item.getSettingRef(), item.getValueType()),
         !Boolean.FALSE.equals(item.getCompareEnabled()),
         item.getBaselineValue(),
         item.getSortOrder());

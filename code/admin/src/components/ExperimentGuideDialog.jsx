@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { imageUrl } from '../api/client'
 
-function displayValueType(valueType) {
-  if (valueType === 'FLOAT') return '浮点型'
-  if (valueType === 'INTEGER') return '整数型'
-  return valueType || '—'
+function displayBaselineValue(value, valueType) {
+  if (valueType !== 'FLOAT' || value === null || value === undefined || value === '') return value ?? '—'
+  const number = Number(value)
+  return Number.isFinite(number) ? number.toFixed(2) : value
 }
 
 /** 实验引导弹窗：按顺序依次展示管理员配置的引导条目。 */
@@ -56,24 +56,20 @@ export default function ExperimentGuideDialog({ items, title, onClose }) {
                       <tr>
                         <th>序号</th>
                         <th>定值名称</th>
-                        <th>定值引用</th>
-                        <th>类型</th>
                         <th>定值</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(current.settingItems ?? []).length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="experiment-guide-dialog__empty">该层级暂无定值清单</td>
+                          <td colSpan={3} className="experiment-guide-dialog__empty">该层级暂无定值清单</td>
                         </tr>
                       ) : (
                         (current.settingItems ?? []).map((item, i) => (
                           <tr key={item.settingRef || i}>
                             <td>{i + 1}</td>
                             <td>{item.settingName}</td>
-                            <td>{item.settingRef}</td>
-                            <td>{displayValueType(item.valueType)}</td>
-                            <td>{item.baselineValue}</td>
+                            <td>{displayBaselineValue(item.baselineValue, item.valueType)}</td>
                           </tr>
                         ))
                       )}

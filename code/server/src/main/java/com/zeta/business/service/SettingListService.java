@@ -142,14 +142,17 @@ public class SettingListService {
       if (catalogItem == null) {
         throw badRequest("第 " + (index + 1) + " 项不属于当前装置：" + ref);
       }
-      String value = validateValue(request.getBaselineValue(), catalogItem.getValueType(), index + 1);
+      String valueType =
+          SettingValueTypePolicy.effectiveType(
+              catalogItem.getSettingRef(), catalogItem.getValueType());
+      String value = validateValue(request.getBaselineValue(), valueType, index + 1);
       SettingListItem item = new SettingListItem();
       item.setScopeType(scopeType);
       item.setScopeId(scopeId);
       item.setSettingRef(catalogItem.getSettingRef());
       item.setSettingFc("SG");
       item.setSettingName(catalogItem.getSettingName());
-      item.setValueType(catalogItem.getValueType());
+      item.setValueType(valueType);
       item.setCompareEnabled(!Boolean.FALSE.equals(request.getCompareEnabled()));
       item.setBaselineValue(value);
       item.setSortOrder(request.getSortOrder() == null ? index : request.getSortOrder());

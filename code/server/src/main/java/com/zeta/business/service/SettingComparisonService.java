@@ -1,6 +1,7 @@
 package com.zeta.business.service;
 
 import com.zeta.business.entities.settinglist.SettingListItem;
+import com.zeta.business.entities.settinglist.SettingValueTypePolicy;
 import com.zeta.business.entities.settinglist.dto.*;
 import com.zeta.business.service.SettingListService.ResolvedSettingList;
 import com.zeta.integration.mms.MmsSettingClient;
@@ -91,7 +92,7 @@ public class SettingComparisonService {
     int missing = 0;
     for (SettingListItem item : comparedItems) {
       Double rawActual = findActual(resolved.getTarget().getIedName(), item.getSettingRef(), actualValues);
-      boolean isTime = item.getSettingRef().contains("Tmms");
+      boolean isTime = SettingValueTypePolicy.isTimeSetting(item.getSettingRef());
       Double actual = rawActual == null ? null : normalizeActual(rawActual, isTime);
       double baseline = normalizeBaseline(Double.parseDouble(item.getBaselineValue()), isTime);
       boolean matched = actual != null;
@@ -103,7 +104,7 @@ public class SettingComparisonService {
           new SettingCheckItemResponse(
               item.getSettingRef(),
               item.getSettingName(),
-              item.getValueType(),
+              SettingValueTypePolicy.effectiveType(item.getSettingRef(), item.getValueType()),
               format(baseline),
               actual == null ? null : format(actual),
               isTime ? "s" : null,
@@ -132,13 +133,15 @@ public class SettingComparisonService {
     for (IedSettingItem item : catalog) {
       Double actual = findActual(target.getIedName(), item.getSettingRef(), summon.getValues());
       if (actual == null) continue;
-      if (item.getSettingRef().contains("Tmms")) actual = normalizeActual(actual, true);
+      if (SettingValueTypePolicy.isTimeSetting(item.getSettingRef())) {
+        actual = normalizeActual(actual, true);
+      }
       rows.add(
           new SettingListItemResponse(
               item.getSettingRef(),
               "SG",
               item.getSettingName(),
-              item.getValueType(),
+              SettingValueTypePolicy.effectiveType(item.getSettingRef(), item.getValueType()),
               true,
               format(actual),
               order++));

@@ -153,7 +153,7 @@ export default function AdminLayout() {
             className="admin-layout__logout"
             onClick={() => {
               logout().then(() => {
-                window.location.href = '/login'
+                navigate('/login', { replace: true })
               })
             }}
           >

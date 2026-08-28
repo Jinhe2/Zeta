@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import './RoleLayout.css'
 
 export default function RoleLayout({ eyebrow, title, children }) {
   const { session, logout } = useAuth()
+  const navigate = useNavigate()
 
   return (
     <div className="role-layout">
@@ -20,7 +21,7 @@ export default function RoleLayout({ eyebrow, title, children }) {
             onClick={(e) => {
               e.preventDefault()
               logout().then(() => {
-                window.location.href = '/login'
+                navigate('/login', { replace: true })
               })
             }}
           >

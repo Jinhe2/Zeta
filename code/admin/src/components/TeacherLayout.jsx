@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import RoleIdentityBadge from './RoleIdentityBadge'
 import './AdminLayout.css'
@@ -11,6 +11,7 @@ const TEACHER_NAV = [
 
 export default function TeacherLayout() {
   const { session, logout } = useAuth()
+  const navigate = useNavigate()
   const displayName = session?.displayName || '教师'
 
   return (
@@ -46,7 +47,7 @@ export default function TeacherLayout() {
             className="admin-layout__logout"
             onClick={() => {
               logout().then(() => {
-                window.location.href = '/login'
+                navigate('/login', { replace: true })
               })
             }}
           >

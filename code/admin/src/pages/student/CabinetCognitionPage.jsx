@@ -338,7 +338,9 @@ export default function CabinetCognitionPage() {
             {navigationError && (
               <p className="cabinet-page__nav-error">{navigationError}</p>
             )}
-            {renderSectionContent()}
+            <div className="cabinet-page__body">
+              {renderSectionContent()}
+            </div>
             <div className="cabinet-page__step-actions" aria-label="屏柜学习步骤导航">
               <button
                 type="button"
@@ -351,13 +353,13 @@ export default function CabinetCognitionPage() {
               <button
                 type="button"
                 className="cabinet-page__step-btn cabinet-page__step-btn--primary"
-              disabled={navigationLoading || currentPageIndex < 0 || currentPageIndex >= navigationPages.length - 1}
-              onClick={goNext}
-            >
-              下一步
-            </button>
-          </div>
-        </section>
+                disabled={navigationLoading || currentPageIndex < 0 || currentPageIndex >= navigationPages.length - 1}
+                onClick={goNext}
+              >
+                下一步
+              </button>
+            </div>
+          </section>
         </div>
       </main>
     </div>

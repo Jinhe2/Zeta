@@ -237,7 +237,17 @@
   position: relative;
   min-width: 0;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
   padding: 20px;
+  overflow: hidden;
+}
+
+.cabinet-page__body {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
   overflow: hidden;
 }
 
@@ -257,10 +267,9 @@
 }
 
 .cabinet-page__step-actions {
-  position: fixed;
-  right: 32px;
-  bottom: 28px;
-  z-index: 10;
+  flex: 0 0 auto;
+  align-self: flex-end;
+  z-index: 3;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1542,10 +1551,12 @@
     overflow: auto;
   }
 
+  .cabinet-page__body {
+    min-height: 0;
+    overflow: visible;
+  }
+
   .cabinet-page__step-actions {
-    position: sticky;
-    right: auto;
-    bottom: 12px;
     align-self: flex-end;
     flex-wrap: wrap;
   }

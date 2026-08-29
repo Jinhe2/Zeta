@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
 import './CognitionVideoUploadField.css'
 
-const MAX_VIDEO_BYTES = 50 * 1024 * 1024
+const MAX_VIDEO_BYTES = 150 * 1024 * 1024
 
 export default function CognitionVideoUploadField({ value, previewUrl = '', onChange, disabled = false }) {
   const inputRef = useRef(null)
@@ -34,7 +34,7 @@ export default function CognitionVideoUploadField({ value, previewUrl = '', onCh
       return
     }
     if (file.size > MAX_VIDEO_BYTES) {
-      setError('视频文件不能超过 50MB')
+      setError('视频文件不能超过 150MB')
       return
     }
 
@@ -90,7 +90,7 @@ export default function CognitionVideoUploadField({ value, previewUrl = '', onCh
           </button>
         )}
       </div>
-      <span className="cognition-video-upload__hint">仅支持 MP4，单个文件不超过 50MB</span>
+      <span className="cognition-video-upload__hint">仅支持 MP4，单个文件不超过 150MB</span>
       {error && <span className="cognition-video-upload__error">{error}</span>}
       {source && (
         <video className="cognition-video-upload__preview" src={source} controls preload="auto" playsInline>

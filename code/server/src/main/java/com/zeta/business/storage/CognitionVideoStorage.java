@@ -27,7 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class CognitionVideoStorage {
 
-    public static final long MAX_VIDEO_BYTES = 50L * 1024L * 1024L;
+    public static final long MAX_VIDEO_BYTES = 150L * 1024L * 1024L;
     private static final String RELATIVE_PREFIX = "resource/video/";
     private static final Pattern MANAGED_PATH = Pattern.compile("^resource/video/[0-9a-fA-F-]{36}\\.mp4$");
 
@@ -150,7 +150,7 @@ public class CognitionVideoStorage {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择视频文件");
         }
         if (file.getSize() > MAX_VIDEO_BYTES) {
-            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "视频文件不能超过 50MB");
+            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "视频文件不能超过 150MB");
         }
         String filename = file.getOriginalFilename();
         if (!StringUtils.hasText(filename) || !filename.toLowerCase(Locale.ROOT).endsWith(".mp4")) {

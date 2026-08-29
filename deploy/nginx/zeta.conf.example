@@ -12,7 +12,7 @@ server {
     root /opt/zeta/web/admin;
     index index.html;
 
-    client_max_body_size 10m;
+    client_max_body_size 501m;
 
     location / {
         try_files $uri $uri/ /index.html;
@@ -42,7 +42,7 @@ server {
 #
 #     root /opt/zeta/web/admin;
 #     index index.html;
-#     client_max_body_size 10m;
+#     client_max_body_size 501m;
 #
 #     location / { try_files $uri $uri/ /index.html; }
 #     location /api/ {

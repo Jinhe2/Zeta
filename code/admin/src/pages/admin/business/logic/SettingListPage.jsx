@@ -80,6 +80,17 @@ export default function SettingListPage({ scopeType, basePath = '/admin/logic-le
     setMessage('')
   }
 
+  const updateCompareSelection = (mode) => {
+    setItems((current) => current.map((item) => ({
+      ...item,
+      compareEnabled: mode === 'all'
+        ? true
+        : mode === 'none' ? false : item.compareEnabled === false,
+    })))
+    setDirty(true)
+    setMessage('')
+  }
+
   const moveItem = (index, direction) => {
     const target = index + direction
     if (target < 0 || target >= items.length) return
@@ -181,6 +192,7 @@ export default function SettingListPage({ scopeType, basePath = '/admin/logic-le
   if (!rawId || Number.isNaN(scopeId)) return <Navigate to={basePath} replace />
   const disabled = Boolean(working)
   const isFallback = (scopeType === 'LOGIC_DIAGRAM' || scopeType === 'LOGIC_GROUP') && data?.fallbackToDevice
+  const comparedCount = items.filter((item) => item.compareEnabled !== false).length
 
   return (
     <div className="users-page setting-list-page">
@@ -204,24 +216,34 @@ export default function SettingListPage({ scopeType, basePath = '/admin/logic-le
       {!isFallback && scopeType !== 'IED_DEVICE' && data?.configuredItems.length > 0 && <div className="setting-list-page__active">当前使用独立清单。</div>}
 
       {loading ? <p className="users-page__loading">加载中…</p> : (
-        <div className="users-page__table-wrap">
-          <table className="users-page__table setting-list-page__table">
-            <thead><tr><th>序号</th><th>定值名称</th><th>定值引用</th><th>类型</th><th>参与比对</th><th>定值</th><th>排序</th></tr></thead>
-            <tbody>
-              {items.length === 0 ? <tr><td colSpan={7} className="users-page__empty-cell">当前层级暂无定值项目，请召唤装置定值或导入 Excel。</td></tr> : items.map((item, index) => (
-                <tr key={item.settingRef}>
-                  <td>{index + 1}</td><td>{item.settingName}</td><td className="setting-list-page__ref">{item.settingRef}</td><td>{displayValueType(item.valueType)}</td>
-                  <td className="setting-list-page__compare"><input type="checkbox" checked={item.compareEnabled !== false} onChange={(event) => updateCompareEnabled(index, event.target.checked)} aria-label={`${item.settingName}参与比对`} /></td>
-                  <td><input type="text" value={item.baselineValue ?? ''} onChange={(event) => updateValue(index, event.target.value)} aria-label={`${item.settingName}定值`} /></td>
-                  <td className="setting-list-page__sort">
-                    <button type="button" onClick={() => moveItem(index, -1)} disabled={index === 0} aria-label={`${item.settingName}上移`}>↑</button>
-                    <button type="button" onClick={() => moveItem(index, 1)} disabled={index === items.length - 1} aria-label={`${item.settingName}下移`}>↓</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div className="setting-list-page__selection-toolbar">
+            <span>已选择 {comparedCount} / {items.length} 项参与比对</span>
+            <div>
+              <button type="button" onClick={() => updateCompareSelection('all')} disabled={disabled || items.length === 0 || comparedCount === items.length}>全选</button>
+              <button type="button" onClick={() => updateCompareSelection('none')} disabled={disabled || items.length === 0 || comparedCount === 0}>全不选</button>
+              <button type="button" onClick={() => updateCompareSelection('invert')} disabled={disabled || items.length === 0}>反选</button>
+            </div>
+          </div>
+          <div className="users-page__table-wrap">
+            <table className="users-page__table setting-list-page__table">
+              <thead><tr><th>序号</th><th>定值名称</th><th>定值引用</th><th>类型</th><th>参与比对</th><th>定值</th><th>排序</th></tr></thead>
+              <tbody>
+                {items.length === 0 ? <tr><td colSpan={7} className="users-page__empty-cell">当前层级暂无定值项目，请召唤装置定值或导入 Excel。</td></tr> : items.map((item, index) => (
+                  <tr key={item.settingRef}>
+                    <td>{index + 1}</td><td>{item.settingName}</td><td className="setting-list-page__ref">{item.settingRef}</td><td>{displayValueType(item.valueType)}</td>
+                    <td className="setting-list-page__compare"><input type="checkbox" checked={item.compareEnabled !== false} onChange={(event) => updateCompareEnabled(index, event.target.checked)} aria-label={`${item.settingName}参与比对`} /></td>
+                    <td><input type="text" value={item.baselineValue ?? ''} onChange={(event) => updateValue(index, event.target.value)} aria-label={`${item.settingName}定值`} /></td>
+                    <td className="setting-list-page__sort">
+                      <button type="button" onClick={() => moveItem(index, -1)} disabled={index === 0} aria-label={`${item.settingName}上移`}>↑</button>
+                      <button type="button" onClick={() => moveItem(index, 1)} disabled={index === items.length - 1} aria-label={`${item.settingName}下移`}>↓</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <div className="setting-list-page__actions">

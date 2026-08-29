@@ -19,6 +19,11 @@
 .setting-list-page__actions button:disabled { opacity: .55; cursor: not-allowed; }
 .setting-list-page__fallback { margin-bottom: 16px; padding: 12px 14px; border-radius: 8px; background: #fff7ed; color: #9a3412; }
 .setting-list-page__active { margin-bottom: 16px; padding: 12px 14px; border-radius: 8px; background: #ecfdf5; color: #047857; }
+.setting-list-page__selection-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 10px; color: #475569; font-size: 14px; }
+.setting-list-page__selection-toolbar > div { display: flex; gap: 8px; }
+.setting-list-page__selection-toolbar button { border: 1px solid #bfdbfe; border-radius: 6px; padding: 7px 13px; background: #eff6ff; color: #1d4ed8; cursor: pointer; }
+.setting-list-page__selection-toolbar button:hover:not(:disabled) { background: #dbeafe; }
+.setting-list-page__selection-toolbar button:disabled { opacity: .45; cursor: not-allowed; }
 .setting-list-page__ref { max-width: 460px; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 .setting-list-page__table input { width: 130px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 7px 9px; }
 .setting-list-page__table select { min-width: 96px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 7px 9px; background: #fff; }

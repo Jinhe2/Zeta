@@ -12,6 +12,8 @@ export default function ExperimentGuideDialog({ items, title, onClose }) {
   const [index, setIndex] = useState(0)
   const list = items ?? []
   const current = list[index] ?? null
+  const settingItems = current?.settingItems ?? []
+  const visibleSettingItems = settingItems.filter((item) => item.compareEnabled !== false)
 
   return (
     <div className="experiment-guide-dialog" role="dialog" aria-modal="false" aria-labelledby="experiment-guide-title">
@@ -60,12 +62,14 @@ export default function ExperimentGuideDialog({ items, title, onClose }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {(current.settingItems ?? []).length === 0 ? (
+                      {visibleSettingItems.length === 0 ? (
                         <tr>
-                          <td colSpan={3} className="experiment-guide-dialog__empty">该层级暂无定值清单</td>
+                          <td colSpan={3} className="experiment-guide-dialog__empty">
+                            {settingItems.length === 0 ? '该层级暂无定值清单' : '暂无参与比对的定值'}
+                          </td>
                         </tr>
                       ) : (
-                        (current.settingItems ?? []).map((item, i) => (
+                        visibleSettingItems.map((item, i) => (
                           <tr key={item.settingRef || i}>
                             <td>{i + 1}</td>
                             <td>{item.settingName}</td>

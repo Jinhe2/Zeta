@@ -6,6 +6,7 @@ import {
   percentToPixelRect,
   pixelRectToPercent,
 } from '../utils/imageRegionUtils'
+import MediaPreviewDialog from './MediaPreviewDialog'
 import './ImageRegionEditor.css'
 
 const HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']
@@ -138,10 +139,11 @@ export default function ImageRegionEditor({ imageUrl, region, onChange, readOnly
 }
 
 /** 学员端只读高亮 */
-export function ImageRegionViewer({ imageUrl, region, alt = '' }) {
+export function ImageRegionViewer({ imageUrl, region, alt = '', previewTitle }) {
   const containerRef = useRef(null)
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 })
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   useEffect(() => {
     const el = containerRef.current
@@ -163,7 +165,20 @@ export function ImageRegionViewer({ imageUrl, region, alt = '' }) {
   const highlight = region ? percentToPixelRect(region, imageRect) : null
 
   return (
-    <div className="image-region-viewer" ref={containerRef}>
+    <div
+      className="image-region-viewer image-region-viewer--previewable"
+      ref={containerRef}
+      role="button"
+      tabIndex={0}
+      title="点击查看大图"
+      onClick={() => setPreviewOpen(true)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          setPreviewOpen(true)
+        }
+      }}
+    >
       <img
         className="image-region-viewer__image"
         src={imageUrl}
@@ -183,6 +198,15 @@ export function ImageRegionViewer({ imageUrl, region, alt = '' }) {
           }}
         />
       )}
+      <span className="image-region-viewer__preview-hint">点击放大</span>
+      <MediaPreviewDialog
+        open={previewOpen}
+        type="image"
+        src={imageUrl}
+        title={previewTitle || alt || '图片预览'}
+        alt={alt}
+        onClose={() => setPreviewOpen(false)}
+      />
     </div>
   )
 }

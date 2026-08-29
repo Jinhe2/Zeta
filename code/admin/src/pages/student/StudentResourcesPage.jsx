@@ -5,6 +5,7 @@ import { getDeviceBindId } from '../../api/deviceBinding'
 import { useAuth } from '../../auth/AuthContext'
 import { useStudentCabinetId } from './studentCabinet'
 import PdfDocumentReader from '../../components/PdfDocumentReader'
+import MediaPreviewDialog from '../../components/MediaPreviewDialog'
 import './StudentResourcesPage.css'
 
 const TYPES = {
@@ -32,6 +33,7 @@ export default function StudentResourcesPage() {
   const [resource, setResource] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const load = useCallback(async () => {
     if (!config) return
@@ -67,7 +69,17 @@ export default function StudentResourcesPage() {
       {loading ? <p>加载中…</p> : error ? <div className="student-resources__error"><p>{error}</p><button type="button" onClick={load}>重试</button></div> : id && resource ? <article className="student-resources__detail">
         <p className="student-resources__scope">{resource.cabinetName ? `适用屏柜：${resource.cabinetName}` : '适用范围：所有屏柜'}</p>
         <p className="student-resources__description">{resource.description}</p>
-        {resource.resourceType === 'VIDEO_COURSE' ? <video className="student-resources__video" controls preload="metadata" src={learningResourceContentUrl(resource.id, bindId, currentCabinetId)}>当前浏览器不支持视频播放。</video> : <PdfDocumentReader key={resource.id} title={resource.name} fileUrl={learningResourceContentUrl(resource.id, bindId, currentCabinetId)} />}
+        {resource.resourceType === 'VIDEO_COURSE' ? <video className="student-resources__video" controls preload="metadata" src={learningResourceContentUrl(resource.id, bindId, currentCabinetId)}>当前浏览器不支持视频播放。</video> : <>
+          <button type="button" className="student-resources__preview-btn" onClick={() => setPreviewOpen(true)}>单独窗口查看 PDF</button>
+          <PdfDocumentReader key={resource.id} title={resource.name} fileUrl={learningResourceContentUrl(resource.id, bindId, currentCabinetId)} />
+          <MediaPreviewDialog
+            open={previewOpen}
+            type="pdf"
+            src={learningResourceContentUrl(resource.id, bindId, currentCabinetId)}
+            title={resource.name}
+            onClose={() => setPreviewOpen(false)}
+          />
+        </>}
       </article> : items.length === 0 ? <p className="student-resources__empty">当前屏柜暂无{config.title}。</p> : <section className="student-resources__list">{items.map((item) => <button key={item.id} type="button" className="student-resources__card" onClick={() => navigate(`/student/resources/${type}/${item.id}`)}><span className="student-resources__card-title">{item.name}</span><span className="student-resources__card-description">{item.description}</span><span className="student-resources__card-meta">{item.cabinetName ? item.cabinetName : '所有屏柜'} · {formatSize(item.fileSize)}</span></button>)}</section>}
     </main>
   </div>

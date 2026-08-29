@@ -43,8 +43,11 @@ import lombok.Getter;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRange;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -104,39 +107,68 @@ public class CognitionVideoController {
   }
 
   @GetMapping("/api/videos/device-display/{id}")
-  public ResponseEntity<Resource> getDeviceVideo(@PathVariable Long id) {
+  public ResponseEntity<?> getDeviceVideo(
+      @PathVariable Long id, @RequestHeader HttpHeaders headers) {
     DeviceDisplayItem item =
         deviceRepository
             .findById(id)
             .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "视频不存在"));
-    return videoResponse(item.getVideoPath());
+    return videoResponse(item.getVideoPath(), headers);
   }
 
   @GetMapping("/api/videos/logic-node-cognition/{id}")
-  public ResponseEntity<Resource> getLogicVideo(@PathVariable Long id) {
+  public ResponseEntity<?> getLogicVideo(
+      @PathVariable Long id, @RequestHeader HttpHeaders headers) {
     LogicNodeCognitionItem item =
         logicRepository
             .findById(id)
             .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "视频不存在"));
-    return videoResponse(item.getVideoPath());
+    return videoResponse(item.getVideoPath(), headers);
   }
 
   @GetMapping("/api/videos/sampling-test/{id}")
-  public ResponseEntity<Resource> getSamplingTestVideo(@PathVariable Long id) {
+  public ResponseEntity<?> getSamplingTestVideo(
+      @PathVariable Long id, @RequestHeader HttpHeaders headers) {
     SamplingTestItem item = samplingTestItemRepository.findById(id)
         .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "视频不存在"));
-    return videoResponse(item.getVideoPath());
+    return videoResponse(item.getVideoPath(), headers);
   }
 
-  private ResponseEntity<Resource> videoResponse(String videoPath) {
+  private ResponseEntity<?> videoResponse(String videoPath, HttpHeaders requestHeaders) {
     if (videoPath == null) {
       throw new ResponseStatusException(NOT_FOUND, "视频不存在");
+    }
+    Resource video = videoStorage.load(videoPath);
+    long contentLength = contentLength(video);
+    if (!requestHeaders.getRange().isEmpty()) {
+      ResourceRegion region = toResourceRegion(video, requestHeaders.getRange().get(0), contentLength);
+      return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+          .contentType(MediaType.parseMediaType("video/mp4"))
+          .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+          .cacheControl(CacheControl.noCache())
+          .body(region);
     }
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType("video/mp4"))
         .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+        .contentLength(contentLength)
         .cacheControl(CacheControl.noCache())
-        .body(videoStorage.load(videoPath));
+        .body(video);
+  }
+
+  private ResourceRegion toResourceRegion(Resource video, HttpRange range, long contentLength) {
+    long start = range.getRangeStart(contentLength);
+    long end = range.getRangeEnd(contentLength);
+    long rangeLength = Math.min(1024 * 1024L, end - start + 1);
+    return new ResourceRegion(video, start, rangeLength);
+  }
+
+  private long contentLength(Resource video) {
+    try {
+      return video.contentLength();
+    } catch (Exception ex) {
+      throw new ResponseStatusException(NOT_FOUND, "视频不存在");
+    }
   }
 
   @Getter

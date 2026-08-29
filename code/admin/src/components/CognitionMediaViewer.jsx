@@ -5,7 +5,7 @@ import './CognitionMediaViewer.css'
 
 export default function CognitionMediaViewer({ item, imageType, region, alt }) {
   const videoRef = useRef(null)
-  const [videoError, setVideoError] = useState(false)
+  const [videoError, setVideoError] = useState('')
 
   useEffect(() => {
     const video = videoRef.current
@@ -20,7 +20,7 @@ export default function CognitionMediaViewer({ item, imageType, region, alt }) {
   if (!item) return null
   if (item.mediaType === 'VIDEO') {
     if (videoError) {
-      return <p className="cognition-media-viewer__error">视频加载失败，请联系管理员检查视频文件。</p>
+      return <p className="cognition-media-viewer__error">视频加载失败，请联系管理员检查视频文件。{videoError}</p>
     }
     return (
       <video
@@ -31,7 +31,10 @@ export default function CognitionMediaViewer({ item, imageType, region, alt }) {
         controls
         preload="metadata"
         playsInline
-        onError={() => setVideoError(true)}
+        onError={(event) => {
+          const code = event.currentTarget.error?.code
+          setVideoError(code ? ` 错误码：${code}` : ' 请尝试重新上传标准 H.264 MP4 文件。')
+        }}
       >
         当前环境不支持视频播放。
       </video>

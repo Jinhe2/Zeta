@@ -8,7 +8,6 @@ import "./TabletHome.css";
 
 const DIALOG_MESSAGES = {
   logout: "您确定要退出系统吗？",
-  close: "您确认退出登陆并关闭系统吗？",
 };
 
 const RESOURCE_ITEMS = [
@@ -101,13 +100,6 @@ export default function TabletHome() {
             onClick={() => setConfirmType("logout")}
           >
             退出登录
-          </button>
-          <button
-            type="button"
-            className="tablet-home__icon-btn tablet-home__icon-btn--close info-block"
-            onClick={() => setConfirmType("close")}
-          >
-            ✕
           </button>
         </div>
       </div>

@@ -8,6 +8,7 @@ import lombok.Setter;
 @Setter
 public class ImportStudentRowRequest {
 
+    private String studentNo;
     private String username;
     private String displayName;
     private String password;

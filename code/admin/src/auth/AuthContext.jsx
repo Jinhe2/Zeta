@@ -32,6 +32,7 @@ function writeSession(session) {
 function sessionFromProfile(profile) {
   return {
     username: profile.username,
+    studentNo: profile.studentNo,
     displayName: profile.displayName,
     role: profile.role,
     homePath: profile.homePath,
@@ -41,6 +42,7 @@ function sessionFromProfile(profile) {
 function sessionFromLogin(result) {
   return {
     username: result.username,
+    studentNo: result.studentNo,
     displayName: result.displayName,
     role: result.role,
     homePath: result.homePath,

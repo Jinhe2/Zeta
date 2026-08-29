@@ -18,7 +18,7 @@ const QUICK_ACCOUNTS = [
 ]
 
 function validateForm(username, password) {
-  if (!username.trim()) return '请输入用户名'
+  if (!username.trim()) return '请输入学号或用户名'
   if (!password) return '请输入密码'
   return null
 }
@@ -91,7 +91,7 @@ export default function LoginPage() {
         <header className="login-card__header">
           <img className="login-card__logo" src={publicUrl('logo.png')} alt="Zeta" />
           <h1 className="login-card__title">继电保护逻辑教学系统</h1>
-          <p className="login-card__subtitle">使用用户名和密码登录</p>
+          <p className="login-card__subtitle">学员可使用学号登录，教师/管理员使用用户名登录</p>
           <button
             type="button"
             className="login-card__settings-btn"
@@ -110,7 +110,7 @@ export default function LoginPage() {
           )}
 
           <label className="login-field">
-            <span>用户名</span>
+            <span>学号 / 用户名</span>
             <input
               type="text"
               name="username"

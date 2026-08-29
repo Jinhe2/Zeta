@@ -12,6 +12,7 @@ public class UserSummaryResponse {
 
     private Long id;
     private String username;
+    private String studentNo;
     private String displayName;
     private UserRole role;
     private Instant createdAt;

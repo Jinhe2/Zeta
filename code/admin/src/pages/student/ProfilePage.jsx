@@ -44,10 +44,12 @@ const MOCK_HONORS = [
 function AccountTab({ session, onChangePassword }) {
   const displayName = session?.displayName || '学员'
   const username = session?.username || '未获取'
+  const studentNo = session?.studentNo || '未分配'
   const roleLabel = ROLE_LABELS[session?.role] || session?.role || '学员'
 
   const infoItems = [
     { label: '姓名', value: displayName },
+    { label: '学号', value: studentNo },
     { label: '登录账号', value: username },
     { label: '用户角色', value: roleLabel },
   ]

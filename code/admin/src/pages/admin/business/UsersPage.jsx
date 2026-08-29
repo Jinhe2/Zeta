@@ -11,7 +11,7 @@ const ROLE_KEY_MAP = {
 }
 
 const ROLE_CONFIG = {
-  STUDENT: { title: '学员管理', createLabel: '新建学员', noun: '学员', sampleUsername: 'student001', sampleDisplayName: '张三' },
+  STUDENT: { title: '学员管理', createLabel: '新建学员', noun: '学员', sampleUsername: '20260001', sampleDisplayName: '张三' },
   TEACHER: { title: '教师管理', createLabel: '新建教师', noun: '教师', sampleUsername: 'teacher001', sampleDisplayName: '李老师' },
   ADMIN: { title: '管理员管理', createLabel: '新建管理员' },
 }
@@ -52,11 +52,12 @@ function parseCsvLine(line) {
   return values
 }
 
-function parseUserCsv(text, noun) {
+function parseUserCsv(text, noun, role) {
   const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim())
   if (lines.length < 2) throw new Error(`CSV 中没有可导入的${noun}数据`)
 
   const aliases = {
+    studentNo: ['studentno', 'student_no', '学号'],
     username: ['username', '用户名'],
     displayName: ['displayname', 'display_name', '显示名称', '姓名'],
     password: ['password', '密码'],
@@ -66,14 +67,20 @@ function parseUserCsv(text, noun) {
     field,
     headers.findIndex((header) => names.includes(header)),
   ]))
-  if (Object.values(indexes).some((index) => index < 0)) {
-    throw new Error('CSV 表头必须包含 username、displayName、password')
+  const requiredFields = role === 'STUDENT' ? ['studentNo', 'displayName', 'password'] : ['username', 'displayName', 'password']
+  if (requiredFields.some((field) => indexes[field] < 0)) {
+    throw new Error(role === 'STUDENT'
+      ? 'CSV 表头必须包含 studentNo、displayName、password'
+      : 'CSV 表头必须包含 username、displayName、password')
   }
 
   const users = lines.slice(1).map((line) => {
     const values = parseCsvLine(line)
+    const studentNo = indexes.studentNo >= 0 ? values[indexes.studentNo] || '' : ''
+    const username = indexes.username >= 0 ? values[indexes.username] || '' : ''
     return {
-      username: values[indexes.username] || '',
+      studentNo,
+      username: role === 'STUDENT' ? username || studentNo : username,
       displayName: values[indexes.displayName] || '',
       password: values[indexes.password] || '',
     }
@@ -92,7 +99,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
   const [message, setMessage] = useState('')
 
   const [showCreate, setShowCreate] = useState(false)
-  const [createForm, setCreateForm] = useState({ username: '', password: '', displayName: '' })
+  const [createForm, setCreateForm] = useState({ username: '', studentNo: '', password: '', displayName: '' })
   const [creating, setCreating] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [importFileName, setImportFileName] = useState('')
@@ -102,6 +109,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
 
   const [editingUser, setEditingUser] = useState(null)
   const [editDisplayName, setEditDisplayName] = useState('')
+  const [editStudentNo, setEditStudentNo] = useState('')
   const [saving, setSaving] = useState(false)
 
   const [resetUser, setResetUser] = useState(null)
@@ -147,7 +155,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
     setError('')
     if (!file) return
     try {
-      setImportRows(parseUserCsv(await file.text(), config?.noun || '用户'))
+      setImportRows(parseUserCsv(await file.text(), config?.noun || '用户', role))
     } catch (err) {
       setError(err.message || 'CSV 解析失败')
     }
@@ -180,7 +188,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
     try {
       await api.createUser({ ...createForm, role })
       setShowCreate(false)
-      setCreateForm({ username: '', password: '', displayName: '' })
+      setCreateForm({ username: '', studentNo: '', password: '', displayName: '' })
       flash('创建成功')
       await loadUsers()
     } catch (err) {
@@ -193,6 +201,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
   const openEdit = (user) => {
     setEditingUser(user)
     setEditDisplayName(user.displayName)
+    setEditStudentNo(user.studentNo || '')
   }
 
   const handleUpdate = async (e) => {
@@ -201,7 +210,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
     setSaving(true)
     setError('')
     try {
-      await api.updateUser(editingUser.id, { displayName: editDisplayName, role })
+      await api.updateUser(editingUser.id, { displayName: editDisplayName, studentNo: editStudentNo, role })
       setEditingUser(null)
       flash('已保存')
       await loadUsers()
@@ -230,7 +239,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
   }
 
   const handleDelete = async (user) => {
-    if (!window.confirm(`确定删除「${user.displayName}」（${user.username}）？`)) {
+    if (!window.confirm(`确定删除「${user.displayName}」（${user.studentNo || user.username}）？`)) {
       return
     }
     setError('')
@@ -295,6 +304,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
             <thead>
               <tr>
                 <th>用户名</th>
+                {role === 'STUDENT' && <th>学号</th>}
                 <th>显示名称</th>
                 <th>创建时间</th>
                 <th>操作</th>
@@ -304,6 +314,7 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
               {users.map((user) => (
                 <tr key={user.id}>
                   <td>{user.username}</td>
+                  {role === 'STUDENT' && <td>{user.studentNo || '未分配'}</td>}
                   <td>{user.displayName}</td>
                   <td>{formatDate(user.createdAt)}</td>
                   <td>
@@ -343,13 +354,24 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
         <div className="users-page__overlay">
           <form className="users-page__dialog" onSubmit={handleCreate}>
             <h3>{config.createLabel}</h3>
+            {role === 'STUDENT' && (
+              <label>
+                学号
+                <input
+                  value={createForm.studentNo}
+                  onChange={(e) => setCreateForm({ ...createForm, studentNo: e.target.value })}
+                  required
+                  autoFocus
+                />
+              </label>
+            )}
             <label>
-              用户名
+              {role === 'STUDENT' ? '登录账号（可选，默认使用学号）' : '用户名'}
               <input
                 value={createForm.username}
                 onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
-                required
-                autoFocus
+                required={role !== 'STUDENT'}
+                autoFocus={role !== 'STUDENT'}
               />
             </label>
             <label>
@@ -387,11 +409,15 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
           <div className="users-page__dialog users-page__dialog--import" role="dialog" aria-modal="true">
             <h3>批量导入{config.noun}</h3>
             <p className="users-page__import-help">
-              上传 CSV 文件，表头为 username、displayName、password。单次最多 500 名{config.noun}，角色固定为{config.noun}。
+              {role === 'STUDENT'
+                ? `上传 CSV 文件，表头为 studentNo、displayName、password；可选 username，不填则登录账号默认使用学号。单次最多 500 名${config.noun}。`
+                : `上传 CSV 文件，表头为 username、displayName、password。单次最多 500 名${config.noun}，角色固定为${config.noun}。`}
             </p>
             <a
               className="users-page__template-link"
-              href={`data:text/csv;charset=utf-8,%EF%BB%BFusername%2CdisplayName%2Cpassword%0A${encodeURIComponent(config.sampleUsername)}%2C${encodeURIComponent(config.sampleDisplayName)}%2C123456`}
+              href={role === 'STUDENT'
+                ? `data:text/csv;charset=utf-8,%EF%BB%BFstudentNo%2CdisplayName%2Cpassword%0A${encodeURIComponent(config.sampleUsername)}%2C${encodeURIComponent(config.sampleDisplayName)}%2C123456`
+                : `data:text/csv;charset=utf-8,%EF%BB%BFusername%2CdisplayName%2Cpassword%0A${encodeURIComponent(config.sampleUsername)}%2C${encodeURIComponent(config.sampleDisplayName)}%2C123456`}
               download={`${config.noun}批量导入模板.csv`}
             >
               下载 CSV 模板
@@ -411,8 +437,8 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
                 {importResult.failureCount > 0 && (
                   <ul>
                     {importResult.results.filter((item) => !item.success).map((item) => (
-                      <li key={`${item.rowNumber}-${item.username}`}>
-                        第 {item.rowNumber} 行（{item.username || '空用户名'}）：{item.message}
+                      <li key={`${item.rowNumber}-${item.studentNo || item.username}`}>
+                        第 {item.rowNumber} 行（{role === 'STUDENT' ? item.studentNo || '空学号' : item.username || '空用户名'}）：{item.message}
                       </li>
                     ))}
                   </ul>
@@ -440,13 +466,24 @@ export default function UsersPage({ fixedRole, invalidRedirect = '/admin/users/s
         <div className="users-page__overlay">
           <form className="users-page__dialog" onSubmit={handleUpdate}>
             <h3>编辑 — {editingUser.username}</h3>
+            {role === 'STUDENT' && (
+              <label>
+                学号
+                <input
+                  value={editStudentNo}
+                  onChange={(e) => setEditStudentNo(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </label>
+            )}
             <label>
               显示名称
               <input
                 value={editDisplayName}
                 onChange={(e) => setEditDisplayName(e.target.value)}
                 required
-                autoFocus
+                autoFocus={role !== 'STUDENT'}
               />
             </label>
             <div className="users-page__dialog-actions">

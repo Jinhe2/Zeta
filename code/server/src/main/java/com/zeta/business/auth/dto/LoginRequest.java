@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class LoginRequest {
 
-    @NotBlank(message = "请输入用户名")
+    @NotBlank(message = "请输入学号或用户名")
     private String username;
 
     @NotBlank(message = "请输入密码")

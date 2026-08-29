@@ -10,6 +10,7 @@ public class StudentImportResult {
 
     private final int rowNumber;
     private final String username;
+    private final String studentNo;
     private final boolean success;
     private final String message;
 }

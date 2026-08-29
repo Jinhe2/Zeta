@@ -47,7 +47,7 @@ public class AuthService {
   public UserProfileResponse profile(String authorization) {
     User user = requireUser(authorization);
     return new UserProfileResponse(
-        user.getUsername(), user.getDisplayName(), user.getRole(), homePath(user.getRole()));
+        user.getUsername(), user.getStudentNo(), user.getDisplayName(), user.getRole(), homePath(user.getRole()));
   }
 
   public User requireUser(String authorization) {
@@ -98,10 +98,13 @@ public class AuthService {
   }
 
   private User authenticate(String username, String password) {
+    String loginName = username.trim().toLowerCase();
     User user =
         userRepository
-            .findByUsername(username.trim().toLowerCase())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户名或密码错误"));
+            .findByUsername(loginName)
+            .orElseGet(() -> userRepository
+                .findByStudentNo(username.trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户名或密码错误")));
     if (!user.getPassword().equals(password)) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户名或密码错误");
     }
@@ -120,6 +123,7 @@ public class AuthService {
         refreshToken,
         jwtTokenService.accessExpiresInSeconds(),
         user.getUsername(),
+        user.getStudentNo(),
         user.getDisplayName(),
         user.getRole(),
         homePath(user.getRole()));

@@ -31,7 +31,9 @@ import com.zeta.business.media.*;
 import com.zeta.business.storage.*;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -60,12 +62,17 @@ public class UserService {
     }
 
     public UserSummaryResponse createUser(CreateUserRequest request) {
-        String username = normalizeUsername(request.getUsername());
+        String studentNo = normalizeStudentNo(request.getStudentNo(), request.getRole(), true);
+        String username = normalizeUsername(defaultUsername(request.getUsername(), studentNo, request.getRole()));
         if (userRepository.existsByUsername(username)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在");
         }
+        if (studentNo != null && userRepository.existsByStudentNo(studentNo)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "学号已存在");
+        }
         User user = new User();
         user.setUsername(username);
+        user.setStudentNo(studentNo);
         user.setPassword(request.getPassword());
         user.setDisplayName(request.getDisplayName().trim());
         user.setRole(request.getRole());
@@ -79,6 +86,7 @@ public class UserService {
                 .map(item -> new StudentImportResult(
                         item.getRowNumber(),
                         item.getUsername(),
+                        item.getStudentNo(),
                         item.isSuccess(),
                         item.getMessage()))
                 .collect(Collectors.toList());
@@ -93,31 +101,44 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请指定用户角色");
         }
         List<UserImportResult> results = new ArrayList<>();
+        Set<String> importedUsernames = new HashSet<>();
+        Set<String> importedStudentNos = new HashSet<>();
         int successCount = 0;
 
         for (int index = 0; index < request.getUsers().size(); index++) {
             ImportUserRowRequest row = request.getUsers().get(index);
             int rowNumber = index + 2;
-            String username = row == null ? "" : safeTrim(row.getUsername()).toLowerCase();
+            String studentNo = row == null ? "" : safeTrim(row.getStudentNo());
+            String username = row == null ? "" : safeTrim(defaultUsername(row.getUsername(), studentNo, role)).toLowerCase();
             try {
-                validateImportRow(row);
+                validateImportRow(row, role);
+                if (!importedUsernames.add(username)) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "导入文件内用户名重复");
+                }
+                if (role == UserRole.STUDENT && !importedStudentNos.add(studentNo)) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "导入文件内学号重复");
+                }
                 if (userRepository.existsByUsername(username)) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在");
+                }
+                if (role == UserRole.STUDENT && userRepository.existsByStudentNo(studentNo)) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "学号已存在");
                 }
 
                 User user = new User();
                 user.setUsername(username);
+                user.setStudentNo(role == UserRole.STUDENT ? studentNo : null);
                 user.setDisplayName(row.getDisplayName().trim());
                 user.setPassword(row.getPassword());
                 user.setRole(role);
                 user.setCreatedAt(Instant.now());
                 userRepository.save(user);
                 successCount++;
-                results.add(new UserImportResult(rowNumber, username, true, "导入成功"));
+                results.add(new UserImportResult(rowNumber, username, role == UserRole.STUDENT ? studentNo : null, true, "导入成功"));
             } catch (ResponseStatusException ex) {
-                results.add(new UserImportResult(rowNumber, username, false, ex.getReason()));
+                results.add(new UserImportResult(rowNumber, username, role == UserRole.STUDENT ? studentNo : null, false, ex.getReason()));
             } catch (RuntimeException ex) {
-                results.add(new UserImportResult(rowNumber, username, false, "导入失败"));
+                results.add(new UserImportResult(rowNumber, username, role == UserRole.STUDENT ? studentNo : null, false, "导入失败"));
             }
         }
 
@@ -132,6 +153,11 @@ public class UserService {
         if (user.getRole() != request.getRole()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不支持变更用户角色，请在对应角色管理中操作");
         }
+        String studentNo = normalizeStudentNo(request.getStudentNo(), user.getRole(), true);
+        if (studentNo != null && userRepository.existsByStudentNoAndIdNot(studentNo, id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "学号已存在");
+        }
+        user.setStudentNo(studentNo);
         user.setDisplayName(request.getDisplayName().trim());
         return toSummary(userRepository.save(user));
     }
@@ -173,6 +199,7 @@ public class UserService {
                     ImportUserRowRequest user = new ImportUserRowRequest();
                     if (row != null) {
                         user.setUsername(row.getUsername());
+                        user.setStudentNo(row.getStudentNo());
                         user.setDisplayName(row.getDisplayName());
                         user.setPassword(row.getPassword());
                     }
@@ -183,18 +210,28 @@ public class UserService {
         return usersRequest;
     }
 
-    private void validateImportRow(ImportUserRowRequest row) {
+    private void validateImportRow(ImportUserRowRequest row, UserRole role) {
         if (row == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "数据行不能为空");
         }
         String username = safeTrim(row.getUsername());
+        String studentNo = safeTrim(row.getStudentNo());
         String displayName = safeTrim(row.getDisplayName());
         String password = row.getPassword() == null ? "" : row.getPassword();
+        if (role == UserRole.STUDENT && username.isEmpty() && !studentNo.isEmpty()) {
+            username = studentNo;
+        }
         if (username.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请输入用户名");
         }
         if (username.length() > 64) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名不能超过 64 个字符");
+        }
+        if (role == UserRole.STUDENT && studentNo.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请输入学号");
+        }
+        if (studentNo.length() > 64) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "学号不能超过 64 个字符");
         }
         if (displayName.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请输入显示名称");
@@ -211,10 +248,33 @@ public class UserService {
         return value == null ? "" : value.trim();
     }
 
+    private String defaultUsername(String username, String studentNo, UserRole role) {
+        String normalized = safeTrim(username);
+        if (role == UserRole.STUDENT && normalized.isEmpty()) {
+            return studentNo;
+        }
+        return normalized;
+    }
+
+    private String normalizeStudentNo(String studentNo, UserRole role, boolean requiredForStudent) {
+        String normalized = safeTrim(studentNo);
+        if (role == UserRole.STUDENT) {
+            if (requiredForStudent && normalized.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请输入学号");
+            }
+            if (normalized.length() > 64) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "学号不能超过 64 个字符");
+            }
+            return normalized.isEmpty() ? null : normalized;
+        }
+        return null;
+    }
+
     private UserSummaryResponse toSummary(User user) {
         return new UserSummaryResponse(
                 user.getId(),
                 user.getUsername(),
+                user.getStudentNo(),
                 user.getDisplayName(),
                 user.getRole(),
                 user.getCreatedAt());

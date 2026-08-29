@@ -62,9 +62,9 @@ public class BusinessDataInitializer implements CommandLineRunner {
 
     @Transactional("businessTransactionManager")
     public void seedUsers() {
-        createUserIfAbsent("student", "123456", "学员", UserRole.STUDENT);
-        createUserIfAbsent("teacher", "123456", "教师", UserRole.TEACHER);
-        createUserIfAbsent("admin", "123456", "管理员", UserRole.ADMIN);
+        createUserIfAbsent("student", "20260001", "123456", "学员", UserRole.STUDENT);
+        createUserIfAbsent("teacher", null, "123456", "教师", UserRole.TEACHER);
+        createUserIfAbsent("admin", null, "123456", "管理员", UserRole.ADMIN);
     }
 
     private void seedCabinetDisplayItemsIfPresent() {
@@ -121,12 +121,13 @@ public class BusinessDataInitializer implements CommandLineRunner {
                 3);
     }
 
-    private void createUserIfAbsent(String username, String password, String displayName, UserRole role) {
+    private void createUserIfAbsent(String username, String studentNo, String password, String displayName, UserRole role) {
         if (userRepository.findByUsername(username).isPresent()) {
             return;
         }
         User user = new User();
         user.setUsername(username);
+        user.setStudentNo(role == UserRole.STUDENT ? studentNo : null);
         user.setPassword(password);
         user.setDisplayName(displayName);
         user.setRole(role);

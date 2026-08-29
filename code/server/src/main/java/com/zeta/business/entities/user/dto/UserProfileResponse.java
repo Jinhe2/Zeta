@@ -10,6 +10,7 @@ import lombok.Getter;
 public class UserProfileResponse {
 
     private String username;
+    private String studentNo;
     private String displayName;
     private UserRole role;
     private String homePath;

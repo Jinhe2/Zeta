@@ -12,9 +12,11 @@ import lombok.Setter;
 @Setter
 public class CreateUserRequest {
 
-    @NotBlank(message = "请输入用户名")
     @Size(max = 64, message = "用户名不能超过 64 个字符")
     private String username;
+
+    @Size(max = 64, message = "学号不能超过 64 个字符")
+    private String studentNo;
 
     @NotBlank(message = "请输入密码")
     @Size(min = 6, max = 128, message = "密码长度为 6-128 个字符")

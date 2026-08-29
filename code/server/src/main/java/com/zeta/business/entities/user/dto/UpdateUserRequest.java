@@ -12,6 +12,9 @@ import lombok.Setter;
 @Setter
 public class UpdateUserRequest {
 
+    @Size(max = 64, message = "学号不能超过 64 个字符")
+    private String studentNo;
+
     @NotBlank(message = "请输入显示名称")
     @Size(max = 64, message = "显示名称不能超过 64 个字符")
     private String displayName;

@@ -30,6 +30,7 @@ export default function AccountProfilePage() {
   const displayName = session?.displayName || '用户'
   const infoItems = [
     { label: '姓名', value: displayName },
+    ...(session?.role === 'STUDENT' ? [{ label: '学号', value: session?.studentNo || '未分配' }] : []),
     { label: '登录账号', value: session?.username || '未获取' },
     { label: '用户角色', value: ROLE_LABELS[session?.role] || session?.role || '未获取' },
   ]

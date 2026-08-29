@@ -86,6 +86,12 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
             return;
         }
         renameColumnIfExists("users", "displayName", "display_name", "VARCHAR(64) NOT NULL");
+        addColumnIfMissing("users", "student_no", "VARCHAR(64) NULL COMMENT '学员学号'");
+        addIndexIfMissing("users", "idx_users_student_no", "student_no");
+        executeIgnoreError("UPDATE `users` SET `student_no` = '20260001' "
+                + "WHERE `role` = 'STUDENT' AND `username` = 'student' "
+                + "AND (`student_no` IS NULL OR TRIM(`student_no`) = '') "
+                + "AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `users` WHERE `student_no` = '20260001') zeta_student_no)");
         fixTimestampColumn("users");
     }
 
@@ -283,6 +289,15 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
         log.info("业务库 {}：新增列 {}", table, column);
     }
 
+    private void addIndexIfMissing(String table, String index, String column) {
+        if (indexExists(table, index)) {
+            return;
+        }
+        if (executeIgnoreError("ALTER TABLE `" + table + "` ADD INDEX `" + index + "` (`" + column + "`)")) {
+            log.info("业务库 {}：新增索引 {}", table, index);
+        }
+    }
+
     private void executeRequired(String sql) {
         try {
             jdbcTemplate.execute(sql);
@@ -436,6 +451,16 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
                 Integer.class,
                 table,
                 column);
+        return count != null && count > 0;
+    }
+
+    private boolean indexExists(String table, String index) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.statistics "
+                        + "WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?",
+                Integer.class,
+                table,
+                index);
         return count != null && count > 0;
     }
 

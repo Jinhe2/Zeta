@@ -100,7 +100,15 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
   const currentDisplayItem = displayItems[Math.min(currentSlide, Math.max(displayItems.length - 1, 0))] ?? null
   const terminalOperation = currentDisplayItem?.mediaType === 'TERMINAL_OPERATION' ? currentDisplayItem.terminalOperation : null
   const terminalStripId = terminalOperation?.terminalStripId ?? null
-  const isPracticeStatusTarget = Boolean(terminalOperation) && navigationTarget?.sectionId === 'terminal'
+  // 翻页时 navigationTarget 会先更新，本地 currentSlide 随后才同步；对齐前不能消费导航事件，
+  // 否则会用上一页的端子操作生成当前页弹窗，并因 sequence 已记录而无法纠正。
+  const isCurrentDisplayItemNavigationTarget =
+    navigationTarget?.displayItemId != null
+    && currentDisplayItem?.id === navigationTarget.displayItemId
+  const isPracticeStatusTarget =
+    Boolean(terminalOperation)
+    && navigationTarget?.sectionId === 'terminal'
+    && isCurrentDisplayItemNavigationTarget
   const visiblePracticeDialog =
     isPracticeStatusTarget
     && practiceDialog?.pageKey === navigationTarget?.key

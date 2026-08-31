@@ -188,15 +188,38 @@ export function ImageRegionViewer({ imageUrl, region, alt = '', previewTitle }) 
         }
       />
       {highlight && (
-        <div
-          className="image-region-highlight"
-          style={{
-            left: highlight.left,
-            top: highlight.top,
-            width: highlight.width,
-            height: highlight.height,
-          }}
-        />
+        <>
+          <div
+            className="image-region-viewer__mask image-region-viewer__mask--top"
+            style={{ left: imageRect.left, top: imageRect.top, width: imageRect.width, height: highlight.top - imageRect.top }}
+          />
+          <div
+            className="image-region-viewer__mask image-region-viewer__mask--right"
+            style={{ left: highlight.left + highlight.width, top: highlight.top, width: imageRect.left + imageRect.width - highlight.left - highlight.width, height: highlight.height }}
+          />
+          <div
+            className="image-region-viewer__mask image-region-viewer__mask--bottom"
+            style={{ left: imageRect.left, top: highlight.top + highlight.height, width: imageRect.width, height: imageRect.top + imageRect.height - highlight.top - highlight.height }}
+          />
+          <div
+            className="image-region-viewer__mask image-region-viewer__mask--left"
+            style={{ left: imageRect.left, top: highlight.top, width: highlight.left - imageRect.left, height: highlight.height }}
+          />
+          <div
+            className="image-region-highlight"
+            style={{
+              left: highlight.left,
+              top: highlight.top,
+              width: highlight.width,
+              height: highlight.height,
+            }}
+          >
+            <span className="image-region-highlight__corner image-region-highlight__corner--tl" />
+            <span className="image-region-highlight__corner image-region-highlight__corner--tr" />
+            <span className="image-region-highlight__corner image-region-highlight__corner--bl" />
+            <span className="image-region-highlight__corner image-region-highlight__corner--br" />
+          </div>
+        </>
       )}
       <span className="image-region-viewer__preview-hint">点击放大</span>
       <MediaPreviewDialog

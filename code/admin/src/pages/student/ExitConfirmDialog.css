@@ -1,7 +1,7 @@
 .exit-dialog {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 1200;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,18 +21,20 @@
 .exit-dialog__panel {
   position: relative;
   z-index: 1;
-  width: min(420px, 100%);
-  padding: 28px 32px 24px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: min(560px, 100%);
+  padding: 42px 48px 38px;
+  border-radius: 20px;
+  border: 1px solid rgba(142, 197, 248, 0.3);
   background: linear-gradient(180deg, #1a2f48 0%, #122438 100%);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 24px 68px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .exit-dialog__message {
-  margin: 0 0 24px;
-  font-size: 22.08px;
-  font-weight: 600;
+  margin: 0 0 34px;
+  font-size: 30px;
+  font-weight: 700;
   line-height: 1.6;
   text-align: center;
   color: #f0f6fc;
@@ -41,10 +43,29 @@
 .exit-dialog__actions {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 28px;
 }
 
 .exit-dialog__btn {
+  min-width: 150px;
+  min-height: 68px;
+  padding: 14px 30px;
+  border: 0;
+  border-radius: 14px;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.exit-dialog__btn:hover {
+  filter: brightness(1.08);
+}
+
 .exit-dialog__btn:active {
   transform: scale(0.98);
 }
@@ -61,4 +82,24 @@
   box-shadow: 0 4px 14px rgba(67, 160, 71, 0.35);
 }
 
+@media (max-width: 640px) {
+  .exit-dialog__panel {
+    padding: 32px 24px 28px;
+  }
+
+  .exit-dialog__message {
+    font-size: 25px;
+  }
+
+  .exit-dialog__actions {
+    gap: 16px;
+  }
+
+  .exit-dialog__btn {
+    flex: 1;
+    min-width: 0;
+    min-height: 62px;
+    font-size: 23px;
+    padding: 12px 20px;
+  }
 }

@@ -59,12 +59,18 @@ export default function PanoramaListPage() {
           api.listProtectionLogics(cabinetId),
         ])
         const summaryById = new Map(summaries.map((logic) => [logic.id, logic]))
-        const availableDevices = (currentCabinet.devices ?? [])
-          .map((device) => ({
-            ...device,
-            protectionLogics: summaries.filter((logic) => logic.deviceId === device.id && summaryById.has(logic.id)),
+        const devicesWithLogics = await Promise.all((currentCabinet.devices ?? [])
+          .filter((device) => device.protectionLogicCount > 0)
+          .map(async (device) => {
+            const deviceLogics = await api.listKnowledgeDeviceProtectionLogics(device.id)
+            return {
+              ...device,
+              protectionLogics: deviceLogics
+                .map((logic) => ({ ...logic, ...summaryById.get(logic.id) }))
+                .filter((logic) => summaryById.has(logic.id)),
+            }
           }))
-          .filter((device) => device.protectionLogics.length > 0)
+        const availableDevices = devicesWithLogics.filter((device) => device.protectionLogics.length > 0)
 
         if (!cancelled) {
           setCabinet(currentCabinet)

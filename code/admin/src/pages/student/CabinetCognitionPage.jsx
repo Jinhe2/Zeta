@@ -348,24 +348,17 @@ export default function CabinetCognitionPage() {
       <main className="tablet-shell__main tablet-shell__main--cabinet">
         <div className="cabinet-page__layout">
           <nav className="cabinet-page__nav" aria-label="屏柜学习分类">
-            {SECTIONS.map((section) => (
-              <button
-                key={section.id}
-                type="button"
-                className={`cabinet-page__nav-btn${activeSection === section.id ? ' cabinet-page__nav-btn--active' : ''}`}
-                onClick={() => handleSectionSelect(section.id)}
-              >
-                {section.label}
-              </button>
-            ))}
-          </nav>
-
-          <section className="cabinet-page__content" aria-live="polite">
-            {navigationError && (
-              <p className="cabinet-page__nav-error">{navigationError}</p>
-            )}
-            <div className="cabinet-page__body">
-              {renderSectionContent()}
+            <div className="cabinet-page__section-nav">
+              {SECTIONS.map((section) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  className={`cabinet-page__nav-btn${activeSection === section.id ? ' cabinet-page__nav-btn--active' : ''}`}
+                  onClick={() => handleSectionSelect(section.id)}
+                >
+                  {section.label}
+                </button>
+              ))}
             </div>
             <div className="cabinet-page__step-actions" aria-label="屏柜学习步骤导航">
               <button
@@ -384,6 +377,15 @@ export default function CabinetCognitionPage() {
               >
                 下一步
               </button>
+            </div>
+          </nav>
+
+          <section className="cabinet-page__content" aria-live="polite">
+            {navigationError && (
+              <p className="cabinet-page__nav-error">{navigationError}</p>
+            )}
+            <div className="cabinet-page__body">
+              {renderSectionContent()}
             </div>
           </section>
         </div>

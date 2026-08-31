@@ -25,14 +25,25 @@ export default function MediaPreviewDialog({ open, type = 'image', src, title = 
       onKeyDown={(event) => event.stopPropagation()}
     >
       <button type="button" className="media-preview-dialog__backdrop" aria-label="关闭预览" onClick={onClose} />
-      <section className="media-preview-dialog__panel">
+      <section className={`media-preview-dialog__panel media-preview-dialog__panel--${type}`}>
         <header className="media-preview-dialog__header">
           <h2>{title}</h2>
           <button type="button" className="media-preview-dialog__close" onClick={onClose}>关闭</button>
         </header>
         <div className="media-preview-dialog__body">
           {type === 'pdf' ? (
-            <PdfDocumentReader fileUrl={src} title={title} />
+            <PdfDocumentReader fileUrl={src} title={title} fitMode="width" scrollMode="continuous" />
+          ) : type === 'video' ? (
+            <video
+              className="media-preview-dialog__video"
+              src={src}
+              controls
+              preload="metadata"
+              playsInline
+              autoPlay
+            >
+              当前环境不支持视频播放。
+            </video>
           ) : (
             <TransformWrapper
               initialScale={1}

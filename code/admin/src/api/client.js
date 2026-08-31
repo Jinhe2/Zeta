@@ -1030,3 +1030,9 @@ export const api = {
 export function learningResourceContentUrl(id, bindId, cabinetId = null) {
   return apiUrl(`/api/learning-resources/${id}/content?bindId=${encodeURIComponent(bindId)}${cabinetId ? `&cabinetId=${encodeURIComponent(cabinetId)}` : ''}`)
 }
+
+export function adminLearningResourceContentUrl(id) {
+  const token = getAccessToken()
+  const query = token ? `?accessToken=${encodeURIComponent(token)}` : ''
+  return apiUrl(`/api/admin/learning-resources/${id}/content${query}`)
+}

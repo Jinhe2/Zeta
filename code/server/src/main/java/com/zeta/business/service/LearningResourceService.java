@@ -138,6 +138,11 @@ public class LearningResourceService {
     }
 
     @Transactional(value = "businessTransactionManager", readOnly = true)
+    public LearningResource getFileForAdmin(Long id) {
+        return require(id);
+    }
+
+    @Transactional(value = "businessTransactionManager", readOnly = true)
     public LearningResource getFileForBoundCabinet(Long id, String bindId, Long selectedCabinetId,
                                                     boolean allowSelectedCabinet) {
         return requireAccessible(id, bindId, selectedCabinetId, allowSelectedCabinet);

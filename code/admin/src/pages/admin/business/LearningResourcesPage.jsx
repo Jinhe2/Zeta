@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { api } from '../../../api/client'
+import { adminLearningResourceContentUrl, api } from '../../../api/client'
+import MediaPreviewDialog from '../../../components/MediaPreviewDialog'
 import './LearningResourcesPage.css'
 
 const TYPES = [
@@ -27,6 +28,8 @@ export default function LearningResourcesPage() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [preview, setPreview] = useState(null)
+  const [previewLoadingId, setPreviewLoadingId] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -49,6 +52,10 @@ export default function LearningResourcesPage() {
     const timer = window.setTimeout(load, 0)
     return () => window.clearTimeout(timer)
   }, [load])
+
+  useEffect(() => () => {
+    if (preview?.url) URL.revokeObjectURL(preview.url)
+  }, [preview?.url])
 
   const selectedType = useMemo(
     () => TYPES.find((type) => type.value === form.resourceType) || TYPES[0],
@@ -124,6 +131,21 @@ export default function LearningResourcesPage() {
     }
   }
 
+  const openPreview = async (item) => {
+    setError('')
+    setPreviewLoadingId(item.id)
+    setPreview({
+      item,
+      url: adminLearningResourceContentUrl(item.id),
+      type: item.resourceType === 'VIDEO_COURSE' ? 'video' : 'pdf',
+    })
+    setPreviewLoadingId(null)
+  }
+
+  const closePreview = () => {
+    setPreview(null)
+  }
+
   return (
     <div className="learning-resources-page">
       <div className="learning-resources-page__header">
@@ -144,7 +166,7 @@ export default function LearningResourcesPage() {
         <div className="learning-resources-page__table-wrap"><table><thead><tr><th>名称</th><th>分类</th><th>适用屏柜</th><th>说明</th><th>文件</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
           {resources.filter((item) => cabinetFilter !== 'all' || !item.cabinetId).map((item) => <tr key={item.id}>
             <td>{item.name}</td><td>{typeLabel(item.resourceType)}</td><td>{item.cabinetName || '所有屏柜'}</td><td className="learning-resources-page__description">{item.description}</td><td>{item.originalFilename}<small>{formatSize(item.fileSize)}</small></td><td>{new Date(item.updatedAt).toLocaleString('zh-CN')}</td>
-            <td><button type="button" onClick={() => openEdit(item)}>编辑</button><button type="button" className="learning-resources-page__danger" onClick={() => remove(item)}>删除</button></td>
+            <td><button type="button" disabled={previewLoadingId === item.id} onClick={() => openPreview(item)}>{previewLoadingId === item.id ? '加载中…' : '预览'}</button><button type="button" onClick={() => openEdit(item)}>编辑</button><button type="button" className="learning-resources-page__danger" onClick={() => remove(item)}>删除</button></td>
           </tr>)}
         </tbody></table></div>
       )}
@@ -158,6 +180,13 @@ export default function LearningResourcesPage() {
         <label>文件{editing !== 'create' && '（留空则保留原文件）'}<input type="file" accept={selectedType.accept} required={editing === 'create'} onChange={(e) => setForm({ ...form, file: e.target.files?.[0] || null })} /><small>{selectedType.value === 'VIDEO_COURSE' ? '仅支持 MP4，最大 500MB' : '仅支持 PDF，最大 50MB'}</small></label>
         <div className="learning-resources-page__dialog-actions"><button type="button" disabled={saving} onClick={() => setEditing(null)}>取消</button><button type="submit" disabled={saving}>{saving ? '保存中…' : '保存'}</button></div>
       </form></div>}
+      <MediaPreviewDialog
+        open={Boolean(preview)}
+        type={preview?.type}
+        src={preview?.url || ''}
+        title={preview?.item?.name || '学习资料预览'}
+        onClose={closePreview}
+      />
     </div>
   )
 }

@@ -38,8 +38,10 @@ import com.zeta.business.entities.user.dto.*;
 import com.zeta.business.media.*;
 import com.zeta.business.service.*;
 import com.zeta.business.storage.*;
+import java.io.InputStream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -47,7 +49,6 @@ import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -141,12 +142,17 @@ public class CognitionVideoController {
     Resource video = videoStorage.load(videoPath);
     long contentLength = contentLength(video);
     if (!requestHeaders.getRange().isEmpty()) {
-      ResourceRegion region = toResourceRegion(video, requestHeaders.getRange().get(0), contentLength);
+      HttpRange range = requestHeaders.getRange().get(0);
+      long start = range.getRangeStart(contentLength);
+      long end = range.getRangeEnd(contentLength);
+      long rangeLength = end - start + 1;
       return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
           .contentType(MediaType.parseMediaType("video/mp4"))
+          .contentLength(rangeLength)
           .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+          .header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + contentLength)
           .cacheControl(CacheControl.noCache())
-          .body(region);
+          .body(rangeResource(video, start, rangeLength));
     }
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType("video/mp4"))
@@ -156,11 +162,73 @@ public class CognitionVideoController {
         .body(video);
   }
 
-  private ResourceRegion toResourceRegion(Resource video, HttpRange range, long contentLength) {
-    long start = range.getRangeStart(contentLength);
-    long end = range.getRangeEnd(contentLength);
-    long rangeLength = Math.min(1024 * 1024L, end - start + 1);
-    return new ResourceRegion(video, start, rangeLength);
+  private Resource rangeResource(Resource video, long start, long length) {
+    try {
+      InputStream inputStream = video.getInputStream();
+      skipFully(inputStream, start);
+      return new InputStreamResource(new BoundedInputStream(inputStream, length)) {
+        @Override
+        public long contentLength() {
+          return length;
+        }
+
+        @Override
+        public String getFilename() {
+          return video.getFilename();
+        }
+      };
+    } catch (java.io.IOException ex) {
+      throw new ResponseStatusException(NOT_FOUND, "视频不存在");
+    }
+  }
+
+  private void skipFully(InputStream inputStream, long bytes) throws java.io.IOException {
+    long remaining = bytes;
+    while (remaining > 0) {
+      long skipped = inputStream.skip(remaining);
+      if (skipped > 0) {
+        remaining -= skipped;
+        continue;
+      }
+      if (inputStream.read() == -1) {
+        break;
+      }
+      remaining -= 1;
+    }
+  }
+
+  private static class BoundedInputStream extends java.io.FilterInputStream {
+    private long remaining;
+
+    private BoundedInputStream(InputStream inputStream, long remaining) {
+      super(inputStream);
+      this.remaining = remaining;
+    }
+
+    @Override
+    public int read() throws java.io.IOException {
+      if (remaining <= 0) {
+        return -1;
+      }
+      int value = super.read();
+      if (value != -1) {
+        remaining -= 1;
+      }
+      return value;
+    }
+
+    @Override
+    public int read(byte[] bytes, int offset, int length) throws java.io.IOException {
+      if (remaining <= 0) {
+        return -1;
+      }
+      int read = super.read(bytes, offset, (int) Math.min(length, remaining));
+      if (read == -1) {
+        return -1;
+      }
+      remaining -= read;
+      return read;
+    }
   }
 
   private long contentLength(Resource video) {

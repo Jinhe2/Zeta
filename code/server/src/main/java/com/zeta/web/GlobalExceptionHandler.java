@@ -1,7 +1,9 @@
 package com.zeta.web;
 
+import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -36,10 +38,35 @@ public class GlobalExceptionHandler {
                 .body(new ApiError("上传文件不能超过 50MB"));
     }
 
+    @ExceptionHandler(ClientAbortException.class)
+    public ResponseEntity<Void> handleClientAbort(ClientAbortException ex) {
+        log.debug("客户端已中断文件流请求：{}", ex.getMessage());
+        return ResponseEntity.status(499).headers(new HttpHeaders()).build();
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleGeneric(Exception ex) {
+    public ResponseEntity<?> handleGeneric(Exception ex) {
+        if (isClientAbort(ex)) {
+            log.debug("客户端已中断请求：{}", ex.getMessage());
+            return ResponseEntity.status(499).headers(new HttpHeaders()).build();
+        }
         log.error("未处理的请求异常", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiError("服务器内部错误"));
+    }
+
+    private boolean isClientAbort(Throwable ex) {
+        Throwable current = ex;
+        while (current != null) {
+            if (current instanceof ClientAbortException) {
+                return true;
+            }
+            String message = current.getMessage();
+            if (message != null && (message.contains("Broken pipe") || message.contains("Connection reset by peer"))) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

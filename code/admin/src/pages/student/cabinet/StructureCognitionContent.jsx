@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl } from '../../../api/client'
-import { resolveStudentCabinetId, useStudentCabinetId } from '../studentCabinet'
+import { useStudentCabinetId } from '../studentCabinet'
 
 export default function StructureCognitionContent({ navigationTarget, onPageChange }) {
   const selectedCabinetId = useStudentCabinetId()
@@ -21,8 +21,7 @@ export default function StructureCognitionContent({ navigationTarget, onPageChan
       setLoading(true)
       setError(null)
       try {
-        const tree = await api.getKnowledgeTree()
-        const cabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
+        const cabinetId = selectedCabinetId
         if (!cabinetId) {
           throw new Error('未找到屏柜学习数据')
         }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { api, imageUrl, publicUrl, videoUrl } from '../../api/client'
-import { resolveStudentCabinetId, useStudentCabinetId } from './studentCabinet'
+import { useStudentCabinetId } from './studentCabinet'
 import { actualOutputs, evaluateSamplingChannel, evaluateSamplingWiring, statesByTerminalId } from '../../utils/samplingValidation'
 import './TabletShell.css'
 import './CabinetCognitionPage.css'
@@ -75,8 +75,7 @@ export default function SamplingTestPage() {
 
       setLoading(true); setError('')
       try {
-        const tree = await api.getKnowledgeTree()
-        const resolvedCabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
+        const resolvedCabinetId = selectedCabinetId
         if (!resolvedCabinetId) throw new Error('未找到当前屏柜')
         const [data, terminalList] = await Promise.all([
           api.listKnowledgeSamplingTestItems(resolvedCabinetId),

@@ -6,7 +6,7 @@ import StructureCognitionContent from './cabinet/StructureCognitionContent'
 import DeviceCognitionContent from './cabinet/DeviceCognitionContent'
 import PlateCognitionContent from './cabinet/PlateCognitionContent'
 import TerminalCognitionContent from './cabinet/TerminalCognitionContent'
-import { resolveStudentCabinetId, useStudentCabinetId } from './studentCabinet'
+import { useStudentCabinetId } from './studentCabinet'
 import './TabletShell.css'
 import './CabinetCognitionPage.css'
 
@@ -119,7 +119,8 @@ export default function CabinetCognitionPage() {
   const { logout } = useAuth()
   const selectedCabinetId = useStudentCabinetId()
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id)
-  const [navigationPages, setNavigationPages] = useState(SECTIONS.map((section) => fallbackPage(section.id)))
+  const [cabinetItems, setCabinetItems] = useState([])
+  const [sectionPages, setSectionPages] = useState({})
   const [currentPageKey, setCurrentPageKey] = useState(pageKey(fallbackPage(SECTIONS[0].id)))
   const [pageNavigationEvent, setPageNavigationEvent] = useState({
     pageKey: pageKey(fallbackPage(SECTIONS[0].id)),
@@ -129,14 +130,50 @@ export default function CabinetCognitionPage() {
   const [navigationLoading, setNavigationLoading] = useState(true)
   const [navigationError, setNavigationError] = useState(null)
   const currentSection = SECTIONS.find((s) => s.id === activeSection)
+  const navigationPages = useMemo(() => (
+    SECTIONS.flatMap((section) => sectionPages[section.id] ?? [])
+  ), [sectionPages])
   const currentPage = navigationPages.find((page) => page.key === currentPageKey)
     ?? navigationPages.find((page) => page.sectionId === activeSection)
-    ?? navigationPages[0]
+    ?? fallbackPage(activeSection)
+  const isLastSection = activeSection === SECTIONS[SECTIONS.length - 1].id
+
+  const buildSectionPages = useCallback(async (sectionId, items) => {
+    if (sectionId === 'structure') {
+      return items.length > 0
+        ? items.map((item) => withKey({
+          sectionId: 'structure',
+          cabinetItemId: item.id,
+          kind: 'display',
+        }))
+        : [fallbackPage('structure')]
+    }
+    return buildDeviceSectionPages(sectionId, items)
+  }, [])
+
+  const ensureSectionPages = useCallback(async (sectionId, items = cabinetItems) => {
+    if (sectionPages[sectionId]) return sectionPages[sectionId]
+    if (items.length === 0) return [fallbackPage(sectionId)]
+    setNavigationLoading(true)
+    setNavigationError(null)
+    try {
+      const pages = await buildSectionPages(sectionId, items)
+      setSectionPages((current) => ({ ...current, [sectionId]: pages }))
+      return pages
+    } catch (err) {
+      setNavigationError(err.message || '加载屏柜学习导航失败')
+      const pages = [fallbackPage(sectionId)]
+      setSectionPages((current) => ({ ...current, [sectionId]: pages }))
+      return pages
+    } finally {
+      setNavigationLoading(false)
+    }
+  }, [buildSectionPages, cabinetItems, sectionPages])
 
   useEffect(() => {
     let cancelled = false
 
-    async function loadNavigationPages() {
+    async function loadInitialNavigationPages() {
       if (selectedCabinetId === undefined) {
         setNavigationLoading(true)
         return
@@ -145,39 +182,18 @@ export default function CabinetCognitionPage() {
       setNavigationLoading(true)
       setNavigationError(null)
       try {
-        const tree = await api.getKnowledgeTree()
-        const cabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
+        const cabinetId = selectedCabinetId
         if (!cabinetId) {
           throw new Error('未找到屏柜学习数据')
         }
 
-        const cabinetItems = await api.listKnowledgeCabinetDisplayItems(cabinetId)
-        const structurePages = cabinetItems.length > 0
-          ? cabinetItems.map((item) => withKey({
-            sectionId: 'structure',
-            cabinetItemId: item.id,
-            kind: 'display',
-          }))
-          : [fallbackPage('structure')]
-
-        const [devicePages, apparatusPages, platePages, terminalPages] = await Promise.all([
-          buildDeviceSectionPages('device', cabinetItems),
-          buildDeviceSectionPages('apparatus', cabinetItems),
-          buildDeviceSectionPages('plate', cabinetItems),
-          buildDeviceSectionPages('terminal', cabinetItems),
-        ])
-
-        const nextPages = [
-          ...structurePages,
-          ...devicePages,
-          ...platePages,
-          ...terminalPages,
-          ...apparatusPages,
-        ]
+        const nextCabinetItems = await api.listKnowledgeCabinetDisplayItems(cabinetId)
+        const structurePages = await buildSectionPages('structure', nextCabinetItems)
 
         if (!cancelled) {
-          setNavigationPages(nextPages)
-          const nextPage = nextPages[0]
+          setCabinetItems(nextCabinetItems)
+          setSectionPages({ structure: structurePages })
+          const nextPage = structurePages[0]
           if (nextPage) {
             setActiveSection(nextPage.sectionId)
             setCurrentPageKey(nextPage.key)
@@ -191,18 +207,19 @@ export default function CabinetCognitionPage() {
       } catch (err) {
         if (!cancelled) {
           setNavigationError(err.message)
-          setNavigationPages(SECTIONS.map((section) => fallbackPage(section.id)))
+          setCabinetItems([])
+          setSectionPages({})
         }
       } finally {
         if (!cancelled) setNavigationLoading(false)
       }
     }
 
-    loadNavigationPages()
+    loadInitialNavigationPages()
     return () => {
       cancelled = true
     }
-  }, [selectedCabinetId])
+  }, [buildSectionPages, selectedCabinetId])
 
   const currentPageIndex = useMemo(
     () => navigationPages.findIndex((page) => page.key === currentPage?.key),
@@ -233,8 +250,9 @@ export default function CabinetCognitionPage() {
     applyPage(target)
   }, [applyPage, navigationPages])
 
-  const handleSectionSelect = (sectionId) => {
-    const nextPage = navigationPages.find((page) => page.sectionId === sectionId) ?? fallbackPage(sectionId)
+  const handleSectionSelect = async (sectionId) => {
+    const pages = await ensureSectionPages(sectionId)
+    const nextPage = pages[0] ?? fallbackPage(sectionId)
     applyPage(nextPage, 'section')
   }
 
@@ -243,9 +261,17 @@ export default function CabinetCognitionPage() {
     applyPage(navigationPages[currentPageIndex - 1], 'previous')
   }
 
-  const goNext = () => {
-    if (currentPageIndex < 0 || currentPageIndex >= navigationPages.length - 1) return
-    applyPage(navigationPages[currentPageIndex + 1], 'next')
+  const goNext = async () => {
+    if (currentPageIndex < 0) return
+    if (currentPageIndex < navigationPages.length - 1) {
+      applyPage(navigationPages[currentPageIndex + 1], 'next')
+      return
+    }
+    const sectionIndex = SECTIONS.findIndex((section) => section.id === activeSection)
+    const nextSection = SECTIONS[sectionIndex + 1]
+    if (!nextSection) return
+    const pages = await ensureSectionPages(nextSection.id)
+    applyPage(pages[0] ?? fallbackPage(nextSection.id), 'next')
   }
 
   const renderSectionContent = () => {
@@ -353,7 +379,7 @@ export default function CabinetCognitionPage() {
               <button
                 type="button"
                 className="cabinet-page__step-btn cabinet-page__step-btn--primary"
-                disabled={navigationLoading || currentPageIndex < 0 || currentPageIndex >= navigationPages.length - 1}
+                disabled={navigationLoading || (isLastSection && (currentPageIndex < 0 || currentPageIndex >= navigationPages.length - 1))}
                 onClick={goNext}
               >
                 下一步

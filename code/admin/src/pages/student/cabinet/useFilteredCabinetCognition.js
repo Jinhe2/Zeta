@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../../api/client'
-import { resolveStudentCabinetId, useStudentCabinetId } from '../studentCabinet'
+import { useStudentCabinetId } from '../studentCabinet'
 
 export default function useFilteredCabinetCognition(deviceType) {
   const selectedCabinetId = useStudentCabinetId()
@@ -23,8 +23,7 @@ export default function useFilteredCabinetCognition(deviceType) {
       setLoading(true)
       setError(null)
       try {
-        const tree = await api.getKnowledgeTree()
-        const nextCabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
+        const nextCabinetId = selectedCabinetId
         if (!nextCabinetId) {
           throw new Error('未找到屏柜学习数据')
         }

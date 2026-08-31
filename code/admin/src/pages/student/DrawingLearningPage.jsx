@@ -4,7 +4,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { api, imageUrl } from '../../api/client'
 import { ImageRegionViewer } from '../../components/ImageRegionEditor'
 import { hasRegion, normalizeRegion } from '../../utils/imageRegionUtils'
-import { resolveStudentCabinetId, useStudentCabinetId } from './studentCabinet'
+import { useStudentCabinetId } from './studentCabinet'
 import './TabletShell.css'
 import './DrawingLearningPage.css'
 
@@ -45,8 +45,7 @@ export default function DrawingLearningPage() {
       setLoading(true)
       setError('')
       try {
-        const tree = await api.getKnowledgeTree()
-        const cabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
+        const cabinetId = selectedCabinetId
         if (!cabinetId) throw new Error('未找到图纸学习数据')
         const data = await api.listKnowledgeDrawingGroups(cabinetId)
         if (!cancelled) {

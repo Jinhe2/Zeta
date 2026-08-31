@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../api/client'
-import { getDeviceBindId } from '../../api/deviceBinding'
 import { useAuth } from '../../auth/AuthContext'
 import { useStudentCabinetId } from './studentCabinet'
 import './TabletShell.css'
@@ -11,7 +10,7 @@ import './PanoramaListPage.css'
 export default function PanoramaListPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { logout, session } = useAuth()
+  const { logout } = useAuth()
   const selectedCabinetId = useStudentCabinetId()
   const [cabinet, setCabinet] = useState(null)
   const [devices, setDevices] = useState([])
@@ -44,23 +43,26 @@ export default function PanoramaListPage() {
   useEffect(() => {
     let cancelled = false
     async function load() {
-      try {
-        const tree = await api.getKnowledgeTree()
-        const cabinetId = session?.role === 'ADMIN'
-          ? selectedCabinetId
-          : (await api.checkBinding(getDeviceBindId())).cabinetId
-        if (!cabinetId) throw new Error('未找到当前评估屏柜')
-        const currentCabinet = tree?.cabinets?.find((item) => item.id === cabinetId)
-        if (!currentCabinet) throw new Error('未找到当前评估屏柜')
+      if (selectedCabinetId === undefined) {
+        setLoading(true)
+        return
+      }
 
-        const summaries = await api.listProtectionLogics(cabinetId)
+      setLoading(true)
+      setError(null)
+      try {
+        const cabinetId = selectedCabinetId
+        if (!cabinetId) throw new Error('未找到当前评估屏柜')
+
+        const [currentCabinet, summaries] = await Promise.all([
+          api.getKnowledgeCabinet(cabinetId),
+          api.listProtectionLogics(cabinetId),
+        ])
         const summaryById = new Map(summaries.map((logic) => [logic.id, logic]))
         const availableDevices = (currentCabinet.devices ?? [])
           .map((device) => ({
             ...device,
-            protectionLogics: (device.protectionLogics ?? [])
-              .map((logic) => ({ ...logic, ...summaryById.get(logic.id) }))
-              .filter((logic) => summaryById.has(logic.id)),
+            protectionLogics: summaries.filter((logic) => logic.deviceId === device.id && summaryById.has(logic.id)),
           }))
           .filter((device) => device.protectionLogics.length > 0)
 
@@ -81,7 +83,7 @@ export default function PanoramaListPage() {
     return () => {
       cancelled = true
     }
-  }, [selectedCabinetId, session?.role])
+  }, [selectedCabinetId])
 
   // 选中装置后加载该装置下的组合逻辑
   useEffect(() => {

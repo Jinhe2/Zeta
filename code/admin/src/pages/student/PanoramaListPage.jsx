@@ -5,6 +5,7 @@ import { api } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { useStudentCabinetId } from './studentCabinet'
 import WholeExperimentSelector from './WholeExperimentSelector'
+import { SHOW_LOGIC_GROUP_ENTRY, resolveLogicLearningMode } from '../../config/logicLearning'
 import './TabletShell.css'
 import './PanoramaListPage.css'
 
@@ -17,7 +18,7 @@ export default function PanoramaListPage() {
   const [devices, setDevices] = useState([])
   const [selectedDeviceId, setSelectedDeviceId] = useState(location.state?.deviceId ?? null)
   const [groups, setGroups] = useState([])
-  const [mode, setMode] = useState(location.state?.mode ?? 'basic') // 基础逻辑 | 组合逻辑 | 整组实验
+  const [mode, setMode] = useState(resolveLogicLearningMode(location.state?.mode)) // 基础逻辑 | 组合逻辑 | 整组实验
   const [groupsLoading, setGroupsLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -103,7 +104,7 @@ export default function PanoramaListPage() {
       return undefined
     }
     let cancelled = false
-    setMode(location.state?.deviceId === activeDevice.id ? (location.state?.mode ?? 'basic') : 'basic')
+    setMode(location.state?.deviceId === activeDevice.id ? resolveLogicLearningMode(location.state?.mode) : 'basic')
     setGroups([])
     setGroupsLoading(true)
     api.listKnowledgeLogicGroups(activeDevice.id)
@@ -194,7 +195,7 @@ export default function PanoramaListPage() {
                     基础逻辑
                     <span>{list.length}</span>
                   </button>
-                  <button
+                  {SHOW_LOGIC_GROUP_ENTRY && <button
                     type="button"
                     role="tab"
                     aria-selected={mode === 'group'}
@@ -203,7 +204,7 @@ export default function PanoramaListPage() {
                   >
                     组合逻辑
                     <span>{groups.length}</span>
-                  </button>
+                  </button>}
                   <button type="button" role="tab" aria-selected={mode === 'whole'}
                     className={`panorama-list__tab${mode === 'whole' ? ' panorama-list__tab--active' : ''}`}
                     onClick={() => setMode('whole')}>

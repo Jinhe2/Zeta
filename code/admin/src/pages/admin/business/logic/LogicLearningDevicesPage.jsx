@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api } from '../../../../api/client'
 import ConfigCopyDialog from '../../../../components/ConfigCopyDialog'
+import { SHOW_LOGIC_GROUP_ENTRY } from '../../../../config/logicLearning'
 import '../UsersPage.css'
 
 export default function LogicLearningDevicesPage() {
@@ -93,9 +94,9 @@ export default function LogicLearningDevicesPage() {
                       <Link className="users-page__link" to={`/admin/logic-learning/devices/${device.id}/logics`}>
                         基础逻辑
                       </Link>
-                      <Link className="users-page__link" to={`/admin/logic-learning/devices/${device.id}/logic-groups`}>
+                      {SHOW_LOGIC_GROUP_ENTRY && <Link className="users-page__link" to={`/admin/logic-learning/devices/${device.id}/logic-groups`}>
                         组合逻辑
-                      </Link>
+                      </Link>}
                       <Link className="users-page__link" to={`/admin/logic-learning/devices/${device.id}/settings`}>
                         装置定值清单
                       </Link>

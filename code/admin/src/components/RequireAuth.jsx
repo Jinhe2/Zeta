@@ -8,8 +8,13 @@ const HOME_BY_ROLE = {
 }
 
 export default function RequireAuth({ role, children }) {
-  const { session } = useAuth()
+  const { session, initializing } = useAuth()
   const location = useLocation()
+
+  // 等待已有登录恢复，避免刷新实验详情时被提前重定向而丢失任务入口。
+  if (initializing) {
+    return <div role="status">正在恢复登录状态…</div>
+  }
 
   if (!session) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />

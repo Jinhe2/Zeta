@@ -131,16 +131,6 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
     }
     return []
   })
-  const readErrorTerminalIds = new Set(
-    (terminalOperation?.terminals?.length ? terminalOperation.terminals : terminals)
-      .map((terminal) => terminal.terminalId ?? terminal.id)
-      .filter((terminalId) => terminalId != null)
-      .map(String),
-  )
-  const hasTerminalReadError = Array.from(readErrorTerminalIds).some((terminalId) => {
-    const state = terminalStates[terminalStatusKey(terminalId)]
-    return state && (state.connection_status === 'ERROR' || state.read_success === false)
-  })
 
   // 加载认知条目
   useEffect(() => {
@@ -465,7 +455,6 @@ export default function TerminalCognitionContent({ navigationTarget, navigationE
                 <span className="terminal-wiring-status__tag-label">{String(terminalOperation.terminalStripLabelPrefix || terminalOperation.terminalStripName || '').replace(/-+$/, '')}</span>
               </div>
               {statusError && <p className="terminal-wiring-status__error">{statusError}</p>}
-              {!statusError && hasTerminalReadError && <p className="terminal-wiring-status__error">部分端子状态读取异常</p>}
               {terminals.length === 0 ? <p className="cabinet-section__paragraph">暂无可渲染的端子数据</p> : <div className="terminal-wiring-status__list">
                 {terminals.map((terminal) => {
                   const state = terminalStates[terminalStatusKey(terminal.id)]

@@ -621,6 +621,50 @@ export const api = {
     })
   },
 
+  createWholeExperiment(deviceId, logicDiagramIds) {
+    return request('/api/whole-experiments', {
+      method: 'POST', body: JSON.stringify({ deviceId, logicDiagramIds }),
+    })
+  },
+
+  listRecentWholeExperiments(deviceId) {
+    return request(`/api/whole-experiments/recent?deviceId=${deviceId}`)
+  },
+
+  getWholeExperiment(id) {
+    return request(`/api/whole-experiments/${id}`)
+  },
+
+  getWholeExperimentGuide(id) {
+    return request(`/api/whole-experiments/${id}/guide`)
+  },
+
+  checkWholeExperiment(id) {
+    return request(`/api/whole-experiments/${id}/precheck`, { method: 'POST' })
+  },
+
+  wholeExperimentMonitor(id, action, taskUuid) {
+    return request(`/api/whole-experiments/${id}/monitor`, {
+      method: 'POST', body: JSON.stringify({ action, taskUuid }),
+    })
+  },
+
+  listWholeExperimentRuns(id) {
+    return request(`/api/whole-experiments/${id}/runs`)
+  },
+
+  getWholeExperimentRun(taskUuid) {
+    return request(`/api/whole-experiment-runs/${taskUuid}`)
+  },
+
+  listWholeExperimentRunMembers(taskUuid) {
+    return request(`/api/whole-experiment-runs/${taskUuid}/members`)
+  },
+
+  getWholeExperimentRunMember(taskUuid, logicDiagramId) {
+    return request(`/api/whole-experiment-runs/${taskUuid}/members/${logicDiagramId}`)
+  },
+
   sendLogicGroupMonitorHeartbeat(taskUuid) {
     return request('/api/monitor/commands/logic-group-monitor', {
       method: 'POST',

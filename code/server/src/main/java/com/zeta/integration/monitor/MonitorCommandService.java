@@ -5,6 +5,7 @@ import com.zeta.business.entities.monitor.MonitorTaskRepository;
 import com.zeta.business.entities.snapshot.LogicSnapshot;
 import com.zeta.business.entities.snapshot.LogicSnapshotRepository;
 import com.zeta.business.service.LogicGroupSnapshotService;
+import com.zeta.business.service.WholeExperimentRunService;
 import com.zeta.integration.queue.ScreenQueueMessage;
 import com.zeta.integration.queue.ScreenQueuePublisher;
 import java.time.Instant;
@@ -27,6 +28,7 @@ public class MonitorCommandService {
   private final LogicSnapshotRepository logicSnapshotRepository;
   private final MonitorTaskRepository monitorTaskRepository;
   private final LogicGroupSnapshotService logicGroupSnapshotService;
+  private final WholeExperimentRunService wholeRuns;
   private final ScheduledExecutorService scheduler =
       Executors.newSingleThreadScheduledExecutor(
           runnable -> {
@@ -71,11 +73,13 @@ public class MonitorCommandService {
       Optional<ScreenQueuePublisher> publisher,
       LogicSnapshotRepository logicSnapshotRepository,
       MonitorTaskRepository monitorTaskRepository,
-      LogicGroupSnapshotService logicGroupSnapshotService) {
+      LogicGroupSnapshotService logicGroupSnapshotService,
+      WholeExperimentRunService wholeRuns) {
     this.publisher = publisher.orElse(null);
     this.logicSnapshotRepository = logicSnapshotRepository;
     this.monitorTaskRepository = monitorTaskRepository;
     this.logicGroupSnapshotService = logicGroupSnapshotService;
+    this.wholeRuns = wholeRuns;
   }
 
   /** 发送压板状态读取命令。 */
@@ -180,6 +184,16 @@ public class MonitorCommandService {
     data.put("logic_ids", logicIds);
 
     return sendCommand("summon_logic_group_monitor", String.valueOf(userId), data, null, groupId);
+  }
+
+  /** 整组运行已持久化，沿用相同协议并使用预先分配的任务 UUID。 */
+  public CompletableFuture<ScreenQueueMessage> startWholeExperimentMonitor(
+      String taskUuid, String iedName, List<String> logicIds, Long userId) {
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("action", "start");
+    data.put("ied_name", iedName);
+    data.put("logic_ids", logicIds);
+    return sendCommand("summon_logic_group_monitor", String.valueOf(userId), data, null, null, taskUuid);
   }
 
   /** 发送心跳（fire-and-forget）。 */
@@ -329,7 +343,9 @@ public class MonitorCommandService {
     }
 
     // 组合监视完成响应：按 req_id 缓存结果，成功时创建 logic_group_snapshot
-    if ("summon_logic_group_monitor".equals(command) && data != null) {
+    boolean wholeResponse = "summon_logic_group_monitor".equals(command)
+        && wholeRuns.handleResponse(message);
+    if ("summon_logic_group_monitor".equals(command) && data != null && !wholeResponse) {
       String result = String.valueOf(data.getOrDefault("result", ""));
       if ("success".equals(result) || "failed".equals(result)) {
         if (message.getError() != null) {
@@ -467,13 +483,17 @@ public class MonitorCommandService {
 
   private CompletableFuture<ScreenQueueMessage> sendCommand(
       String command, String userData, Map<String, Object> data, String cachePrefix, Long groupId) {
+    return sendCommand(command, userData, data, cachePrefix, groupId, UUID.randomUUID().toString());
+  }
+
+  private CompletableFuture<ScreenQueueMessage> sendCommand(
+      String command, String userData, Map<String, Object> data, String cachePrefix, Long groupId, String reqId) {
     if (publisher == null) {
       CompletableFuture<ScreenQueueMessage> future = new CompletableFuture<>();
       future.completeExceptionally(new RuntimeException("Redis 队列未启用，无法发送命令"));
       return future;
     }
 
-    String reqId = UUID.randomUUID().toString();
     ScreenQueueMessage message = new ScreenQueueMessage(command, reqId, userData, data);
 
     CompletableFuture<ScreenQueueMessage> future = new CompletableFuture<>();

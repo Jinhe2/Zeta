@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { useStudentCabinetId } from './studentCabinet'
+import WholeExperimentSelector from './WholeExperimentSelector'
 import './TabletShell.css'
 import './PanoramaListPage.css'
 
@@ -16,7 +17,7 @@ export default function PanoramaListPage() {
   const [devices, setDevices] = useState([])
   const [selectedDeviceId, setSelectedDeviceId] = useState(location.state?.deviceId ?? null)
   const [groups, setGroups] = useState([])
-  const [mode, setMode] = useState('basic') // 基础逻辑 | 组合逻辑
+  const [mode, setMode] = useState(location.state?.mode ?? 'basic') // 基础逻辑 | 组合逻辑 | 整组实验
   const [groupsLoading, setGroupsLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -30,7 +31,9 @@ export default function PanoramaListPage() {
   const list = activeDevice?.protectionLogics ?? []
   const introText = hasDeviceSelection && !activeDevice
     ? `当前屏柜${cabinet?.name ? `「${cabinet.name}」` : ''}有多个装置配置了逻辑图，请先选择装置。`
-    : mode === 'group'
+    : mode === 'whole'
+      ? '按序列选择两个或三个基础逻辑，组成整组实验。'
+      : mode === 'group'
       ? '选择组合逻辑，学习多个基础逻辑的拼接与联动。'
       : fromCoach
         ? '选择保护逻辑，学习逻辑框图与动作原理。'
@@ -100,7 +103,7 @@ export default function PanoramaListPage() {
       return undefined
     }
     let cancelled = false
-    setMode('basic')
+    setMode(location.state?.deviceId === activeDevice.id ? (location.state?.mode ?? 'basic') : 'basic')
     setGroups([])
     setGroupsLoading(true)
     api.listKnowledgeLogicGroups(activeDevice.id)
@@ -201,8 +204,16 @@ export default function PanoramaListPage() {
                     组合逻辑
                     <span>{groups.length}</span>
                   </button>
+                  <button type="button" role="tab" aria-selected={mode === 'whole'}
+                    className={`panorama-list__tab${mode === 'whole' ? ' panorama-list__tab--active' : ''}`}
+                    onClick={() => setMode('whole')}>
+                    整组实验
+                  </button>
                 </div>
-                {mode === 'group' ? (
+                {mode === 'whole' ? (
+                  <WholeExperimentSelector key={activeDevice.id} deviceId={activeDevice.id}
+                    logics={list} navigationState={diagramState} />
+                ) : mode === 'group' ? (
                   groupsLoading ? (
                     <p className="panorama-list__status panorama-list__tab-content">加载组合逻辑中…</p>
                   ) : groups.length === 0 ? (

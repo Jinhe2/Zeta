@@ -126,6 +126,8 @@ export default function App() {
             <Route path="modes/exam" element={<StudentPlaceholderPage title="测评模式" description="模拟测评考核，功能开发中。" />} />
             <Route path="modes/panorama" element={<PanoramaListPage />} />
             <Route path="modes/panorama/groups/:groupId" element={<StudentLogicGroupDetailPage />} />
+            <Route path="modes/panorama/whole-experiments/:groupId"
+              element={<StudentLogicGroupDetailPage experimentType="whole" />} />
             <Route path="modes/panorama/:id" element={<StudentDiagramPage />} />
             <Route path="settings/password" element={<ChangePasswordPage />} />
             <Route path="profile" element={<ProfilePage />} />

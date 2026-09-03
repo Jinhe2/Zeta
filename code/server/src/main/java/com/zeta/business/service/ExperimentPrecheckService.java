@@ -70,7 +70,7 @@ public class ExperimentPrecheckService {
         wiringRequirementService.resolveForGroup(groupId));
   }
 
-  private ExperimentPrecheckResponse runCheck(
+  public ExperimentPrecheckResponse runCheck(
       ResolvedSettingList settings,
       ResolvedSoftPressboardList pressboards,
       ResolvedHardPressboardList hardPressboards,

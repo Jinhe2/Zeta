@@ -196,7 +196,14 @@ export default function StudentDiagramPage() {
     () => new URLSearchParams(location.search).get('groupSnapshotId'),
     [location.search],
   )
-  const isGroupResultMode = Boolean(groupSnapshotId)
+  const wholeRunId = useMemo(
+    () => new URLSearchParams(location.search).get('wholeRunId'),
+    [location.search],
+  )
+  const isGroupResultMode = Boolean(groupSnapshotId || wholeRunId)
+  const getMemberResult = useCallback(() => wholeRunId
+    ? api.getWholeExperimentRunMember(wholeRunId, id)
+    : api.getLogicGroupSnapshotMember(groupSnapshotId, id), [wholeRunId, groupSnapshotId, id])
   const [groupMemberResult, setGroupMemberResult] = useState(null)
   const [detail, setDetail] = useState(null)
   const [snapshots, setSnapshots] = useState([])
@@ -237,7 +244,8 @@ export default function StudentDiagramPage() {
   const applyGroupMemberResult = useCallback((detailData, memberResult) => {
     const groupSections = memberResult?.status === 'failed' ? [] : (memberResult?.sections ?? [])
     const groupOutputNodeIds = (detailData?.config?.outputs ?? []).map((output) => output.id).filter(Boolean)
-    const syntheticSnapshotId = `group-${memberResult.groupSnapshotId}`
+    const syntheticSnapshotId = memberResult.wholeRunId
+      ? `whole-${memberResult.wholeRunId}` : `group-${memberResult.groupSnapshotId}`
     setGroupMemberResult(memberResult)
     setSnapshots([{
       id: syntheticSnapshotId,
@@ -261,7 +269,7 @@ export default function StudentDiagramPage() {
     Promise.all([
       api.getProtectionLogic(id),
       isGroupResultMode
-        ? api.getLogicGroupSnapshotMember(groupSnapshotId, id)
+        ? getMemberResult()
         : api.listSnapshotsByLogic(id),
     ])
       .then(([detailData, resultData]) => {
@@ -282,7 +290,7 @@ export default function StudentDiagramPage() {
       })
 
     return () => { cancelled = true }
-  }, [applyGroupMemberResult, groupSnapshotId, id, isGroupResultMode])
+  }, [applyGroupMemberResult, getMemberResult, id, isGroupResultMode])
 
   // 清理：组件卸载时停止心跳和轮询
   const clearMonitorTimers = useCallback(() => {
@@ -590,7 +598,7 @@ export default function StudentDiagramPage() {
     Promise.all([
       api.getProtectionLogic(id),
       isGroupResultMode
-        ? api.getLogicGroupSnapshotMember(groupSnapshotId, id)
+        ? getMemberResult()
         : api.listSnapshotsByLogic(id),
     ])
       .then(([detailData, resultData]) => {
@@ -604,7 +612,7 @@ export default function StudentDiagramPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [applyGroupMemberResult, groupSnapshotId, id, isGroupResultMode])
+  }, [applyGroupMemberResult, getMemberResult, id, isGroupResultMode])
 
   useEffect(() => {
     if (detail?.title) document.title = detail.title
@@ -729,7 +737,10 @@ export default function StudentDiagramPage() {
             className="tablet-shell__back"
             onClick={() => {
               const groupId = groupMemberResult?.groupId ?? location.state?.groupId
-              if (groupId != null) {
+              const wholeId = groupMemberResult?.wholeExperimentId ?? location.state?.wholeExperimentId
+              if (wholeId != null) {
+                navigate(`/student/modes/panorama/whole-experiments/${wholeId}`, { state: { ...listState, mode: 'whole' } })
+              } else if (groupId != null) {
                 navigate(`/student/modes/panorama/groups/${groupId}`, { state: listState })
               } else {
                 navigate('/student/modes/panorama', { state: listState })
@@ -918,7 +929,7 @@ export default function StudentDiagramPage() {
                     onClick={isGroupResultMode ? undefined : () => loadSnapshotSections(snap.id)}
                   >
                     <span className="diagram-page__history-time">
-                      {isGroupResultMode ? `组合记录 #${groupSnapshotId}` : formatSnapTime(snap.createdAt)}
+                      {wholeRunId ? `整组记录 #${wholeRunId}` : isGroupResultMode ? `组合记录 #${groupSnapshotId}` : formatSnapTime(snap.createdAt)}
                     </span>
                     <span className="diagram-page__history-transitions">{snap.totalTransitions} 次变位</span>
                     {!isGroupResultMode && (

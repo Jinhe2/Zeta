@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test:sampling": "node --test src/utils/samplingValidation.test.js",
     "test:setting": "node --test src/utils/settingCheck.test.js",
+    "test:whole": "node --test src/utils/wholeExperiment.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

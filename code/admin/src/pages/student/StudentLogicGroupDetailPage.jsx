@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { LogicGroupView } from '@zeta/diagram'
-import { api } from '../../api/client'
+import { api as baseApi } from '../../api/client'
+import { wholeExperimentApi } from '../../utils/wholeExperiment'
 import { useAuth } from '../../auth/AuthContext'
 import {
   buildExperimentPrecheckMismatchDialog,
@@ -21,6 +22,7 @@ const statusLabel = {
   starting: '正在启动…',
   watching: '实验监视中',
   stopping: '正在停止…',
+  response_timeout: '响应超时，设备状态待确认',
   completed: '实验完成',
   failed: '实验失败',
 }
@@ -66,8 +68,11 @@ function readPassed(value) {
   return null
 }
 
-export default function StudentLogicGroupDetailPage() {
+export default function StudentLogicGroupDetailPage({ experimentType = 'group' }) {
   const { groupId } = useParams()
+  const whole = experimentType === 'whole'
+  const label = whole ? '整组' : '组合'
+  const api = useMemo(() => whole ? wholeExperimentApi(baseApi, groupId) : baseApi, [whole, groupId])
   const navigate = useNavigate()
   const location = useLocation()
   const { logout } = useAuth()
@@ -96,12 +101,16 @@ export default function StudentLogicGroupDetailPage() {
 
   const fromCoach = location.state?.from === 'coach'
   const listState = {
+    mode: whole ? 'whole' : 'group',
     ...(fromCoach ? { from: 'coach', section: 'logic' } : {}),
     ...(location.state?.deviceId ? { deviceId: location.state.deviceId } : {}),
   }
 
   const load = useCallback(async () => {
     setLoading(true)
+    setMonitoring(false)
+    setMonitorStatus('')
+    startConfirmationInFlightRef.current = false
     setError(null)
     setSelectedSnapshotId(null)
     setMemberResults({})
@@ -109,7 +118,7 @@ export default function StudentLogicGroupDetailPage() {
     try {
       const [detailData, snapshotData] = await Promise.all([
         api.getKnowledgeLogicGroup(groupId),
-        api.listLogicGroupSnapshots(groupId).catch(() => []),
+        api.listLogicGroupSnapshots(groupId),
       ])
       setDetail(detailData)
       setSnapshots(snapshotData)
@@ -118,11 +127,11 @@ export default function StudentLogicGroupDetailPage() {
     } finally {
       setLoading(false)
     }
-  }, [groupId])
+  }, [api, groupId])
 
   const loadSnapshots = useCallback(async (selectLatest = false) => {
     try {
-      const snapshotData = await api.listLogicGroupSnapshots(groupId).catch(() => [])
+      const snapshotData = await api.listLogicGroupSnapshots(groupId)
       setSnapshots(snapshotData)
       if (selectLatest && snapshotData.length > 0) {
         const latest = snapshotData[0]
@@ -137,7 +146,7 @@ export default function StudentLogicGroupDetailPage() {
     } catch {
       // 忽略刷新失败
     }
-  }, [detail, groupId])
+  }, [api, detail, groupId])
 
   useEffect(() => {
     load()
@@ -157,17 +166,26 @@ export default function StudentLogicGroupDetailPage() {
   useEffect(() => {
     return () => {
       clearMonitorTimers()
-      if (taskUuidRef.current) {
-        api.endLogicGroupMonitor(taskUuidRef.current).catch(() => {})
+      const taskUuid = taskUuidRef.current
+      taskUuidRef.current = null
+      if (taskUuid) {
+        api.endLogicGroupMonitor(taskUuid).catch(() => {})
       }
     }
-  }, [clearMonitorTimers])
+  }, [api, clearMonitorTimers])
 
   const startResultPolling = useCallback((taskUuid) => {
     if (pollRef.current) clearInterval(pollRef.current)
     pollRef.current = setInterval(async () => {
       try {
         const result = await api.getMonitorTaskResult(taskUuid)
+        if (whole && result.result === 'pending') {
+          setMonitorStatus(result.status === 'RESPONSE_TIMEOUT' ? 'response_timeout'
+            : result.status === 'STOPPING' ? 'stopping' : 'watching')
+          setError(result.errorMessage || null)
+          return
+        }
+        if (whole) setError(null)
         clearInterval(pollRef.current)
         pollRef.current = null
         if (heartbeatRef.current) {
@@ -193,12 +211,27 @@ export default function StudentLogicGroupDetailPage() {
           setExperimentDialog({ open: true, title: '实验结果', message: '组合实验已结束' })
         }
         if (taskUuidRef.current === taskUuid) taskUuidRef.current = null
+        startConfirmationInFlightRef.current = false
         loadSnapshots(true)
       } catch {
         // 404 = 结果尚未返回，继续轮询
       }
     }, POLL_INTERVAL)
-  }, [detail, loadSnapshots])
+  }, [api, whole, detail, loadSnapshots])
+
+  // 刷新页面或从历史打开时，恢复仍未结束的整组监测，防止重复启动。
+  useEffect(() => {
+    if (!whole || loading || taskUuidRef.current) return
+    const active = snapshots.find((run) => ['STARTING', 'WATCHING', 'STOPPING', 'RESPONSE_TIMEOUT'].includes(run.status))
+    if (!active) return
+    taskUuidRef.current = active.taskUuid
+    setMonitoring(true)
+    setMonitorStatus(active.status === 'RESPONSE_TIMEOUT' ? 'response_timeout' : 'watching')
+    heartbeatRef.current = setInterval(() => {
+      api.sendLogicGroupMonitorHeartbeat(active.taskUuid).catch(() => {})
+    }, HEARTBEAT_INTERVAL)
+    startResultPolling(active.taskUuid)
+  }, [api, whole, loading, snapshots, startResultPolling])
 
   const startExperimentAfterConfirmation = useCallback(async () => {
     if (startConfirmationInFlightRef.current) return
@@ -218,18 +251,22 @@ export default function StudentLogicGroupDetailPage() {
         throw new Error('未返回 taskUuid')
       }
       taskUuidRef.current = taskUuid
-      setMonitorStatus('watching')
+      setMonitorStatus(response.status === 'RESPONSE_TIMEOUT' ? 'response_timeout' : 'watching')
+      if (whole && response.errorMessage) setError(response.errorMessage)
       heartbeatRef.current = setInterval(() => {
         api.sendLogicGroupMonitorHeartbeat(taskUuid).catch(() => {})
       }, HEARTBEAT_INTERVAL)
       startResultPolling(taskUuid)
+      if (whole) loadSnapshots()
     } catch (err) {
       startConfirmationInFlightRef.current = false
       setMonitoring(false)
       setMonitorStatus('')
       setError('启动组合实验失败: ' + err.message)
+      // HTTP 响应丢失不代表设备未启动，读取已持久化任务以恢复监测。
+      if (whole) loadSnapshots()
     }
-  }, [groupId, startResultPolling])
+  }, [api, whole, groupId, loadSnapshots, startResultPolling])
 
   const handleStartExperiment = useCallback(async () => {
     taskUuidRef.current = null
@@ -252,7 +289,7 @@ export default function StudentLogicGroupDetailPage() {
       setMonitorStatus('')
       setError('组合实验前基准校核失败: ' + err.message)
     }
-  }, [clearMonitorTimers, groupId])
+  }, [api, clearMonitorTimers, groupId])
 
   const handleStopExperiment = useCallback(async () => {
     const taskUuid = taskUuidRef.current
@@ -264,11 +301,12 @@ export default function StudentLogicGroupDetailPage() {
       startResultPolling(taskUuid)
     } catch (err) {
       setError('停止组合实验失败: ' + err.message)
-      setMonitoring(false)
-      setMonitorStatus('')
+      setMonitoring(whole)
+      setMonitorStatus(whole ? 'response_timeout' : '')
+      if (whole) startResultPolling(taskUuid)
     }
-    taskUuidRef.current = null
-  }, [clearMonitorTimers, startResultPolling])
+    if (!whole) taskUuidRef.current = null
+  }, [api, whole, clearMonitorTimers, startResultPolling])
 
   const handleOpenGuide = useCallback(async () => {
     setGuideLoading(true)
@@ -282,7 +320,7 @@ export default function StudentLogicGroupDetailPage() {
     } finally {
       setGuideLoading(false)
     }
-  }, [groupId])
+  }, [api, groupId])
 
   const closeGuide = useCallback(() => {
     setGuideOpen(false)
@@ -304,9 +342,10 @@ export default function StudentLogicGroupDetailPage() {
     }
   }
 
+  const displayedMembers = snapshots.find((run) => run.id === selectedSnapshotId)?.members ?? detail?.members
   const items = useMemo(
-    () => (detail?.members ?? []).map((m) => ({ id: String(m.logicDiagramId), name: m.title })),
-    [detail?.members],
+    () => (displayedMembers ?? []).map((m) => ({ id: String(m.logicDiagramId), name: m.title })),
+    [displayedMembers],
   )
 
   const nodeStates = useMemo(() => {
@@ -330,6 +369,10 @@ export default function StudentLogicGroupDetailPage() {
       return
     }
     const selectedSnapshot = snapshots.find((snapshot) => snapshot.id === selectedSnapshotId)
+    if (whole && selectedSnapshot?.resultStatus !== 'SNAPSHOT_READY') {
+      setError(selectedSnapshot?.errorMessage || '该实验暂无有效断面，请等待实验结束或检查监测结果')
+      return
+    }
     if (selectedSnapshot?.resultStatus === 'DEVICE_NOT_STARTED') {
       setError('该实验记录未生成断面数据，保护装置未启动')
       return
@@ -338,12 +381,13 @@ export default function StudentLogicGroupDetailPage() {
       setError('该实验记录的断面数据异常，无法查看')
       return
     }
-    navigate(`/student/modes/panorama/${logicDiagramId}?groupSnapshotId=${selectedSnapshotId}`, {
+    navigate(`/student/modes/panorama/${logicDiagramId}?${whole ? 'wholeRunId' : 'groupSnapshotId'}=${selectedSnapshotId}`, {
       state: {
         from: 'coach',
         section: 'logic',
         deviceId: detail?.iedDeviceId,
-        groupId: Number(groupId),
+        ...(whole ? { wholeExperimentId: Number(groupId), wholeRunId: selectedSnapshotId }
+          : { groupId: Number(groupId) }),
       },
     })
   }
@@ -363,7 +407,7 @@ export default function StudentLogicGroupDetailPage() {
             返回首页
           </button>
         </div>
-        <h1>{detail?.name || '组合逻辑'}</h1>
+        <h1>{detail?.name || `${label}实验`}</h1>
         <div className="tablet-shell__header-actions">
           <button
             type="button"
@@ -375,7 +419,10 @@ export default function StudentLogicGroupDetailPage() {
         </div>
       </header>
 
-      {error && <div className="diagram-page__error">{error}</div>}
+      {error && <div className="diagram-page__error">{whole ? error.replaceAll('组合', '整组') : error}</div>}
+      {whole && detail?.valid === false && <div className="diagram-page__error">
+        {detail.invalidReason}；可查看旧实验记录，开始新实验请返回重新选择。
+      </div>}
 
       <div className="diagram-page__body logic-group">
         {loading ? (
@@ -388,7 +435,7 @@ export default function StudentLogicGroupDetailPage() {
               <div className="diagram-canvas">
                 <div className="diagram-canvas__header">
                   <div>
-                    <span>组合逻辑框图</span>
+                    <span>{label}逻辑框图</span>
                     <span className="logic-group__hint">点击基础逻辑节点查看当前记录的节点断面</span>
                   </div>
                   <div className="logic-group__actions">
@@ -401,17 +448,17 @@ export default function StudentLogicGroupDetailPage() {
                       <>
                         <span className="logic-group__status">● {statusLabel[monitorStatus] || '监视中'}</span>
                         {monitorStatus !== 'checking' && (
-                          <button type="button" className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline diagram-canvas__trigger-btn--stop" onClick={handleStopExperiment}>
+                          <button type="button" disabled={monitorStatus === 'starting'} className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline diagram-canvas__trigger-btn--stop" onClick={handleStopExperiment}>
                             ■ 停止实验
                           </button>
                         )}
                       </>
                     ) : (
                       <>
-                        <button type="button" className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline" onClick={handleStartExperiment}>
+                        <button type="button" disabled={whole && detail?.valid === false} className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline" onClick={handleStartExperiment}>
                           ▶ 开始实验
                         </button>
-                        <button type="button" className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline" onClick={handleOpenGuide} disabled={guideLoading}>
+                        <button type="button" className="diagram-canvas__trigger-btn diagram-canvas__trigger-btn--inline" onClick={handleOpenGuide} disabled={guideLoading || (whole && detail?.valid === false)}>
                           {guideLoading ? '加载中…' : '试验引导'}
                         </button>
                       </>
@@ -432,11 +479,11 @@ export default function StudentLogicGroupDetailPage() {
             <aside className="diagram-page__sidebar">
               <section className="diagram-page__history">
                 <div className="diagram-page__history-header">
-                  <span>组合实验记录</span>
+                  <span>{label}实验记录</span>
                   <button
                     type="button"
                     className="diagram-page__history-trigger"
-                    disabled={monitoring}
+                    disabled={monitoring || (whole && detail?.valid === false)}
                     onClick={handleStartExperiment}
                   >
                     {monitoring ? '…' : '+ 新实验'}
@@ -456,7 +503,13 @@ export default function StudentLogicGroupDetailPage() {
                         {snap.createdAt ? new Date(snap.createdAt).toLocaleString() : `#${snap.id}`}
                       </span>
                       <span className="diagram-page__history-transitions">{snap.totalTransitions ?? 0} 次变位</span>
-                      {snap.resultStatus === 'DEVICE_NOT_STARTED' ? (
+                      {whole && snap.resultStatus === 'PENDING' ? (
+                        <span>{snap.status === 'RESPONSE_TIMEOUT' ? '响应超时，状态待确认' : '实验进行中'}</span>
+                      ) : whole && (snap.status === 'START_FAILED' || snap.status === 'FAILED') ? (
+                        <span title={snap.errorMessage} className="diagram-page__history-status--failed">
+                          {snap.status === 'START_FAILED' ? '启动失败' : '实验失败'}
+                        </span>
+                      ) : snap.resultStatus === 'DEVICE_NOT_STARTED' ? (
                         <span className="diagram-page__history-status diagram-page__history-status--failed">
                           装置未启动
                         </span>
@@ -492,7 +545,7 @@ export default function StudentLogicGroupDetailPage() {
               <h2 className="experiment-result-dialog__title">{experimentDialog.title}</h2>
             )}
             <p id="logic-group-result-message" className="experiment-result-dialog__message">
-              {experimentDialog.message}
+              {whole ? experimentDialog.message?.replaceAll('组合', '整组') : experimentDialog.message}
             </p>
             {experimentDialog.baselineItems?.length > 0 && (
               <section className="experiment-result-dialog__section">

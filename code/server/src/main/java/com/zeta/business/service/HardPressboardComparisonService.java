@@ -26,6 +26,7 @@ public class HardPressboardComparisonService {
   }
 
   public SummonResponse summonPreview(SettingListScopeType scopeType, Long scopeId) {
+    PressboardSelectionService.requireDeviceScope(scopeType);
     SettingListTargetService.Target target = targetService.require(scopeType, scopeId);
     List<HardPressboard> catalog = catalogService.list(target.getCabinetId());
     HardPressboardStatusClient.StatusResult summon =

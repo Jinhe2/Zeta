@@ -12,6 +12,7 @@ function displayValueType(valueType) {
 }
 
 export default function SettingListPage({ scopeType, basePath = '/admin/logic-learning', apiNamespace = 'admin' }) {
+  const isDevice = scopeType === 'IED_DEVICE'
   const params = useParams()
   const rawId = scopeType === 'IED_DEVICE'
     ? params.deviceId
@@ -28,9 +29,9 @@ export default function SettingListPage({ scopeType, basePath = '/admin/logic-le
 
   const applyData = useCallback((next) => {
     setData(next)
-    setItems((next.configuredItems || []).map((item, index) => ({ ...item, sortOrder: index })))
+    setItems(((isDevice ? next.configuredItems : next.effectiveItems) || []).map((item, index) => ({ ...item, sortOrder: index })))
     setDirty(false)
-  }, [])
+  }, [isDevice])
 
   const load = useCallback(async () => {
     if (!scopeId) return
@@ -108,14 +109,15 @@ export default function SettingListPage({ scopeType, basePath = '/admin/logic-le
     setError('')
     setMessage('')
     try {
-      const result = await api.saveSettingList(scopeType, scopeId, items.map((item, index) => ({
+      const result = isDevice ? await api.saveSettingList(scopeType, scopeId, items.map((item, index) => ({
         settingRef: item.settingRef,
         baselineValue: item.baselineValue,
         compareEnabled: item.compareEnabled !== false,
         sortOrder: index,
-      })), apiNamespace)
+      })), apiNamespace) : await api.saveSettingSelection(scopeType, scopeId,
+        items.filter((item) => item.compareEnabled).map((item) => item.settingRef), apiNamespace)
       applyData(result)
-      setMessage('定值清单已保存')
+      setMessage(isDevice ? '定值清单已保存' : '校验项目已保存')
     } catch (err) {
       setError(err.message || '保存定值清单失败')
     } finally {
@@ -146,7 +148,7 @@ export default function SettingListPage({ scopeType, basePath = '/admin/logic-le
     setError('')
     try {
       applyData(await api.clearSettingList(scopeType, scopeId, apiNamespace))
-      setMessage(scopeType !== 'IED_DEVICE' ? '独立清单已清空，当前自动使用装置级清单。' : '装置级清单已清空。')
+      setMessage('装置级清单已清空。')
     } catch (err) {
       setError(err.message || '清空定值清单失败')
     } finally {
@@ -191,7 +193,6 @@ export default function SettingListPage({ scopeType, basePath = '/admin/logic-le
 
   if (!rawId || Number.isNaN(scopeId)) return <Navigate to={basePath} replace />
   const disabled = Boolean(working)
-  const isFallback = (scopeType === 'LOGIC_DIAGRAM' || scopeType === 'LOGIC_GROUP') && data?.fallbackToDevice
   const comparedCount = items.filter((item) => item.compareEnabled !== false).length
 
   return (
@@ -199,21 +200,19 @@ export default function SettingListPage({ scopeType, basePath = '/admin/logic-le
       <div className="users-page__header">
         <div>
           <p className="users-page__breadcrumb"><Link to={basePath}>基准管理</Link><span> / </span><span>定值清单</span></p>
-          <h2 className="users-page__title">{data ? `${data.scopeName} — ${scopeType === 'IED_DEVICE' ? '装置定值清单' : '独立定值清单'}` : '定值清单'}</h2>
-          <p className="users-page__desc">定值项目集合由装置召唤或 Excel 导入生成，界面可直接修改定值。</p>
+          <h2 className="users-page__title">{data ? `${data.scopeName} — ${scopeType === 'IED_DEVICE' ? '装置定值清单' : '定值校验项目'}` : '定值清单'}</h2>
+          <p className="users-page__desc">{isDevice ? '定值项目集合由装置召唤或 Excel 导入生成，界面可直接修改定值。' : '定值统一来自装置清单，仅勾选本逻辑需要校验的项目；定值修改请前往装置层。'}</p>
         </div>
-        <div className="setting-list-page__toolbar">
+        {isDevice && <div className="setting-list-page__toolbar">
           <button type="button" onClick={summon} disabled={disabled}>{working === 'summon' ? '召唤中…' : '召唤当前定值'}</button>
           <button type="button" onClick={exportExcel} disabled={disabled}>{working === 'export' ? '导出中…' : '导出 Excel'}</button>
           <button type="button" onClick={() => fileRef.current?.click()} disabled={disabled}>{working === 'import' ? '导入中…' : '导入 Excel'}</button>
           <input ref={fileRef} type="file" accept=".xlsx" hidden onChange={importExcel} />
-        </div>
+        </div>}
       </div>
 
       {error && <div className="users-page__error">{error}</div>}
       {message && <div className="users-page__message">{message}</div>}
-      {isFallback && <div className="setting-list-page__fallback">当前未配置独立清单，实验时将使用装置级清单（{data.effectiveItems.length} 项）。召唤或导入并保存后将启用独立清单。</div>}
-      {!isFallback && scopeType !== 'IED_DEVICE' && data?.configuredItems.length > 0 && <div className="setting-list-page__active">当前使用独立清单。</div>}
 
       {loading ? <p className="users-page__loading">加载中…</p> : (
         <>
@@ -227,17 +226,17 @@ export default function SettingListPage({ scopeType, basePath = '/admin/logic-le
           </div>
           <div className="users-page__table-wrap">
             <table className="users-page__table setting-list-page__table">
-              <thead><tr><th>序号</th><th>定值名称</th><th>定值引用</th><th>类型</th><th>参与比对</th><th>定值</th><th>排序</th></tr></thead>
+              <thead><tr><th>序号</th><th>定值名称</th><th>定值引用</th><th>类型</th><th>参与比对</th><th>定值</th>{isDevice && <th>排序</th>}</tr></thead>
               <tbody>
-                {items.length === 0 ? <tr><td colSpan={7} className="users-page__empty-cell">当前层级暂无定值项目，请召唤装置定值或导入 Excel。</td></tr> : items.map((item, index) => (
+                {items.length === 0 ? <tr><td colSpan={isDevice ? 7 : 6} className="users-page__empty-cell">{isDevice ? '当前装置暂无定值项目，请召唤装置定值或导入 Excel。' : '装置尚未配置定值清单，请先在装置层维护。'}</td></tr> : items.map((item, index) => (
                   <tr key={item.settingRef}>
                     <td>{index + 1}</td><td>{item.settingName}</td><td className="setting-list-page__ref">{item.settingRef}</td><td>{displayValueType(item.valueType)}</td>
-                    <td className="setting-list-page__compare"><input type="checkbox" checked={item.compareEnabled !== false} onChange={(event) => updateCompareEnabled(index, event.target.checked)} aria-label={`${item.settingName}参与比对`} /></td>
-                    <td><input type="text" value={item.baselineValue ?? ''} onChange={(event) => updateValue(index, event.target.value)} aria-label={`${item.settingName}定值`} /></td>
-                    <td className="setting-list-page__sort">
+                    <td className="setting-list-page__compare"><input type="checkbox" disabled={disabled} checked={item.compareEnabled !== false} onChange={(event) => updateCompareEnabled(index, event.target.checked)} aria-label={`${item.settingName}参与比对`} /></td>
+                    <td>{isDevice ? <input type="text" value={item.baselineValue ?? ''} onChange={(event) => updateValue(index, event.target.value)} aria-label={`${item.settingName}定值`} /> : item.baselineValue}</td>
+                    {isDevice && <td className="setting-list-page__sort">
                       <button type="button" onClick={() => moveItem(index, -1)} disabled={index === 0} aria-label={`${item.settingName}上移`}>↑</button>
                       <button type="button" onClick={() => moveItem(index, 1)} disabled={index === items.length - 1} aria-label={`${item.settingName}下移`}>↓</button>
-                    </td>
+                    </td>}
                   </tr>
                 ))}
               </tbody>
@@ -247,8 +246,8 @@ export default function SettingListPage({ scopeType, basePath = '/admin/logic-le
       )}
 
       <div className="setting-list-page__actions">
-        <button type="button" className="setting-list-page__save" onClick={save} disabled={disabled || !dirty}>{working === 'save' ? '保存中…' : '保存清单'}</button>
-        <button type="button" className="setting-list-page__clear" onClick={clear} disabled={disabled || !data?.configuredItems.length}>清空当前层级</button>
+        <button type="button" className="setting-list-page__save" onClick={save} disabled={disabled || !dirty}>{working === 'save' ? '保存中…' : isDevice ? '保存清单' : '保存校验项目'}</button>
+        {isDevice && <button type="button" className="setting-list-page__clear" onClick={clear} disabled={disabled || !data?.configuredItems.length}>清空装置清单</button>}
       </div>
     </div>
   )

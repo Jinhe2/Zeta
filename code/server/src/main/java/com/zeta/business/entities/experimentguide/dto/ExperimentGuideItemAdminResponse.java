@@ -10,6 +10,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ExperimentGuideItemAdminResponse {
 
+  private boolean showInWholeExperiment;
+
   private Long id;
   private SettingListScopeType scopeType;
   private Long scopeId;

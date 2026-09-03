@@ -1,6 +1,11 @@
 package com.zeta.business.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import com.zeta.business.entities.settinglist.*;
+import com.zeta.business.entities.settinglist.dto.SettingListResponse;
+import com.zeta.integration.mms.MmsSettingClient;
+import java.util.Arrays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -26,15 +31,19 @@ import org.springframework.web.server.ResponseStatusException;
 class SettingListServiceTest {
   private SettingListItemRepository repository;
   private SettingCatalogService catalogService;
+  private SettingListTargetService targetService;
+  private LogicSettingSelectionRepository selections;
   private SettingListService service;
   private AtomicReference<List<SettingListItem>> savedItems;
 
   @BeforeEach
   void setUp() {
     repository = mock(SettingListItemRepository.class);
-    SettingListTargetService targetService = mock(SettingListTargetService.class);
+    targetService = mock(SettingListTargetService.class);
+    selections = mock(LogicSettingSelectionRepository.class);
     catalogService = mock(SettingCatalogService.class);
-    service = new SettingListService(repository, targetService, catalogService);
+    service = new SettingListService(repository, targetService, catalogService,
+        selections);
     savedItems = new AtomicReference<>();
 
     when(targetService.require(SettingListScopeType.IED_DEVICE, 12L))
@@ -91,6 +100,94 @@ class SettingListServiceTest {
     SettingListItemResponse response = SettingListItemResponse.from(item);
 
     assertEquals("FLOAT", response.getValueType());
+  }
+
+  @Test
+  void 逻辑读取装置数值且勾选相互独立() {
+    SettingListItem device = deviceItem("定值A", "3", false);
+    when(repository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(SettingListScopeType.IED_DEVICE, 12L))
+        .thenReturn(Collections.singletonList(device));
+    for (SettingListScopeType type : Arrays.asList(SettingListScopeType.LOGIC_DIAGRAM, SettingListScopeType.LOGIC_GROUP)) {
+      configureLogic(type, 20L);
+      when(selections.findByScopeTypeAndScopeId(type, 20L))
+          .thenReturn(Collections.singletonList(selection(type, 20L, "定值A")));
+      SettingListResponse response = service.get(type, 20L);
+      assertEquals(0, response.getConfiguredItems().size());
+      assertEquals(SettingListScopeType.IED_DEVICE, response.getEffectiveScopeType());
+      assertTrue(response.getEffectiveItems().get(0).isCompareEnabled());
+      assertEquals("3", response.getEffectiveItems().get(0).getBaselineValue());
+      assertFalse(device.getCompareEnabled());
+      verify(repository, never()).findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(type, 20L);
+    }
+    device.setBaselineValue("4");
+    assertEquals("4", service.resolveForLogic(20L).getItems().get(0).getBaselineValue());
+  }
+
+  @Test
+  void 未配置选择的逻辑展示全部项目但跳过校验且不召唤() {
+    configureLogic(SettingListScopeType.LOGIC_DIAGRAM, 20L);
+    when(repository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(SettingListScopeType.IED_DEVICE, 12L))
+        .thenReturn(Collections.singletonList(deviceItem("定值A", "3", true)));
+    assertFalse(service.get(SettingListScopeType.LOGIC_DIAGRAM, 20L).getEffectiveItems().get(0).isCompareEnabled());
+    MmsSettingClient mms = mock(MmsSettingClient.class);
+    SettingComparisonService comparison = new SettingComparisonService(service, targetService, catalogService, mms);
+    assertEquals("SKIPPED", comparison.checkForLogic(20L).getStatus());
+    verifyNoInteractions(mms);
+  }
+
+  @Test
+  void 选择接口支持空数组且拒绝外部引用() {
+    configureLogic(SettingListScopeType.LOGIC_GROUP, 20L);
+    service.saveSelection(SettingListScopeType.LOGIC_GROUP, 20L, Collections.emptyList());
+    verify(selections).deleteByScopeTypeAndScopeId(SettingListScopeType.LOGIC_GROUP, 20L);
+    verify(repository, never()).saveAll(any());
+    assertThrows(ResponseStatusException.class, () -> service.saveSelection(
+        SettingListScopeType.LOGIC_GROUP, 20L, Collections.singletonList("未知定值")));
+  }
+
+  @Test
+  void 逻辑作用域禁止旧清单操作() {
+    for (SettingListScopeType type : Arrays.asList(SettingListScopeType.LOGIC_DIAGRAM, SettingListScopeType.LOGIC_GROUP)) {
+      assertThrows(ResponseStatusException.class, () -> service.replace(type, 20L, Collections.emptyList()));
+      assertThrows(ResponseStatusException.class, () -> service.clear(type, 20L));
+      SettingListExcelService excel = new SettingListExcelService(service);
+      assertThrows(ResponseStatusException.class, () -> excel.exportWorkbook(type, 20L));
+      assertThrows(ResponseStatusException.class, () -> excel.importWorkbook(type, 20L, null));
+      SettingComparisonService comparison = new SettingComparisonService(service, targetService, catalogService, mock(MmsSettingClient.class));
+      assertThrows(ResponseStatusException.class, () -> comparison.summonPreview(type, 20L));
+    }
+    verifyNoInteractions(repository, selections);
+  }
+
+  @Test
+  void 装置替换只清理删除项目的选择() {
+    configureCatalog("定值A", "FLOAT");
+    LogicSettingSelection retained = selection(SettingListScopeType.LOGIC_DIAGRAM, 20L, "定值A");
+    LogicSettingSelection removed = selection(SettingListScopeType.LOGIC_DIAGRAM, 20L, "定值B");
+    when(targetService.logicScopeIdsForDevice(12L)).thenReturn(Collections.singletonMap(
+        SettingListScopeType.LOGIC_DIAGRAM, Collections.singletonList(20L)));
+    when(selections.findByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, Collections.singletonList(20L)))
+        .thenReturn(Arrays.asList(retained, removed));
+    service.replace(SettingListScopeType.IED_DEVICE, 12L, Collections.singletonList(request("定值A", "4")));
+    verify(selections).deleteAll(Collections.singletonList(removed));
+    verify(selections, never()).saveAll(any());
+  }
+
+  private void configureLogic(SettingListScopeType type, Long id) {
+    when(targetService.require(type, id)).thenReturn(new Target(type, id, "逻辑", 12L, "IED_A", 3L));
+  }
+
+  private SettingListItem deviceItem(String ref, String value, boolean compare) {
+    SettingListItem item = new SettingListItem();
+    item.setSettingRef(ref); item.setSettingName(ref); item.setSettingFc("SG");
+    item.setBaselineValue(value); item.setValueType("FLOAT"); item.setSortOrder(0); item.setCompareEnabled(compare);
+    return item;
+  }
+
+  private LogicSettingSelection selection(SettingListScopeType type, Long id, String ref) {
+    LogicSettingSelection item = new LogicSettingSelection();
+    item.setScopeType(type); item.setScopeId(id); item.setSettingRef(ref);
+    return item;
   }
 
   private void configureCatalog(String settingRef, String valueType) {

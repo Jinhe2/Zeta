@@ -60,6 +60,16 @@ public class SettingListTargetService {
         device.getCabinet().getId());
   }
 
+  @Transactional(value = "screenTransactionManager", readOnly = true)
+  public java.util.Map<SettingListScopeType, java.util.List<Long>> logicScopeIdsForDevice(Long deviceId) {
+    java.util.Map<SettingListScopeType, java.util.List<Long>> result = new java.util.EnumMap<>(SettingListScopeType.class);
+    result.put(SettingListScopeType.LOGIC_DIAGRAM, logicRepository.findByDeviceIdOrderByIdAsc(deviceId)
+        .stream().map(ProtectionLogic::getId).collect(java.util.stream.Collectors.toList()));
+    result.put(SettingListScopeType.LOGIC_GROUP, logicGroupRepository.findByIedDeviceIdOrderBySortOrderAscIdAsc(deviceId)
+        .stream().map(LogicGroup::getId).collect(java.util.stream.Collectors.toList()));
+    return result;
+  }
+
   @Getter
   @AllArgsConstructor
   public static class Target {

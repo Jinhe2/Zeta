@@ -137,15 +137,17 @@ public class KnowledgeStructureService {
     private List<ProtectionLogicBriefResponse> toProtectionLogicBriefs(List<ProtectionLogic> logics) {
         Map<Long, Integer> sortOrders = logicLearningConfigService.getSortOrders(
                 logics.stream().map(ProtectionLogic::getId).collect(Collectors.toList()));
+        Map<Long, Integer> sequences = logicLearningConfigService.getWholeExperimentSequences(
+                logics.stream().map(ProtectionLogic::getId).collect(Collectors.toList()));
         return logics.stream()
                 .sorted(Comparator
                         .comparingInt((ProtectionLogic logic) -> sortOrders.getOrDefault(logic.getId(), 0))
                         .thenComparing(ProtectionLogic::getId))
-                .map(logic -> toProtectionLogicBrief(logic, sortOrders.getOrDefault(logic.getId(), 0)))
+                .map(logic -> toProtectionLogicBrief(logic, sortOrders.getOrDefault(logic.getId(), 0), sequences.getOrDefault(logic.getId(), 1)))
                 .collect(Collectors.toList());
     }
 
-    private ProtectionLogicBriefResponse toProtectionLogicBrief(ProtectionLogic logic, int sortOrder) {
+    private ProtectionLogicBriefResponse toProtectionLogicBrief(ProtectionLogic logic, int sortOrder, int sequence) {
         return new ProtectionLogicBriefResponse(
                 logic.getId(),
                 logic.getDevice().getId(),
@@ -153,7 +155,7 @@ public class KnowledgeStructureService {
                 logic.getTitle(),
                 logic.getDescription(),
                 logic.getCategory(),
-                sortOrder);
+                sortOrder, sequence);
     }
 
     private Cabinet requireCabinet(Long id) {

@@ -27,4 +27,6 @@ public class CreateExperimentGuideItemRequest {
   private Integer sortOrder;
 
   private Boolean enabled = true;
+
+  private Boolean showInWholeExperiment;
 }

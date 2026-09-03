@@ -92,6 +92,9 @@ public class ExperimentGuideService {
         repository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(scopeType, scopeId),
         ExperimentGuideItem::getSortOrder));
     item.setEnabled(request.getEnabled() == null || request.getEnabled());
+    if (scopeType == SettingListScopeType.LOGIC_DIAGRAM) {
+      item.setShowInWholeExperiment(request.getShowInWholeExperiment() == null || request.getShowInWholeExperiment());
+    }
     item.setCreatedAt(Instant.now());
     return toAdminResponse(repository.save(item));
   }
@@ -113,6 +116,10 @@ public class ExperimentGuideService {
         ExperimentGuideItem::getId,
         item.getId()));
     item.setEnabled(request.getEnabled());
+    if (item.getScopeType() == SettingListScopeType.LOGIC_DIAGRAM
+        && request.getShowInWholeExperiment() != null) {
+      item.setShowInWholeExperiment(request.getShowInWholeExperiment());
+    }
     ExperimentGuideItem saved = repository.save(item);
     if (!Objects.equals(saved.getImageUrl(), previousImageUrl)) {
       mediaCleanupService.scheduleDeviceImageDeletion(previousImageUrl);
@@ -200,6 +207,7 @@ public class ExperimentGuideService {
 
   private ExperimentGuideItemAdminResponse toAdminResponse(ExperimentGuideItem item) {
     return new ExperimentGuideItemAdminResponse(
+        !Boolean.FALSE.equals(item.getShowInWholeExperiment()),
         item.getId(),
         item.getScopeType(),
         item.getScopeId(),
@@ -219,6 +227,7 @@ public class ExperimentGuideService {
             ? (settingItems == null ? Collections.emptyList() : settingItems)
             : null;
     return new ExperimentGuideItemStudentResponse(
+        !Boolean.FALSE.equals(item.getShowInWholeExperiment()),
         item.getId(),
         item.getType(),
         item.getTitle(),

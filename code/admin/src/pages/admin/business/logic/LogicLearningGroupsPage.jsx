@@ -268,13 +268,13 @@ export default function LogicLearningGroupsPage() {
                         编辑
                       </button>
                       <Link className="users-page__link" to={`/admin/logic-learning/groups/${group.id}/settings`}>
-                        独立定值清单
+                        定值校验项目
                       </Link>
                       <Link className="users-page__link" to={`/admin/logic-learning/groups/${group.id}/soft-pressboards`}>
-                        独立软压板
+                        软压板校验项目
                       </Link>
                       <Link className="users-page__link" to={`/admin/logic-learning/groups/${group.id}/hard-pressboards`}>
-                        独立硬压板
+                        硬压板校验项目
                       </Link>
                       <Link className="users-page__link" to={`/admin/logic-learning/groups/${group.id}/wiring`}>
                         试验仪接线

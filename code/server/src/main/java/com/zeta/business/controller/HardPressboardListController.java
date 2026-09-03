@@ -1,6 +1,7 @@
 package com.zeta.business.controller;
 
 import com.zeta.business.auth.AuthService;
+import com.zeta.business.entities.pressboardselection.PressboardSelectionSaveRequest;
 import com.zeta.business.entities.hardpressboardlist.HardPressboardDtos.*;
 import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.entities.user.UserRole;
@@ -83,6 +84,15 @@ public class HardPressboardListController {
       @RequestParam("file") MultipartFile file) {
     requireAdmin(authorization);
     return excelService.importWorkbook(scopeType, scopeId, file);
+  }
+
+  @PutMapping("/{scopeType}/{scopeId}/selection")
+  public ListResponse saveSelection(
+      @RequestHeader(value = "Authorization", required = false) String authorization,
+      @PathVariable SettingListScopeType scopeType, @PathVariable Long scopeId,
+      @Valid @RequestBody PressboardSelectionSaveRequest request) {
+    requireAdmin(authorization);
+    return listService.saveSelection(scopeType, scopeId, request.getPressboardRefs());
   }
 
   private void requireAdmin(String authorization) {

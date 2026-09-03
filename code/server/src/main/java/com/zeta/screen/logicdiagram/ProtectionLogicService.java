@@ -83,11 +83,13 @@ public class ProtectionLogicService {
     private List<ProtectionLogicSummaryResponse> toSummaries(List<ProtectionLogic> logics) {
         Map<Long, Integer> sortOrders = logicLearningConfigService.getSortOrders(
                 logics.stream().map(ProtectionLogic::getId).collect(Collectors.toList()));
+        Map<Long, Integer> sequences = logicLearningConfigService.getWholeExperimentSequences(
+                logics.stream().map(ProtectionLogic::getId).collect(Collectors.toList()));
         return logics.stream()
                 .sorted(Comparator
                         .comparingInt((ProtectionLogic logic) -> sortOrders.getOrDefault(logic.getId(), 0))
                         .thenComparing(ProtectionLogic::getId))
-                .map(logic -> toSummary(logic, sortOrders.getOrDefault(logic.getId(), 0)))
+                .map(logic -> toSummary(logic, sortOrders.getOrDefault(logic.getId(), 0), sequences.getOrDefault(logic.getId(), 1)))
                 .collect(Collectors.toList());
     }
 
@@ -195,7 +197,7 @@ public class ProtectionLogicService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "保护逻辑不存在"));
     }
 
-    private ProtectionLogicSummaryResponse toSummary(ProtectionLogic logic, int sortOrder) {
+    private ProtectionLogicSummaryResponse toSummary(ProtectionLogic logic, int sortOrder, int sequence) {
         ConfigDto config = parseConfig(logic.getConfigJson());
         return new ProtectionLogicSummaryResponse(
                 logic.getId(),
@@ -206,7 +208,7 @@ public class ProtectionLogicService {
                 sizeOf(config.getInputs()),
                 sizeOf(config.getGates()),
                 sizeOf(config.getOutputs()),
-                sortOrder);
+                sortOrder, sequence);
     }
 
     private ProtectionLogicDetailResponse toDetail(ProtectionLogic logic) {
@@ -225,7 +227,9 @@ public class ProtectionLogicService {
                 device != null ? device.getIedName() : null,
                 cabinetId,
                 cabinetName,
-                resolveIedOperationCognitionDeviceId(deviceId));
+                resolveIedOperationCognitionDeviceId(deviceId),
+                logicLearningConfigService.getWholeExperimentSequences(java.util.Collections.singleton(logic.getId()))
+                        .getOrDefault(logic.getId(), 1));
     }
 
     private Long resolveIedOperationCognitionDeviceId(Long screenDeviceId) {

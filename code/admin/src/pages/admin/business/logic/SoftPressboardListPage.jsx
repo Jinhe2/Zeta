@@ -6,6 +6,7 @@ import '../UsersPage.css'
 import './SettingListPage.css'
 
 export default function SoftPressboardListPage({ scopeType, basePath = '/admin/logic-learning', apiNamespace = 'admin' }) {
+  const isDevice = scopeType === 'IED_DEVICE'
   const params = useParams()
   const rawId = scopeType === 'IED_DEVICE'
     ? params.deviceId
@@ -22,9 +23,9 @@ export default function SoftPressboardListPage({ scopeType, basePath = '/admin/l
 
   const applyData = useCallback((next) => {
     setData(next)
-    setItems((next.configuredItems || []).map((item, index) => ({ ...item, sortOrder: index })))
+    setItems(((isDevice ? next.configuredItems : next.effectiveItems) || []).map((item, index) => ({ ...item, sortOrder: index })))
     setDirty(false)
-  }, [])
+  }, [isDevice])
 
   const load = useCallback(async () => {
     if (!scopeId) return
@@ -68,6 +69,14 @@ export default function SoftPressboardListPage({ scopeType, basePath = '/admin/l
     setMessage('')
   }
 
+  const updateSelection = (mode) => {
+    setItems((current) => current.map((item) => ({ ...item,
+      compareEnabled: mode === 'all' ? true : mode === 'none' ? false : item.compareEnabled === false,
+    })))
+    setDirty(true)
+    setMessage('')
+  }
+
   const moveItem = (index, direction) => {
     const target = index + direction
     if (target < 0 || target >= items.length) return
@@ -83,14 +92,15 @@ export default function SoftPressboardListPage({ scopeType, basePath = '/admin/l
   const save = async () => {
     setWorking('save'); setError(''); setMessage('')
     try {
-      const result = await api.saveSoftPressboardList(scopeType, scopeId, items.map((item, index) => ({
+      const result = isDevice ? await api.saveSoftPressboardList(scopeType, scopeId, items.map((item, index) => ({
         pressboardRef: item.pressboardRef,
         baselineValue: Boolean(item.baselineValue),
         compareEnabled: item.compareEnabled !== false,
         sortOrder: index,
-      })), apiNamespace)
+      })), apiNamespace) : await api.saveSoftPressboardSelection(scopeType, scopeId,
+        items.filter((item) => item.compareEnabled).map((item) => item.pressboardRef), apiNamespace)
       applyData(result)
-      setMessage('软压板基准清单已保存')
+      setMessage(isDevice ? '软压板基准清单已保存' : '软压板校验项目已保存')
     } catch (err) {
       setError(err.message || '保存软压板基准清单失败')
     } finally { setWorking('') }
@@ -114,7 +124,7 @@ export default function SoftPressboardListPage({ scopeType, basePath = '/admin/l
     setWorking('clear'); setError('')
     try {
       applyData(await api.clearSoftPressboardList(scopeType, scopeId, apiNamespace))
-      setMessage(scopeType !== 'IED_DEVICE' ? '独立清单已清空，当前自动使用装置级清单。' : '装置级清单已清空。')
+      setMessage('装置级清单已清空。')
     } catch (err) {
       setError(err.message || '清空软压板基准清单失败')
     } finally { setWorking('') }
@@ -150,45 +160,51 @@ export default function SoftPressboardListPage({ scopeType, basePath = '/admin/l
 
   if (!rawId || Number.isNaN(scopeId)) return <Navigate to={basePath} replace />
   const disabled = Boolean(working)
-  const isFallback = (scopeType === 'LOGIC_DIAGRAM' || scopeType === 'LOGIC_GROUP') && data?.fallbackToDevice
+  const comparedCount = items.filter((item) => item.compareEnabled !== false).length
 
   return (
     <div className="users-page setting-list-page">
       <div className="users-page__header">
         <div>
           <p className="users-page__breadcrumb"><Link to={basePath}>基准管理</Link><span> / </span><span>软压板基准清单</span></p>
-          <h2 className="users-page__title">{data ? `${data.scopeName} — ${scopeType === 'IED_DEVICE' ? '装置软压板基准清单' : '独立软压板基准清单'}` : '软压板基准清单'}</h2>
-          <p className="users-page__desc">软压板项目由装置召唤或 Excel 导入生成，召唤后确认并保存才会生效。</p>
+          <h2 className="users-page__title">{data ? `${data.scopeName} — ${scopeType === 'IED_DEVICE' ? '装置软压板基准清单' : '软压板校验项目'}` : '软压板基准清单'}</h2>
+          <p className="users-page__desc">{isDevice ? '软压板项目由装置召唤或 Excel 导入生成，召唤后确认并保存才会生效。' : '软压板基准统一来自装置清单，仅勾选本逻辑需要校验的项目。'}</p>
         </div>
-        <div className="setting-list-page__toolbar">
+        {isDevice && <div className="setting-list-page__toolbar">
           <button type="button" onClick={summon} disabled={disabled}>{working === 'summon' ? '召唤中…' : '召唤当前软压板'}</button>
           <button type="button" onClick={exportExcel} disabled={disabled}>{working === 'export' ? '导出中…' : '导出 Excel'}</button>
           <button type="button" onClick={() => fileRef.current?.click()} disabled={disabled}>{working === 'import' ? '导入中…' : '导入 Excel'}</button>
           <input ref={fileRef} type="file" accept=".xlsx" hidden onChange={importExcel} />
-        </div>
+        </div>}
       </div>
       {error && <div className="users-page__error">{error}</div>}
       {message && <div className="users-page__message">{message}</div>}
-      {isFallback && <div className="setting-list-page__fallback">当前未配置独立清单，实验时将使用装置级清单（{data.effectiveItems.length} 项）。召唤或导入并保存后将启用独立清单。</div>}
-      {!isFallback && scopeType !== 'IED_DEVICE' && data?.configuredItems.length > 0 && <div className="setting-list-page__active">当前使用独立清单。</div>}
+      {!loading && <div className="setting-list-page__selection-toolbar">
+        <span>已选择 {comparedCount} / {items.length} 项参与比对</span>
+        <div>
+          <button type="button" onClick={() => updateSelection('all')} disabled={disabled || comparedCount === items.length}>全选</button>
+          <button type="button" onClick={() => updateSelection('none')} disabled={disabled || comparedCount === 0}>全不选</button>
+          <button type="button" onClick={() => updateSelection('invert')} disabled={disabled || items.length === 0}>反选</button>
+        </div>
+      </div>}
       {loading ? <p className="users-page__loading">加载中…</p> : (
         <div className="users-page__table-wrap">
           <table className="users-page__table setting-list-page__table">
-            <thead><tr><th>序号</th><th>软压板名称</th><th>软压板引用</th><th>参与比对</th><th>基准状态</th><th>排序</th></tr></thead>
-            <tbody>{items.length === 0 ? <tr><td colSpan={6} className="users-page__empty-cell">当前层级暂无软压板项目，请召唤装置软压板或导入 Excel。</td></tr> : items.map((item, index) => (
+            <thead><tr><th>序号</th><th>软压板名称</th><th>软压板引用</th><th>参与比对</th><th>基准状态</th>{isDevice && <th>排序</th>}</tr></thead>
+            <tbody>{items.length === 0 ? <tr><td colSpan={isDevice ? 6 : 5} className="users-page__empty-cell">{isDevice ? '当前装置暂无软压板项目，请召唤或导入 Excel。' : '装置尚未配置软压板清单，请先在装置层维护。'}</td></tr> : items.map((item, index) => (
               <tr key={item.pressboardRef}>
                 <td>{index + 1}</td><td>{item.pressboardName}</td><td className="setting-list-page__ref">{item.pressboardRef}</td>
-                <td className="setting-list-page__compare"><input type="checkbox" checked={item.compareEnabled !== false} onChange={(event) => updateItem(index, { compareEnabled: event.target.checked })} aria-label={`${item.pressboardName}参与比对`} /></td>
-                <td><select value={item.baselineValue ? 'true' : 'false'} onChange={(event) => updateItem(index, { baselineValue: event.target.value === 'true' })} aria-label={`${item.pressboardName}基准状态`}><option value="true">投入</option><option value="false">退出</option></select></td>
-                <td className="setting-list-page__sort"><button type="button" onClick={() => moveItem(index, -1)} disabled={index === 0} aria-label={`${item.pressboardName}上移`}>↑</button><button type="button" onClick={() => moveItem(index, 1)} disabled={index === items.length - 1} aria-label={`${item.pressboardName}下移`}>↓</button></td>
+                <td className="setting-list-page__compare"><input type="checkbox" disabled={disabled} checked={item.compareEnabled !== false} onChange={(event) => updateItem(index, { compareEnabled: event.target.checked })} aria-label={`${item.pressboardName}参与比对`} /></td>
+                <td>{isDevice ? <select disabled={disabled} value={item.baselineValue ? 'true' : 'false'} onChange={(event) => updateItem(index, { baselineValue: event.target.value === 'true' })} aria-label={`${item.pressboardName}基准状态`}><option value="true">投入</option><option value="false">退出</option></select> : <span className={`pressboard-state ${item.baselineValue ? 'pressboard-state--on' : 'pressboard-state--off'}`}>{item.baselineValue ? '投入' : '退出'}</span>}</td>
+                {isDevice && <td className="setting-list-page__sort"><button type="button" onClick={() => moveItem(index, -1)} disabled={index === 0} aria-label={`${item.pressboardName}上移`}>↑</button><button type="button" onClick={() => moveItem(index, 1)} disabled={index === items.length - 1} aria-label={`${item.pressboardName}下移`}>↓</button></td>}
               </tr>
             ))}</tbody>
           </table>
         </div>
       )}
       <div className="setting-list-page__actions">
-        <button type="button" className="setting-list-page__save" onClick={save} disabled={disabled || !dirty}>{working === 'save' ? '保存中…' : '保存清单'}</button>
-        <button type="button" className="setting-list-page__clear" onClick={clear} disabled={disabled || !data?.configuredItems.length}>清空当前层级</button>
+        <button type="button" className="setting-list-page__save" onClick={save} disabled={disabled || !dirty}>{working === 'save' ? '保存中…' : isDevice ? '保存清单' : '保存校验项目'}</button>
+        {isDevice && <button type="button" className="setting-list-page__clear" onClick={clear} disabled={disabled || !data?.configuredItems.length}>清空装置清单</button>}
       </div>
     </div>
   )

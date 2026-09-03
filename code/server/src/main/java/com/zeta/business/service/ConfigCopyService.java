@@ -30,6 +30,9 @@ import com.zeta.business.entities.logicgroup.LogicGroupMemberRepository;
 import com.zeta.business.entities.logicgroup.LogicGroupRepository;
 import com.zeta.business.entities.samplingtest.*;
 import com.zeta.business.entities.settinglist.SettingListItem;
+import com.zeta.business.entities.pressboardselection.*;
+import com.zeta.business.entities.settinglist.LogicSettingSelection;
+import com.zeta.business.entities.settinglist.LogicSettingSelectionRepository;
 import com.zeta.business.entities.settinglist.SettingListItemRepository;
 import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.entities.softpressboardlist.SoftPressboardListItem;
@@ -87,6 +90,8 @@ public class ConfigCopyService {
   private final SamplingTestChannelRepository samplingChannelRepository;
   private final LearningResourceRepository resourceRepository;
   private final SettingListItemRepository settingItemRepository;
+  private final LogicSettingSelectionRepository selectionRepository;
+  private final LogicPressboardSelectionRepository pressboardSelectionRepository;
   private final SoftPressboardListItemRepository softPressboardItemRepository;
   private final HardPressboardListItemRepository hardPressboardItemRepository;
   private final WiringRequirementConfigRepository wiringConfigRepository;
@@ -122,6 +127,8 @@ public class ConfigCopyService {
       SamplingTestChannelRepository samplingChannelRepository,
       LearningResourceRepository resourceRepository,
       SettingListItemRepository settingItemRepository,
+      LogicSettingSelectionRepository selectionRepository,
+      LogicPressboardSelectionRepository pressboardSelectionRepository,
       SoftPressboardListItemRepository softPressboardItemRepository,
       HardPressboardListItemRepository hardPressboardItemRepository,
       WiringRequirementConfigRepository wiringConfigRepository,
@@ -155,6 +162,8 @@ public class ConfigCopyService {
     this.samplingChannelRepository = samplingChannelRepository;
     this.resourceRepository = resourceRepository;
     this.settingItemRepository = settingItemRepository;
+    this.selectionRepository = selectionRepository;
+    this.pressboardSelectionRepository = pressboardSelectionRepository;
     this.softPressboardItemRepository = softPressboardItemRepository;
     this.hardPressboardItemRepository = hardPressboardItemRepository;
     this.wiringConfigRepository = wiringConfigRepository;
@@ -634,12 +643,12 @@ public class ConfigCopyService {
   }
 
   private boolean hasBaselineConfigAtLogic(Long logicId) {
-    return !settingItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+    return !selectionRepository.findByScopeTypeAndScopeId(
         SettingListScopeType.LOGIC_DIAGRAM, logicId).isEmpty()
-        || !softPressboardItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
-        SettingListScopeType.LOGIC_DIAGRAM, logicId).isEmpty()
-        || !hardPressboardItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
-        SettingListScopeType.LOGIC_DIAGRAM, logicId).isEmpty()
+        || !pressboardSelectionRepository.findByPressboardKindAndScopeTypeAndScopeId(
+        PressboardKind.SOFT, SettingListScopeType.LOGIC_DIAGRAM, logicId).isEmpty()
+        || !pressboardSelectionRepository.findByPressboardKindAndScopeTypeAndScopeId(
+        PressboardKind.HARD, SettingListScopeType.LOGIC_DIAGRAM, logicId).isEmpty()
         || !wiringConfigRepository.findByScopeTypeAndScopeIdOrderByIdAsc(
         SettingListScopeType.LOGIC_DIAGRAM, logicId).isEmpty();
   }
@@ -948,6 +957,7 @@ public class ConfigCopyService {
       if (sourceConfig != null) {
         LogicLearningConfig target = new LogicLearningConfig();
         target.setLogicDiagramId(entry.getValue()); target.setSortOrder(sourceConfig.getSortOrder());
+        target.setWholeExperimentSequence(sourceConfig.getWholeExperimentSequence());
         logicConfigRepository.save(target);
       }
       for (LogicNodeCognitionItem source : logicItemRepository
@@ -977,6 +987,7 @@ public class ConfigCopyService {
         target.setSortOrder(source.getSortOrder());
         target.setEnabled(source.getEnabled());
         target.setCreatedAt(Instant.now());
+        target.setShowInWholeExperiment(source.getShowInWholeExperiment());
         experimentGuideItemRepository.save(target);
       }
       copied++;
@@ -1031,6 +1042,7 @@ public class ConfigCopyService {
       guide.setSortOrder(source.getSortOrder());
       guide.setEnabled(source.getEnabled());
       guide.setCreatedAt(Instant.now());
+      guide.setShowInWholeExperiment(source.getShowInWholeExperiment());
       experimentGuideItemRepository.save(guide);
     }
   }
@@ -1051,8 +1063,29 @@ public class ConfigCopyService {
   private int copySettingItems(TargetAnalysis target, Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
     int copied = 0;
     copied += copySettingItemsForScope(target, SettingListScopeType.IED_DEVICE, deviceIds);
-    copied += copySettingItemsForScope(target, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
-    copied += copySettingItemsForScope(target, SettingListScopeType.LOGIC_GROUP, groupIds);
+    copied += copySettingSelectionsForScope(target, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    copied += copySettingSelectionsForScope(target, SettingListScopeType.LOGIC_GROUP, groupIds);
+    return copied;
+  }
+
+  private int copySettingSelectionsForScope(TargetAnalysis target, SettingListScopeType type, Set<Long> sourceIds) {
+    if (sourceIds.isEmpty()) return 0;
+    int copied = 0;
+    for (LogicSettingSelection source : selectionRepository.findByScopeTypeAndScopeIdIn(type, sourceIds)) {
+      Long targetId = mapScopeId(target, type, source.getScopeId());
+      if (targetId == null) continue;
+      String ref = remapRef(target, type, source.getScopeId(), source.getSettingRef());
+      Long deviceId = targetService.require(type, targetId).getIedDeviceId();
+      boolean available = settingItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+          SettingListScopeType.IED_DEVICE, deviceId).stream().anyMatch(item -> item.getSettingRef().equals(ref));
+      if (!available) continue;
+      LogicSettingSelection item = new LogicSettingSelection();
+      item.setScopeType(type);
+      item.setScopeId(targetId);
+      item.setSettingRef(ref);
+      selectionRepository.save(item);
+      copied++;
+    }
     return copied;
   }
 
@@ -1078,11 +1111,47 @@ public class ConfigCopyService {
     return copied;
   }
 
+  private int copyPressboardSelections(TargetAnalysis target, PressboardKind kind,
+      SettingListScopeType type, Set<Long> sourceIds) {
+    if (sourceIds.isEmpty()) return 0;
+    int copied = 0;
+    for (LogicPressboardSelection source : pressboardSelectionRepository
+        .findByPressboardKindAndScopeTypeAndScopeIdIn(kind, type, sourceIds)) {
+      Long targetId = mapScopeId(target, type, source.getScopeId());
+      if (targetId == null) continue;
+      Long targetDeviceId = targetService.require(type, targetId).getIedDeviceId();
+      String mappedRef;
+      if (kind == PressboardKind.SOFT) {
+        mappedRef = remapRef(target, type, source.getScopeId(), source.getPressboardRef());
+        final String ref = mappedRef;
+        if (softPressboardItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+            SettingListScopeType.IED_DEVICE, targetDeviceId).stream().noneMatch(item -> item.getPressboardRef().equals(ref))) continue;
+      } else {
+        Long sourceDeviceId = targetService.require(type, source.getScopeId()).getIedDeviceId();
+        String name = hardPressboardItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+            SettingListScopeType.IED_DEVICE, sourceDeviceId).stream()
+            .filter(item -> item.getPressboardRef().equals(source.getPressboardRef()))
+            .map(HardPressboardListItem::getPressboardName).findFirst().orElse(null);
+        if (name == null) continue;
+        List<HardPressboardListItem> matches = hardPressboardItemRepository.findByScopeTypeAndScopeIdOrderBySortOrderAscIdAsc(
+            SettingListScopeType.IED_DEVICE, targetDeviceId).stream()
+            .filter(item -> name.equals(item.getPressboardName())).collect(Collectors.toList());
+        if (matches.size() != 1) continue;
+        mappedRef = matches.get(0).getPressboardRef();
+      }
+      LogicPressboardSelection item = new LogicPressboardSelection();
+      item.setPressboardKind(kind); item.setScopeType(type); item.setScopeId(targetId); item.setPressboardRef(mappedRef);
+      pressboardSelectionRepository.save(item);
+      copied++;
+    }
+    return copied;
+  }
+
   private int copySoftPressboardItems(TargetAnalysis target, Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
     int copied = 0;
     copied += copySoftPressboardItemsForScope(target, SettingListScopeType.IED_DEVICE, deviceIds);
-    copied += copySoftPressboardItemsForScope(target, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
-    copied += copySoftPressboardItemsForScope(target, SettingListScopeType.LOGIC_GROUP, groupIds);
+    copied += copyPressboardSelections(target, PressboardKind.SOFT, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    copied += copyPressboardSelections(target, PressboardKind.SOFT, SettingListScopeType.LOGIC_GROUP, groupIds);
     return copied;
   }
 
@@ -1109,8 +1178,8 @@ public class ConfigCopyService {
   private int copyHardPressboardItems(TargetAnalysis target, Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
     int copied = 0;
     copied += copyHardPressboardItemsForScope(target, SettingListScopeType.IED_DEVICE, deviceIds);
-    copied += copyHardPressboardItemsForScope(target, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
-    copied += copyHardPressboardItemsForScope(target, SettingListScopeType.LOGIC_GROUP, groupIds);
+    copied += copyPressboardSelections(target, PressboardKind.HARD, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    copied += copyPressboardSelections(target, PressboardKind.HARD, SettingListScopeType.LOGIC_GROUP, groupIds);
     return copied;
   }
 
@@ -1342,6 +1411,8 @@ public class ConfigCopyService {
     deleteHardPressboardItems(deviceIds, logicIds, groupIds);
     deleteWiringConfigs(deviceIds, logicIds, groupIds);
     settingItemRepository.flush();
+    selectionRepository.flush();
+    pressboardSelectionRepository.flush();
     softPressboardItemRepository.flush();
     hardPressboardItemRepository.flush();
     wiringConfigRepository.flush();
@@ -1349,20 +1420,20 @@ public class ConfigCopyService {
 
   private void deleteSettingItems(Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
     if (!deviceIds.isEmpty()) settingItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.IED_DEVICE, deviceIds);
-    if (!logicIds.isEmpty()) settingItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
-    if (!groupIds.isEmpty()) settingItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_GROUP, groupIds);
+    if (!logicIds.isEmpty()) selectionRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    if (!groupIds.isEmpty()) selectionRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_GROUP, groupIds);
   }
 
   private void deleteSoftPressboardItems(Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
     if (!deviceIds.isEmpty()) softPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.IED_DEVICE, deviceIds);
-    if (!logicIds.isEmpty()) softPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
-    if (!groupIds.isEmpty()) softPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_GROUP, groupIds);
+    if (!logicIds.isEmpty()) pressboardSelectionRepository.deleteByPressboardKindAndScopeTypeAndScopeIdIn(PressboardKind.SOFT, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    if (!groupIds.isEmpty()) pressboardSelectionRepository.deleteByPressboardKindAndScopeTypeAndScopeIdIn(PressboardKind.SOFT, SettingListScopeType.LOGIC_GROUP, groupIds);
   }
 
   private void deleteHardPressboardItems(Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
     if (!deviceIds.isEmpty()) hardPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.IED_DEVICE, deviceIds);
-    if (!logicIds.isEmpty()) hardPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_DIAGRAM, logicIds);
-    if (!groupIds.isEmpty()) hardPressboardItemRepository.deleteByScopeTypeAndScopeIdIn(SettingListScopeType.LOGIC_GROUP, groupIds);
+    if (!logicIds.isEmpty()) pressboardSelectionRepository.deleteByPressboardKindAndScopeTypeAndScopeIdIn(PressboardKind.HARD, SettingListScopeType.LOGIC_DIAGRAM, logicIds);
+    if (!groupIds.isEmpty()) pressboardSelectionRepository.deleteByPressboardKindAndScopeTypeAndScopeIdIn(PressboardKind.HARD, SettingListScopeType.LOGIC_GROUP, groupIds);
   }
 
   private void deleteWiringConfigs(Set<Long> deviceIds, Set<Long> logicIds, Set<Long> groupIds) {
@@ -1446,9 +1517,15 @@ public class ConfigCopyService {
 
   private int countBaselineScope(SettingListScopeType scopeType, Set<Long> scopeIds) {
     if (scopeIds.isEmpty()) return 0;
-    return settingItemRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size()
-        + softPressboardItemRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size()
-        + hardPressboardItemRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size()
+    return (scopeType == SettingListScopeType.IED_DEVICE
+        ? settingItemRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size()
+        : selectionRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size())
+        + (scopeType == SettingListScopeType.IED_DEVICE
+            ? softPressboardItemRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size()
+            : pressboardSelectionRepository.findByPressboardKindAndScopeTypeAndScopeIdIn(PressboardKind.SOFT, scopeType, scopeIds).size())
+        + (scopeType == SettingListScopeType.IED_DEVICE
+            ? hardPressboardItemRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size()
+            : pressboardSelectionRepository.findByPressboardKindAndScopeTypeAndScopeIdIn(PressboardKind.HARD, scopeType, scopeIds).size())
         + wiringConfigRepository.findByScopeTypeAndScopeIdIn(scopeType, scopeIds).size();
   }
 

@@ -17,63 +17,51 @@ public class SettingListService {
   private final SettingListItemRepository repository;
   private final SettingListTargetService targetService;
   private final SettingCatalogService catalogService;
+  private final LogicSettingSelectionRepository selectionRepository;
 
   public SettingListService(
       SettingListItemRepository repository,
       SettingListTargetService targetService,
-      SettingCatalogService catalogService) {
+      SettingCatalogService catalogService,
+      LogicSettingSelectionRepository selectionRepository) {
     this.repository = repository;
     this.targetService = targetService;
     this.catalogService = catalogService;
+    this.selectionRepository = selectionRepository;
   }
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
   public SettingListResponse get(SettingListScopeType scopeType, Long scopeId) {
     Target target = targetService.require(scopeType, scopeId);
-    List<SettingListItem> configured = find(scopeType, scopeId);
-    List<SettingListItem> effective = configured;
-    SettingListScopeType effectiveType = configured.isEmpty() ? null : scopeType;
-    Long effectiveId = configured.isEmpty() ? null : scopeId;
-    boolean fallback = false;
-    if ((scopeType == SettingListScopeType.LOGIC_DIAGRAM
-            || scopeType == SettingListScopeType.LOGIC_GROUP)
-        && configured.isEmpty()) {
-      effective = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId());
-      if (!effective.isEmpty()) {
-        effectiveType = SettingListScopeType.IED_DEVICE;
-        effectiveId = target.getIedDeviceId();
-        fallback = true;
-      }
-    }
-    return new SettingListResponse(
-        scopeType,
-        scopeId,
-        target.getScopeName(),
-        target.getIedDeviceId(),
-        target.getIedName(),
-        effectiveType,
-        effectiveId,
-        fallback,
-        responses(configured),
-        responses(effective));
+    boolean device = scopeType == SettingListScopeType.IED_DEVICE;
+    ResolvedSettingList resolved = device ? resolveForDevice(scopeId) : resolveForLogicScope(scopeType, scopeId);
+    return new SettingListResponse(scopeType, scopeId, target.getScopeName(),
+        target.getIedDeviceId(), target.getIedName(), resolved.getEffectiveScopeType(),
+        resolved.getEffectiveScopeId(), false,
+        device ? responses(resolved.getItems()) : Collections.emptyList(),
+        responses(resolved.getItems()));
   }
 
   @Transactional("businessTransactionManager")
   public SettingListResponse replace(
       SettingListScopeType scopeType, Long scopeId, List<SettingListSaveItemRequest> requests) {
+    requireDeviceScope(scopeType);
     Target target = targetService.require(scopeType, scopeId);
     Map<String, IedSettingItem> catalog = catalogService.mapByReference(target.getIedDeviceId());
     List<SettingListItem> replacements = validateAndBuild(scopeType, scopeId, requests, catalog);
     repository.deleteByScopeTypeAndScopeId(scopeType, scopeId);
     repository.flush();
     repository.saveAll(replacements);
+    removeMissingSelections(scopeId, replacements);
     repository.flush();
     return get(scopeType, scopeId);
   }
 
   @Transactional("businessTransactionManager")
   public SettingListResponse clear(SettingListScopeType scopeType, Long scopeId) {
+    requireDeviceScope(scopeType);
     targetService.require(scopeType, scopeId);
+    removeMissingSelections(scopeId, Collections.emptyList());
     repository.deleteByScopeTypeAndScopeId(scopeType, scopeId);
     repository.flush();
     return get(scopeType, scopeId);
@@ -92,30 +80,75 @@ public class SettingListService {
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
   public ResolvedSettingList resolveForLogic(Long logicDiagramId) {
-    Target target = targetService.require(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
-    List<SettingListItem> items = find(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
-    SettingListScopeType type = SettingListScopeType.LOGIC_DIAGRAM;
-    Long id = logicDiagramId;
-    if (items.isEmpty()) {
-      items = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId());
-      type = items.isEmpty() ? null : SettingListScopeType.IED_DEVICE;
-      id = items.isEmpty() ? null : target.getIedDeviceId();
-    }
-    return new ResolvedSettingList(target, type, id, items);
+    return resolveForLogicScope(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
   }
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
   public ResolvedSettingList resolveForGroup(Long groupId) {
-    Target target = targetService.require(SettingListScopeType.LOGIC_GROUP, groupId);
-    List<SettingListItem> items = find(SettingListScopeType.LOGIC_GROUP, groupId);
-    SettingListScopeType type = SettingListScopeType.LOGIC_GROUP;
-    Long id = groupId;
-    if (items.isEmpty()) {
-      items = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId());
-      type = items.isEmpty() ? null : SettingListScopeType.IED_DEVICE;
-      id = items.isEmpty() ? null : target.getIedDeviceId();
+    return resolveForLogicScope(SettingListScopeType.LOGIC_GROUP, groupId);
+  }
+
+  private ResolvedSettingList resolveForLogicScope(SettingListScopeType type, Long id) {
+    Target target = targetService.require(type, id);
+    Set<String> selected = selectionRepository.findByScopeTypeAndScopeId(type, id).stream()
+        .map(LogicSettingSelection::getSettingRef).collect(Collectors.toSet());
+    // 复制为非托管对象，避免逻辑勾选污染装置实体。
+    List<SettingListItem> items = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId()).stream()
+        .map(source -> {
+          SettingListItem item = new SettingListItem();
+          item.setSettingRef(source.getSettingRef());
+          item.setSettingFc(source.getSettingFc());
+          item.setSettingName(source.getSettingName());
+          item.setValueType(source.getValueType());
+          item.setBaselineValue(source.getBaselineValue());
+          item.setSortOrder(source.getSortOrder());
+          item.setCompareEnabled(selected.contains(source.getSettingRef()));
+          return item;
+        }).collect(Collectors.toList());
+    return new ResolvedSettingList(target, SettingListScopeType.IED_DEVICE, target.getIedDeviceId(), items);
+  }
+
+  @Transactional("businessTransactionManager")
+  public SettingListResponse saveSelection(SettingListScopeType type, Long id, List<String> refs) {
+    if (type != SettingListScopeType.LOGIC_DIAGRAM && type != SettingListScopeType.LOGIC_GROUP) {
+      throw badRequest("校验项目选择仅支持基础逻辑和组合逻辑");
     }
-    return new ResolvedSettingList(target, type, id, items);
+    Target target = targetService.require(type, id);
+    Set<String> available = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId()).stream()
+        .map(SettingListItem::getSettingRef).collect(Collectors.toSet());
+    if (refs == null || refs.stream().anyMatch(ref -> !available.contains(ref))) {
+      throw badRequest("校验项目必须属于当前装置定值清单，请刷新后重试");
+    }
+    List<LogicSettingSelection> selections = refs.stream().distinct().map(ref -> {
+      LogicSettingSelection item = new LogicSettingSelection();
+      item.setScopeType(type);
+      item.setScopeId(id);
+      item.setSettingRef(ref);
+      return item;
+    }).collect(Collectors.toList());
+    selectionRepository.deleteByScopeTypeAndScopeId(type, id);
+    selectionRepository.flush();
+    selectionRepository.saveAll(selections);
+    selectionRepository.flush();
+    return get(type, id);
+  }
+
+  private void removeMissingSelections(Long deviceId, List<SettingListItem> items) {
+    Set<String> refs = items.stream().map(SettingListItem::getSettingRef).collect(Collectors.toSet());
+    targetService.logicScopeIdsForDevice(deviceId).forEach((type, ids) -> {
+      if (!ids.isEmpty()) {
+        List<LogicSettingSelection> removed = selectionRepository.findByScopeTypeAndScopeIdIn(type, ids)
+            .stream().filter(item -> !refs.contains(item.getSettingRef())).collect(Collectors.toList());
+        selectionRepository.deleteAll(removed);
+      }
+    });
+  }
+
+  public static void requireDeviceScope(SettingListScopeType type) {
+    if (type != SettingListScopeType.IED_DEVICE) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+          "逻辑层仅支持查看装置定值和勾选校验项目，请在装置层维护定值清单");
+    }
   }
 
   private List<SettingListItem> find(SettingListScopeType type, Long id) {

@@ -1,6 +1,7 @@
 package com.zeta.business.controller;
 
 import com.zeta.business.auth.AuthService;
+import com.zeta.business.entities.pressboardselection.PressboardSelectionSaveRequest;
 import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.entities.softpressboardlist.SoftPressboardDtos.*;
 import com.zeta.business.entities.user.UserRole;
@@ -102,6 +103,16 @@ public class SoftPressboardListController {
       @RequestParam("file") MultipartFile file) {
     requireTeacherOrAdmin(authorization);
     return excelService.importWorkbook(scopeType, scopeId, file);
+  }
+
+  @PutMapping({"/api/admin/soft-pressboard-lists/{scopeType}/{scopeId}/selection",
+      "/api/teacher/soft-pressboard-lists/{scopeType}/{scopeId}/selection"})
+  public ListResponse saveSelection(
+      @RequestHeader(value = "Authorization", required = false) String authorization,
+      @PathVariable SettingListScopeType scopeType, @PathVariable Long scopeId,
+      @Valid @RequestBody PressboardSelectionSaveRequest request) {
+    requireTeacherOrAdmin(authorization);
+    return listService.saveSelection(scopeType, scopeId, request.getPressboardRefs());
   }
 
   private void requireTeacherOrAdmin(String authorization) {

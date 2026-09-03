@@ -17,6 +17,7 @@ const EMPTY_FORM = {
   content: '',
   sortOrder: '',
   enabled: true,
+  showInWholeExperiment: true,
 }
 
 const TYPE_LABELS = {
@@ -160,6 +161,7 @@ export default function ExperimentGuidePage({ scopeType }) {
       content: item.content || '',
       sortOrder: item.sortOrder,
       enabled: item.enabled,
+      showInWholeExperiment: item.showInWholeExperiment !== false,
     })
   }
 
@@ -275,6 +277,11 @@ export default function ExperimentGuidePage({ scopeType }) {
             />
             启用
           </label>
+          {scopeType === 'LOGIC_DIAGRAM' && <label className="users-page__checkbox">
+            <input type="checkbox" checked={form.showInWholeExperiment}
+              onChange={(e) => setForm({ ...form, showInWholeExperiment: e.target.checked })} />
+            在整组实验中显示
+          </label>}
           <div className="users-page__dialog-actions">
             <button type="button" className="users-page__btn" onClick={close}>取消</button>
             <button type="submit" className="users-page__btn users-page__btn--primary" disabled={busy}>
@@ -314,7 +321,7 @@ export default function ExperimentGuidePage({ scopeType }) {
             )}
           </p>
           <h2 className="users-page__title">{scopeName ? `${scopeName} — 实验引导` : '实验引导'}</h2>
-          <p className="users-page__desc">为学员在开始实验前提供按序浏览的引导内容；「定值整定」类型将展示该层级的定值清单表格。</p>
+          <p className="users-page__desc">为学员在开始实验前提供按序浏览的引导内容；「定值整定」类型将展示所属装置的完整定值清单表格。</p>
         </div>
         <button type="button" className="users-page__btn users-page__btn--primary" onClick={() => setShowCreate(true)}>
           新增引导项
@@ -336,6 +343,7 @@ export default function ExperimentGuidePage({ scopeType }) {
                 <th>描述摘要</th>
                 <th>排序</th>
                 <th>状态</th>
+                {scopeType === 'LOGIC_DIAGRAM' && <th>在整组实验中显示</th>}
                 <th>创建时间</th>
                 <th>操作</th>
               </tr>
@@ -343,7 +351,7 @@ export default function ExperimentGuidePage({ scopeType }) {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="users-page__empty-cell">暂无实验引导，点击右上角「新增引导项」创建。</td>
+                  <td colSpan={scopeType === 'LOGIC_DIAGRAM' ? 8 : 7} className="users-page__empty-cell">暂无实验引导，点击右上角「新增引导项」创建。</td>
                 </tr>
               ) : (
                 items.map((item) => (
@@ -357,6 +365,7 @@ export default function ExperimentGuidePage({ scopeType }) {
                     <td>{previewContent(item.content)}</td>
                     <td>{item.sortOrder}</td>
                     <td>{item.enabled ? '启用' : '停用'}</td>
+                    {scopeType === 'LOGIC_DIAGRAM' && <td>{item.showInWholeExperiment !== false ? '是' : '否'}</td>}
                     <td>{formatDate(item.createdAt)}</td>
                     <td className="users-page__actions">
                       <button type="button" className="users-page__link" onClick={() => openEdit(item)}>编辑</button>

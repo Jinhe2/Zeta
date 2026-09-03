@@ -318,6 +318,18 @@ export const api = {
     return request(`/api/knowledge/logic-groups/${groupId}`)
   },
 
+  saveLogicLearningConfigs(deviceId, items) {
+    return request(`/api/admin/logic-learning/logics/by-device/${deviceId}/configs`, {
+      method: 'PUT', body: JSON.stringify({ items }),
+    })
+  },
+
+  updateWholeExperimentSequence(logicDiagramId, wholeExperimentSequence) {
+    return request(`/api/admin/logic-learning/logics/${logicDiagramId}/whole-experiment-sequence`, {
+      method: 'PUT', body: JSON.stringify({ wholeExperimentSequence }),
+    })
+  },
+
   updateLogicLearningSortOrder(logicDiagramId, sortOrder) {
     return request(`/api/admin/logic-learning/logics/${logicDiagramId}/sort-order`, {
       method: 'PUT',
@@ -427,6 +439,12 @@ export const api = {
     return request(`/api/${namespace}/setting-lists/${scopeType}/${scopeId}`)
   },
 
+  saveSettingSelection(scopeType, scopeId, settingRefs, namespace = 'admin') {
+    return request(`/api/${namespace}/setting-lists/${scopeType}/${scopeId}/selection`, {
+      method: 'PUT', body: JSON.stringify({ settingRefs }),
+    })
+  },
+
   saveSettingList(scopeType, scopeId, items, namespace = 'admin') {
     return request(`/api/${namespace}/setting-lists/${scopeType}/${scopeId}`, {
       method: 'PUT',
@@ -463,6 +481,12 @@ export const api = {
     return request(`/api/${namespace}/soft-pressboard-lists/${scopeType}/${scopeId}`)
   },
 
+  saveSoftPressboardSelection(scopeType, scopeId, pressboardRefs, namespace = 'admin') {
+    return request(`/api/${namespace}/soft-pressboard-lists/${scopeType}/${scopeId}/selection`, {
+      method: 'PUT', body: JSON.stringify({ pressboardRefs }),
+    })
+  },
+
   saveSoftPressboardList(scopeType, scopeId, items, namespace = 'admin') {
     return request(`/api/${namespace}/soft-pressboard-lists/${scopeType}/${scopeId}`, {
       method: 'PUT',
@@ -490,6 +514,12 @@ export const api = {
 
   getHardPressboardList(scopeType, scopeId) {
     return request(`/api/admin/hard-pressboard-lists/${scopeType}/${scopeId}`)
+  },
+
+  saveHardPressboardSelection(scopeType, scopeId, pressboardRefs) {
+    return request(`/api/admin/hard-pressboard-lists/${scopeType}/${scopeId}/selection`, {
+      method: 'PUT', body: JSON.stringify({ pressboardRefs }),
+    })
   },
 
   saveHardPressboardList(scopeType, scopeId, items) {

@@ -10,6 +10,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ExperimentGuideItemStudentResponse {
 
+  private boolean showInWholeExperiment;
+
   private Long id;
   private ExperimentGuideType type;
   private String title;

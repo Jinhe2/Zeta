@@ -48,6 +48,24 @@ public class LogicLearningConfigController {
     this.authService = authService;
   }
 
+  @PutMapping("/by-device/{deviceId}/configs")
+  public java.util.List<UpdateLogicLearningConfigsRequest.Item> updateConfigs(
+      @RequestHeader(value = "Authorization", required = false) String authorization,
+      @PathVariable Long deviceId, @Valid @RequestBody UpdateLogicLearningConfigsRequest request) {
+    authService.requireRole(authorization, UserRole.ADMIN);
+    return configService.updateConfigs(deviceId, request.getItems());
+  }
+
+  @PutMapping("/{logicDiagramId}/whole-experiment-sequence")
+  public Map<String, Integer> updateWholeExperimentSequence(
+      @RequestHeader(value = "Authorization", required = false) String authorization,
+      @PathVariable Long logicDiagramId,
+      @Valid @RequestBody UpdateWholeExperimentSequenceRequest request) {
+    authService.requireRole(authorization, UserRole.ADMIN);
+    int sequence = configService.updateWholeExperimentSequence(logicDiagramId, request.getWholeExperimentSequence());
+    return Collections.singletonMap("wholeExperimentSequence", sequence);
+  }
+
   @PutMapping("/{logicDiagramId}/sort-order")
   public Map<String, Integer> updateSortOrder(
       @RequestHeader(value = "Authorization", required = false) String authorization,

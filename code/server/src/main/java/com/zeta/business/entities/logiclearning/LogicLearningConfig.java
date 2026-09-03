@@ -22,4 +22,7 @@ public class LogicLearningConfig {
 
   @Column(name = "sort_order", nullable = false)
   private Integer sortOrder = 0;
+
+  @Column(name = "whole_experiment_sequence", nullable = false, columnDefinition = "INT NOT NULL DEFAULT 1")
+  private Integer wholeExperimentSequence = 1;
 }

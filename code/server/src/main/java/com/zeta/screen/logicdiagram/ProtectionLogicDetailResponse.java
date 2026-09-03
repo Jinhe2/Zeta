@@ -19,4 +19,5 @@ public class ProtectionLogicDetailResponse {
     private Long screenCabinetId;
     private String screenCabinetName;
     private Long cognitionDeviceId;
+    private int wholeExperimentSequence;
 }

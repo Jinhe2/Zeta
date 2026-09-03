@@ -14,4 +14,5 @@ public class ProtectionLogicBriefResponse {
     private String description;
     private String category;
     private int sortOrder;
+    private int wholeExperimentSequence;
 }

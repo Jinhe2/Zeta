@@ -56,6 +56,9 @@ public class ExperimentGuideItem {
   @Column(nullable = false)
   private Boolean enabled = true;
 
+  @Column(name = "show_in_whole_experiment", nullable = false, columnDefinition = "TINYINT(1) NOT NULL DEFAULT 1")
+  private Boolean showInWholeExperiment = true;
+
   @Column(
       name = "created_at",
       nullable = false,

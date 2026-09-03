@@ -37,7 +37,7 @@ function CabinetListPage() {
   return (
     <div className="users-page">
       <h2 className="users-page__title">基准管理</h2>
-      <p className="users-page__desc">选择屏柜与装置，维护装置、基础逻辑或组合逻辑的定值清单和软压板基准清单。</p>
+      <p className="users-page__desc">选择屏柜与装置，维护装置定值清单、各逻辑的定值校验项目和软压板基准清单。</p>
       {error && <div className="users-page__error">{error}</div>}
       {loading ? <p className="users-page__loading">加载中…</p> : (
         <div className="users-page__table-wrap">
@@ -95,7 +95,7 @@ function CabinetDevicePage({ cabinetId }) {
         <div>
           <p className="users-page__breadcrumb"><Link to={BASE_PATH}>基准管理</Link><span> / </span><span>{cabinet?.name || '装置列表'}</span></p>
           <h2 className="users-page__title">{cabinet ? `${cabinet.name} — 装置` : '装置'}</h2>
-          <p className="users-page__desc">装置级基准会作为基础逻辑和组合逻辑的默认基准。</p>
+          <p className="users-page__desc">基础逻辑和组合逻辑统一使用装置定值，分别选择需要校验的项目。</p>
         </div>
       </div>
       {error && <div className="users-page__error">{error}</div>}
@@ -166,13 +166,13 @@ function DeviceBaselinePage({ deviceId }) {
             {device && <><span> / </span><Link to={`${BASE_PATH}/cabinets/${device.cabinetId}`}>{device.cabinetName}</Link><span> / </span><span>{device.name}</span></>}
           </p>
           <h2 className="users-page__title">{device ? `${device.name} — 基准清单` : '基准清单'}</h2>
-          <p className="users-page__desc">可配置装置级默认基准，也可为单个基础逻辑或组合逻辑配置独立基准。</p>
+          <p className="users-page__desc">定值在装置层统一维护，各逻辑单独勾选校验项目；软压板同样使用装置基准并独立勾选校验项目。</p>
         </div>
       </div>
       {error && <div className="users-page__error">{error}</div>}
       {loading ? <p className="users-page__loading">加载中…</p> : (
         <>
-          <Section title="装置级默认基准">
+          <Section title="装置级基准">
             <tr>
               <td>{device?.name || '当前装置'}</td>
               <td>装置级</td>
@@ -182,26 +182,26 @@ function DeviceBaselinePage({ deviceId }) {
               </td>
             </tr>
           </Section>
-          <Section title="基础逻辑独立基准" empty={logics.length === 0 ? '暂无基础逻辑' : ''}>
+          <Section title="基础逻辑校验配置" empty={logics.length === 0 ? '暂无基础逻辑' : ''}>
             {logics.map((logic) => (
               <tr key={logic.id}>
                 <td>{logic.title}</td>
                 <td>{logic.code || '—'}</td>
                 <td className="users-page__actions">
-                  <Link className="users-page__link" to={`${BASE_PATH}/logics/${logic.id}/settings`}>独立定值</Link>
-                  <Link className="users-page__link" to={`${BASE_PATH}/logics/${logic.id}/soft-pressboards`}>独立软压板</Link>
+                  <Link className="users-page__link" to={`${BASE_PATH}/logics/${logic.id}/settings`}>定值校验项目</Link>
+                  <Link className="users-page__link" to={`${BASE_PATH}/logics/${logic.id}/soft-pressboards`}>软压板校验项目</Link>
                 </td>
               </tr>
             ))}
           </Section>
-          <Section title="组合逻辑独立基准" empty={groups.length === 0 ? '暂无组合逻辑' : ''}>
+          <Section title="组合逻辑校验配置" empty={groups.length === 0 ? '暂无组合逻辑' : ''}>
             {groups.map((group) => (
               <tr key={group.id}>
                 <td>{group.name}</td>
                 <td>{group.memberCount} 个成员</td>
                 <td className="users-page__actions">
-                  <Link className="users-page__link" to={`${BASE_PATH}/groups/${group.id}/settings`}>独立定值</Link>
-                  <Link className="users-page__link" to={`${BASE_PATH}/groups/${group.id}/soft-pressboards`}>独立软压板</Link>
+                  <Link className="users-page__link" to={`${BASE_PATH}/groups/${group.id}/settings`}>定值校验项目</Link>
+                  <Link className="users-page__link" to={`${BASE_PATH}/groups/${group.id}/soft-pressboards`}>软压板校验项目</Link>
                 </td>
               </tr>
             ))}

@@ -125,6 +125,7 @@ public class SettingComparisonService {
 
   public SettingSummonResponse summonPreview(
       com.zeta.business.entities.settinglist.SettingListScopeType scopeType, Long scopeId) {
+    SettingListService.requireDeviceScope(scopeType);
     SettingListTargetService.Target target = targetService.require(scopeType, scopeId);
     List<IedSettingItem> catalog = catalogService.list(target.getIedDeviceId());
     SummonResult summon = mmsSettingClient.summon(target.getIedName());

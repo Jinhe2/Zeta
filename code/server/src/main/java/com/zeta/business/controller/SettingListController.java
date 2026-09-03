@@ -116,6 +116,18 @@ public class SettingListController {
     return excelService.importWorkbook(scopeType, scopeId, file);
   }
 
+  @PutMapping({
+      "/api/admin/setting-lists/{scopeType}/{scopeId}/selection",
+      "/api/teacher/setting-lists/{scopeType}/{scopeId}/selection"
+  })
+  public SettingListResponse saveSelection(
+      @RequestHeader(value = "Authorization", required = false) String authorization,
+      @PathVariable SettingListScopeType scopeType, @PathVariable Long scopeId,
+      @Valid @RequestBody SettingSelectionSaveRequest request) {
+    requireTeacherOrAdmin(authorization);
+    return settingListService.saveSelection(scopeType, scopeId, request.getSettingRefs());
+  }
+
   @PostMapping("/api/setting-lists/check")
   public SettingCheckResponse check(
       @RequestHeader(value = "Authorization", required = false) String authorization,

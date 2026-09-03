@@ -22,6 +22,7 @@ public class SettingListExcelService {
   }
 
   public byte[] exportWorkbook(SettingListScopeType scopeType, Long scopeId) {
+    SettingListService.requireDeviceScope(scopeType);
     SettingListResponse list = settingListService.get(scopeType, scopeId);
     try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
       Sheet sheet = workbook.createSheet("定值清单");
@@ -57,6 +58,7 @@ public class SettingListExcelService {
 
   public SettingListResponse importWorkbook(
       SettingListScopeType scopeType, Long scopeId, MultipartFile file) {
+    SettingListService.requireDeviceScope(scopeType);
     if (file == null || file.isEmpty()) throw badRequest("请选择需要导入的 Excel 文件");
     String filename = file.getOriginalFilename();
     if (filename == null || !filename.toLowerCase(Locale.ROOT).endsWith(".xlsx")) {

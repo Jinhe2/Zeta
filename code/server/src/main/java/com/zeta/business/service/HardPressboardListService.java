@@ -4,6 +4,7 @@ import com.zeta.business.entities.hardpressboardlist.*;
 import com.zeta.business.entities.hardpressboardlist.HardPressboardDtos.*;
 import com.zeta.business.entities.settinglist.SettingListScopeType;
 import com.zeta.business.service.SettingListTargetService.Target;
+import com.zeta.business.entities.pressboardselection.PressboardKind;
 import com.zeta.screen.hardpressboard.HardPressboard;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,42 +18,32 @@ public class HardPressboardListService {
   private final HardPressboardListItemRepository repository;
   private final SettingListTargetService targetService;
   private final HardPressboardCatalogService catalogService;
+  private final PressboardSelectionService selectionService;
 
   public HardPressboardListService(
       HardPressboardListItemRepository repository,
       SettingListTargetService targetService,
-      HardPressboardCatalogService catalogService) {
+      HardPressboardCatalogService catalogService, PressboardSelectionService selectionService) {
     this.repository = repository;
     this.targetService = targetService;
     this.catalogService = catalogService;
+    this.selectionService = selectionService;
   }
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
   public ListResponse get(SettingListScopeType scopeType, Long scopeId) {
     Target target = targetService.require(scopeType, scopeId);
-    List<HardPressboardListItem> configured = find(scopeType, scopeId);
-    List<HardPressboardListItem> effective = configured;
-    SettingListScopeType effectiveType = configured.isEmpty() ? null : scopeType;
-    Long effectiveId = configured.isEmpty() ? null : scopeId;
-    boolean fallback = false;
-    if ((scopeType == SettingListScopeType.LOGIC_DIAGRAM
-            || scopeType == SettingListScopeType.LOGIC_GROUP)
-        && configured.isEmpty()) {
-      effective = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId());
-      if (!effective.isEmpty()) {
-        effectiveType = SettingListScopeType.IED_DEVICE;
-        effectiveId = target.getIedDeviceId();
-        fallback = true;
-      }
-    }
-    return new ListResponse(
-        scopeType, scopeId, target.getScopeName(), target.getCabinetId(),
-        effectiveType, effectiveId, fallback, responses(configured), responses(effective));
+    boolean device = scopeType == SettingListScopeType.IED_DEVICE;
+    List<HardPressboardListItem> items = device ? find(scopeType, scopeId) : resolveForScope(scopeType, scopeId).getItems();
+    return new ListResponse(scopeType, scopeId, target.getScopeName(), target.getCabinetId(),
+        SettingListScopeType.IED_DEVICE, target.getIedDeviceId(), false,
+        device ? responses(items) : Collections.emptyList(), responses(items));
   }
 
   @Transactional("businessTransactionManager")
   public ListResponse replace(
       SettingListScopeType scopeType, Long scopeId, List<SaveItemRequest> requests) {
+    PressboardSelectionService.requireDeviceScope(scopeType);
     Target target = targetService.require(scopeType, scopeId);
     Map<String, HardPressboard> catalog =
         catalogService.mapById(target.getCabinetId());
@@ -60,13 +51,17 @@ public class HardPressboardListService {
     repository.deleteByScopeTypeAndScopeId(scopeType, scopeId);
     repository.flush();
     repository.saveAll(replacements);
+    selectionService.removeMissing(PressboardKind.HARD, scopeId,
+        replacements.stream().map(HardPressboardListItem::getPressboardRef).collect(Collectors.toSet()));
     repository.flush();
     return get(scopeType, scopeId);
   }
 
   @Transactional("businessTransactionManager")
   public ListResponse clear(SettingListScopeType scopeType, Long scopeId) {
+    PressboardSelectionService.requireDeviceScope(scopeType);
     targetService.require(scopeType, scopeId);
+    selectionService.removeMissing(PressboardKind.HARD, scopeId, Collections.emptySet());
     repository.deleteByScopeTypeAndScopeId(scopeType, scopeId);
     repository.flush();
     return get(scopeType, scopeId);
@@ -74,30 +69,38 @@ public class HardPressboardListService {
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
   public ResolvedHardPressboardList resolveForLogic(Long logicDiagramId) {
-    Target target = targetService.require(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
-    List<HardPressboardListItem> items = find(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
-    SettingListScopeType type = SettingListScopeType.LOGIC_DIAGRAM;
-    Long id = logicDiagramId;
-    if (items.isEmpty()) {
-      items = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId());
-      type = items.isEmpty() ? null : SettingListScopeType.IED_DEVICE;
-      id = items.isEmpty() ? null : target.getIedDeviceId();
-    }
-    return new ResolvedHardPressboardList(target, type, id, items);
+    return resolveForScope(SettingListScopeType.LOGIC_DIAGRAM, logicDiagramId);
   }
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
   public ResolvedHardPressboardList resolveForGroup(Long groupId) {
-    Target target = targetService.require(SettingListScopeType.LOGIC_GROUP, groupId);
-    List<HardPressboardListItem> items = find(SettingListScopeType.LOGIC_GROUP, groupId);
-    SettingListScopeType type = SettingListScopeType.LOGIC_GROUP;
-    Long id = groupId;
-    if (items.isEmpty()) {
-      items = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId());
-      type = items.isEmpty() ? null : SettingListScopeType.IED_DEVICE;
-      id = items.isEmpty() ? null : target.getIedDeviceId();
-    }
-    return new ResolvedHardPressboardList(target, type, id, items);
+    return resolveForScope(SettingListScopeType.LOGIC_GROUP, groupId);
+  }
+
+  private ResolvedHardPressboardList resolveForScope(SettingListScopeType type, Long id) {
+    Target target = targetService.require(type, id);
+    Set<String> selected = selectionService.selected(PressboardKind.HARD, type, id);
+    // 创建非托管视图，逻辑的勾选不得修改装置实体。
+    List<HardPressboardListItem> items = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId()).stream()
+        .map(source -> {
+          HardPressboardListItem item = new HardPressboardListItem();
+          item.setPressboardRef(source.getPressboardRef());
+          item.setPressboardName(source.getPressboardName());
+          item.setBaselineValue(source.getBaselineValue());
+          item.setSortOrder(source.getSortOrder());
+          item.setCompareEnabled(selected.contains(source.getPressboardRef()));
+          return item;
+        }).collect(Collectors.toList());
+    return new ResolvedHardPressboardList(target, SettingListScopeType.IED_DEVICE, target.getIedDeviceId(), items);
+  }
+
+  @Transactional("businessTransactionManager")
+  public ListResponse saveSelection(SettingListScopeType type, Long id, List<String> refs) {
+    Target target = targetService.require(type, id);
+    Set<String> available = find(SettingListScopeType.IED_DEVICE, target.getIedDeviceId()).stream()
+        .map(HardPressboardListItem::getPressboardRef).collect(Collectors.toSet());
+    selectionService.replace(PressboardKind.HARD, type, id, refs, available);
+    return get(type, id);
   }
 
   private List<HardPressboardListItem> find(SettingListScopeType type, Long id) {

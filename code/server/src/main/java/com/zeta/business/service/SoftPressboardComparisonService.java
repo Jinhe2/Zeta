@@ -27,6 +27,7 @@ public class SoftPressboardComparisonService {
   }
 
   public SummonResponse summonPreview(SettingListScopeType scopeType, Long scopeId) {
+    PressboardSelectionService.requireDeviceScope(scopeType);
     SettingListTargetService.Target target = targetService.require(scopeType, scopeId);
     List<IedSoftPressboardItem> catalog = catalogService.list(target.getIedDeviceId());
     IedSoftPressboardStatusClient.StatusResult summon =

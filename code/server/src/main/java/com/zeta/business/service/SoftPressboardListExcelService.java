@@ -25,6 +25,7 @@ public class SoftPressboardListExcelService {
   }
 
   public byte[] exportWorkbook(SettingListScopeType scopeType, Long scopeId) {
+    PressboardSelectionService.requireDeviceScope(scopeType);
     ListResponse list = listService.get(scopeType, scopeId);
     try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
       Sheet sheet = workbook.createSheet(SHEET_NAME);
@@ -59,6 +60,7 @@ public class SoftPressboardListExcelService {
 
   public ListResponse importWorkbook(
       SettingListScopeType scopeType, Long scopeId, MultipartFile file) {
+    PressboardSelectionService.requireDeviceScope(scopeType);
     if (file == null || file.isEmpty()) throw badRequest("请选择需要导入的 Excel 文件");
     String filename = file.getOriginalFilename();
     if (filename == null || !filename.toLowerCase(Locale.ROOT).endsWith(".xlsx")) {

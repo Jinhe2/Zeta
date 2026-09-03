@@ -25,7 +25,7 @@ import com.zeta.business.media.*;
 import com.zeta.business.storage.*;
 import com.zeta.screen.logicdiagram.ProtectionLogic;
 import com.zeta.screen.logicdiagram.ProtectionLogicRepository;
-import java.util.Collection;
+import java.util.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +57,73 @@ public class LogicLearningConfigService {
                 .collect(Collectors.toMap(
                         LogicLearningConfig::getLogicDiagramId,
                         LogicLearningConfig::getSortOrder));
+    }
+
+    @Transactional(value = "businessTransactionManager", readOnly = true)
+    public Map<Long, Integer> getWholeExperimentSequences(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+        return configRepository.findByLogicDiagramIdIn(ids).stream().collect(Collectors.toMap(
+                LogicLearningConfig::getLogicDiagramId,
+                config -> config.getWholeExperimentSequence() == null ? 1 : config.getWholeExperimentSequence()));
+    }
+
+    @Transactional("businessTransactionManager")
+    public List<UpdateLogicLearningConfigsRequest.Item> updateConfigs(
+            Long deviceId, List<UpdateLogicLearningConfigsRequest.Item> items) {
+        if (items == null || items.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请提交需要保存的逻辑配置");
+        }
+        List<Long> ids = protectionLogicRepository.findByDeviceIdOrderByIdAsc(deviceId).stream()
+                .map(ProtectionLogic::getId).collect(Collectors.toList());
+        Map<Long, LogicLearningConfig> configs = configRepository.findByLogicDiagramIdIn(ids).stream()
+                .collect(Collectors.toMap(LogicLearningConfig::getLogicDiagramId, config -> config));
+        Map<Long, Integer> finalOrders = new HashMap<>();
+        ids.forEach(id -> finalOrders.put(id, configs.containsKey(id) ? configs.get(id).getSortOrder() : 0));
+        Set<Long> submitted = new HashSet<>();
+        for (UpdateLogicLearningConfigsRequest.Item item : items) {
+            if (item == null || !finalOrders.containsKey(item.getLogicDiagramId()) || !submitted.add(item.getLogicDiagramId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "逻辑编号重复或不属于当前装置，请刷新后重试");
+            }
+            if (item.getSortOrder() == null || item.getWholeExperimentSequence() == null
+                    || item.getWholeExperimentSequence() < 1 || item.getWholeExperimentSequence() > 3) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请填写整数排序序号，并选择序列 1、2、3");
+            }
+            finalOrders.put(item.getLogicDiagramId(), item.getSortOrder());
+        }
+        for (UpdateLogicLearningConfigsRequest.Item item : items) {
+            LogicLearningConfig current = configs.get(item.getLogicDiagramId());
+            int previous = current == null ? 0 : current.getSortOrder();
+            if (previous != item.getSortOrder() && finalOrders.entrySet().stream().anyMatch(entry ->
+                    !entry.getKey().equals(item.getLogicDiagramId()) && entry.getValue().equals(item.getSortOrder()))) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "排序编号已存在，请更换编号");
+            }
+        }
+        List<LogicLearningConfig> updates = new ArrayList<>();
+        for (UpdateLogicLearningConfigsRequest.Item item : items) {
+            LogicLearningConfig config = configs.getOrDefault(item.getLogicDiagramId(), new LogicLearningConfig());
+            config.setLogicDiagramId(item.getLogicDiagramId());
+            config.setSortOrder(item.getSortOrder());
+            config.setWholeExperimentSequence(item.getWholeExperimentSequence());
+            updates.add(config);
+        }
+        configRepository.saveAll(updates);
+        configRepository.flush();
+        return items;
+    }
+
+    @Transactional("businessTransactionManager")
+    public int updateWholeExperimentSequence(Long logicDiagramId, int sequence) {
+        if (sequence < 1 || sequence > 3) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "整组试验序列只能为 1、2、3");
+        }
+        if (!protectionLogicRepository.existsById(logicDiagramId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "逻辑框图不存在");
+        }
+        LogicLearningConfig config = configRepository.findByLogicDiagramId(logicDiagramId)
+                .orElseGet(LogicLearningConfig::new);
+        config.setLogicDiagramId(logicDiagramId);
+        config.setWholeExperimentSequence(sequence);
+        return configRepository.save(config).getWholeExperimentSequence();
     }
 
     @Transactional("businessTransactionManager")

@@ -14,6 +14,8 @@ import MistakesPage from './pages/student/MistakesPage'
 import TasksPage from './pages/student/TasksPage'
 import ChangePasswordPage from './pages/student/ChangePasswordPage'
 import CoachModePage from './pages/student/CoachModePage'
+import VirtualCircuitDeviceListPage from './pages/student/VirtualCircuitDeviceListPage'
+import VirtualCircuitLearningPage from './pages/student/VirtualCircuitLearningPage'
 import CircuitLearningPage from './pages/student/CircuitLearningPage'
 import CircuitViewerPage from './pages/student/CircuitViewerPage'
 import CabinetCognitionPage from './pages/student/CabinetCognitionPage'
@@ -118,6 +120,8 @@ export default function App() {
             <Route index element={<StudentHomePage />} />
             <Route path="modes/coach" element={<CoachModePage />} />
             <Route path="modes/coach/cabinet" element={<CabinetCognitionPage />} />
+            <Route path="modes/coach/virtual-circuit" element={<VirtualCircuitDeviceListPage />} />
+            <Route path="modes/coach/virtual-circuit/:iedDeviceId" element={<VirtualCircuitLearningPage />} />
             <Route path="modes/coach/circuit" element={<CircuitLearningPage />} />
             <Route path="modes/coach/circuit/:category/:name" element={<CircuitViewerPage />} />
             <Route path="modes/coach/sampling" element={<SamplingTestPage />} />

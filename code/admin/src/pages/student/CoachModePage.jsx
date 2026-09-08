@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
+import { api } from '../../api/client'
+import { resolveStudentCabinetId, useStudentCabinetId } from './studentCabinet'
 import IedCommunicationStatus from '../../components/IedCommunicationStatus'
 import './TabletShell.css'
 import './CoachModePage.css'
+import './CoachVirtualCircuit.css'
 
 /* ── 各模块 SVG 图标 ── */
 
@@ -115,6 +119,20 @@ const COACH_ENTRIES = [
 export default function CoachModePage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
+  const selectedCabinetId = useStudentCabinetId()
+  const [virtualDevices, setVirtualDevices] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    api.getKnowledgeTree()
+      .then((tree) => {
+        const cabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
+        return cabinetId ? api.listVirtualCircuitDevices(cabinetId) : []
+      })
+      .then((devices) => { if (!cancelled) setVirtualDevices(devices || []) })
+      .catch(() => { if (!cancelled) setVirtualDevices([]) })
+    return () => { cancelled = true }
+  }, [selectedCabinetId])
 
   return (
     <div className="tablet-shell">
@@ -162,6 +180,13 @@ export default function CoachModePage() {
               </button>
             )
           })}
+          {virtualDevices.length > 0 && (
+            <button type="button" className="coach-mode__card coach-mode__card--virtual" onClick={() => navigate('/student/modes/coach/virtual-circuit')}>
+              <span className="coach-mode__card-icon"><IconCircuit /></span>
+              <span className="coach-mode__card-label">虚回路学习</span>
+              <span className="coach-mode__card-desc">查看装置间 GOOSE、SV 虚端子连接与实时链路状态</span>
+            </button>
+          )}
         </div>
       </main>
       <IedCommunicationStatus />

@@ -1,0 +1,138 @@
+.virtual-page {
+  isolation: isolate;
+  background: #08101c;
+}
+
+.virtual-page::before {
+  content: '';
+  position: absolute;
+  inset: -18px;
+  z-index: -2;
+  background: url('/zetabg.png') center / cover no-repeat;
+  filter: blur(8px);
+  transform: scale(1.03);
+}
+
+.virtual-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(rgba(6, 14, 24, 0.74), rgba(6, 14, 24, 0.88)),
+    radial-gradient(circle at 70% 20%, rgba(94, 179, 255, 0.14), transparent 36%);
+}
+
+.virtual-page__main {
+  height: calc(100vh - 79px);
+  padding: 14px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.virtual-page__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 11px 14px;
+  border: 1px solid rgba(142, 197, 248, 0.3);
+  border-radius: 14px;
+  background: rgba(8, 20, 35, 0.9);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.virtual-page__device-name { color: #f0f6fc; }
+
+.virtual-page__toolbar button {
+  padding: 8px 13px;
+  border: 1px solid rgba(142, 197, 248, 0.48);
+  border-radius: 8px;
+  background: rgba(94, 179, 255, 0.14);
+  color: #d7ecff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.virtual-page__toolbar button:disabled { opacity: 0.5; cursor: default; }
+.virtual-page__toolbar time { margin-left: auto; color: #93a9bc; font-size: 13px; }
+.virtual-page__legend { display: flex; align-items: center; gap: 12px; color: #b8c8d8; font-size: 13px; }
+.virtual-page__legend span { display: inline-flex; align-items: center; gap: 5px; }
+.virtual-page__legend i { width: 18px; height: 4px; border-radius: 4px; }
+.virtual-page__warning { margin: 0; padding: 7px 12px; border: 1px solid rgba(251, 146, 60, 0.28); border-radius: 8px; background: rgba(124, 45, 18, 0.45); color: #fed7aa; font-size: 13px; }
+
+.virtual-page__canvas {
+  position: relative;
+  flex: 1;
+  min-height: 420px;
+  overflow: hidden;
+  border: 1px solid rgba(142, 197, 248, 0.3);
+  border-radius: 16px;
+  background: rgba(5, 14, 25, 0.88);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+}
+
+.virtual-page__canvas .react-flow__controls button { background: #10243a; border-color: #29445f; fill: #cfe8ff; }
+.virtual-page__message { position: absolute; inset: 0; display: grid; place-items: center; color: #a9bfd2; }
+.virtual-page__message--error { color: #ff8a80; }
+
+.virtual-node {
+  width: 220px;
+  min-height: 116px;
+  display: grid;
+  place-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  border: 2px solid #4d9872;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #173b31, #102c25);
+  color: #e5fff2;
+  text-align: center;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42), inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.virtual-node--center {
+  width: 280px;
+  min-height: 300px;
+  border-color: #5e9bd3;
+  background: linear-gradient(145deg, #163b60, #102945);
+  color: #eef7ff;
+}
+
+.virtual-node__name { font-size: 16px; font-weight: 800; line-height: 1.35; }
+.virtual-node__code { margin-top: 7px; color: #a9bfd2; font-size: 13px; }
+.virtual-node__handle { width: auto !important; min-width: 42px; height: 27px !important; padding: 0 8px; border: 1px solid #d6a84c !important; border-radius: 4px !important; background: #4a3814 !important; color: #ffecb3; display: grid; place-items: center; font-size: 11px; cursor: pointer; }
+.virtual-node__handle.react-flow__handle-left { transform: translate(-100%, -50%); }
+.virtual-node__handle.react-flow__handle-right { transform: translate(100%, -50%); }
+.virtual-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 22px; background: rgba(1, 7, 14, 0.78); }
+.virtual-modal__panel { width: min(1180px, 96vw); max-height: 92vh; overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(142, 197, 248, 0.3); border-radius: 16px; background: #0b1726; color: #dce9f5; box-shadow: 0 26px 70px rgba(0, 0, 0, 0.6); }
+.virtual-modal__panel > header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #263d54; background: #0e2033; }
+.virtual-modal__panel h2, .virtual-modal__panel p { margin: 0; }
+.virtual-modal__panel header p { margin-top: 4px; color: #93a9bc; }
+.virtual-modal__panel header button { border: 0; background: none; color: #dce9f5; font-size: 28px; cursor: pointer; }
+.virtual-detail { overflow: auto; padding: 18px 20px 28px; }
+.virtual-detail h3 { color: #8ec5f8; }
+.virtual-detail__protocol > h4 { padding: 7px 10px; border: 1px solid rgba(142, 197, 248, 0.24); border-radius: 6px; background: rgba(94, 179, 255, 0.12); color: #b9dcfb; }
+.virtual-detail__block { margin: 12px 0 20px; padding: 14px; border: 1px solid #263d54; border-radius: 10px; background: rgba(15, 34, 54, 0.72); }
+.virtual-detail__meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: #a9bfd2; font-size: 13px; }
+.virtual-detail__meta strong { color: #fff; font-size: 15px; }
+.virtual-detail__state { margin-left: auto; padding: 4px 9px; border-radius: 999px; font-weight: 700; }
+.virtual-detail__state--red { background: rgba(220, 38, 38, 0.24); color: #fca5a5; }
+.virtual-detail__state--orange { background: rgba(245, 158, 11, 0.22); color: #fcd34d; }
+.virtual-detail__state--gray { background: rgba(148, 163, 184, 0.18); color: #cbd5e1; }
+.virtual-detail__state--green { background: rgba(34, 197, 94, 0.2); color: #86efac; }
+.virtual-detail__error { color: #fca5a5; }
+.virtual-detail table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 12px; }
+.virtual-detail th, .virtual-detail td { padding: 8px; border: 1px solid #294159; text-align: left; vertical-align: top; }
+.virtual-detail th { background: #122a42; color: #d9ecfb; }
+.virtual-detail td span, .virtual-detail td code { display: block; }
+.virtual-detail td code { margin-top: 3px; color: #9eb2c5; word-break: break-all; white-space: normal; }
+
+@media (max-width: 900px) {
+  .virtual-page__toolbar time { margin-left: 0; }
+  .virtual-page__legend { width: 100%; }
+  .virtual-page__main { padding: 10px; }
+  .virtual-modal { padding: 8px; }
+}

@@ -284,6 +284,21 @@ export const api = {
     return request(`/api/knowledge/devices/${deviceId}/protection-logics`)
   },
 
+  listVirtualCircuitDevices(cabinetId) {
+    return request(`/api/knowledge/cabinets/${cabinetId}/virtual-circuit-devices`)
+  },
+
+  getVirtualCircuitTopology(cabinetId, iedDeviceId) {
+    return request(`/api/knowledge/cabinets/${cabinetId}/virtual-circuits/${iedDeviceId}`)
+  },
+
+  triggerVirtualCircuitStatus(cabinetId, iedDeviceId) {
+    return request('/api/monitor/commands/virtual-circuit-status', {
+      method: 'POST',
+      body: JSON.stringify({ cabinetId, iedDeviceId }),
+    })
+  },
+
   listLogicGroups(deviceId) {
     return request(`/api/admin/logic-learning/devices/${deviceId}/logic-groups`)
   },

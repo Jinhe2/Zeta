@@ -40,14 +40,21 @@ public class DigitalSamplingTopologyService {
     Set<Long> channelIds = channels.stream().map(DigitalSamplingTestChannel::getSamplingSignalChannelId)
         .collect(Collectors.toSet());
     Map<Long, Snapshot> current = catalog.loadCurrentChannels(channelIds);
-    Map<String, Map<String, Object>> cabinetDevices = catalog.listDevices(item.getScreenCabinetId()).stream()
-        .collect(Collectors.toMap(row -> String.valueOf(row.get("iedName")), row -> row, (left, right) -> left,
-            LinkedHashMap::new));
+    Map<String, String> configuredDescriptions =
+        catalog.listConfiguredDescriptions(item.getScreenCabinetId());
 
     Map<Long, Map<String, Object>> groupedEdges = new LinkedHashMap<>();
     Set<String> peerNames = new LinkedHashSet<>();
+    Map<String, String> virtualDescriptions = new LinkedHashMap<>();
     for (DigitalSamplingTestChannel channel : channels) {
       Snapshot live = current.get(channel.getSamplingSignalChannelId());
+      if (live != null) {
+        rememberDescription(
+            virtualDescriptions, live.getSourceIedName(), live.getSourceIedDescription());
+        rememberDescription(
+            virtualDescriptions, String.valueOf(center.get("iedName")),
+            live.getReceiverIedDescription());
+      }
       boolean valid = matches(channel, live, item.getIedDeviceId());
       long associationId = channel.getSamplingSignalAssociationId();
       Map<String, Object> edge = groupedEdges.get(associationId);
@@ -76,18 +83,37 @@ public class DigitalSamplingTopologyService {
 
     List<Map<String, Object>> peers = new ArrayList<>();
     for (String peerName : peerNames) {
-      Map<String, Object> configured = cabinetDevices.get(peerName);
       Map<String, Object> peer = new LinkedHashMap<>();
       peer.put("iedName", peerName);
-      peer.put("displayName", configured == null ? peerName : configured.get("displayName"));
+      peer.put("displayName", displayName(
+          peerName, configuredDescriptions.get(peerName), virtualDescriptions.get(peerName)));
       peers.add(peer);
     }
+    String centerName = String.valueOf(center.get("iedName"));
+    center.put("displayName", displayName(
+        centerName, configuredDescriptions.get(centerName), virtualDescriptions.get(centerName)));
     Map<String, Object> result = new LinkedHashMap<>();
     result.put("itemId", itemId);
     result.put("center", center);
     result.put("peers", peers);
     result.put("edges", new ArrayList<>(groupedEdges.values()));
     return result;
+  }
+
+  String displayName(String iedName, String configuredDescription, String virtualDescription) {
+    if (configuredDescription != null && !configuredDescription.trim().isEmpty()) {
+      return configuredDescription;
+    }
+    if (virtualDescription != null && !virtualDescription.trim().isEmpty()) {
+      return virtualDescription;
+    }
+    return iedName;
+  }
+
+  void rememberDescription(Map<String, String> descriptions, String iedName, String description) {
+    if (iedName == null || iedName.trim().isEmpty()
+        || description == null || description.trim().isEmpty()) return;
+    descriptions.putIfAbsent(iedName, description);
   }
 
   private boolean matches(DigitalSamplingTestChannel saved, Snapshot current, Long itemDeviceId) {

@@ -39,6 +39,33 @@ class VirtualCircuitTopologyServiceTest {
         .containsEntry("targetPort", VirtualCircuitTopologyService.UNCONFIGURED_PORT);
   }
 
+  @Test
+  void resolvesDisplayNameByConfiguredDescriptionThenVirtualDescriptionThenIedName() {
+    VirtualCircuitTopologyService service =
+        new VirtualCircuitTopologyService(mock(DataSource.class), new ObjectMapper());
+
+    assertThat(service.displayName(
+        "IED-A", Collections.singletonList(device("IED-A", "装置表描述")), "虚端子表描述"))
+        .isEqualTo("装置表描述");
+    assertThat(service.displayName(
+        "IED-B", Collections.singletonList(device("IED-B", "")), "虚端子表描述"))
+        .isEqualTo("虚端子表描述");
+    assertThat(service.displayName("IED-C", Collections.emptyList(), null)).isEqualTo("IED-C");
+  }
+
+  @Test
+  void keepsFirstNonBlankVirtualDescription() {
+    VirtualCircuitTopologyService service =
+        new VirtualCircuitTopologyService(mock(DataSource.class), new ObjectMapper());
+    Map<String, String> descriptions = new LinkedHashMap<>();
+
+    service.rememberDescription(descriptions, "IED-A", "");
+    service.rememberDescription(descriptions, "IED-A", "第一条描述");
+    service.rememberDescription(descriptions, "IED-A", "第二条描述");
+
+    assertThat(descriptions).containsEntry("IED-A", "第一条描述");
+  }
+
   private Map<String, Object> block(
       Long id, String source, String sourcePort, String target, String targetPort) {
     Map<String, Object> block = new LinkedHashMap<>();
@@ -48,6 +75,15 @@ class VirtualCircuitTopologyServiceTest {
     block.put("sourcePorts", sourcePort == null ? Collections.emptyList() : Collections.singletonList(sourcePort));
     block.put("targetPorts", targetPort == null ? Collections.emptyList() : Collections.singletonList(targetPort));
     return block;
+  }
+
+  private Map<String, Object> device(String iedName, String description) {
+    Map<String, Object> device = new LinkedHashMap<>();
+    device.put("iedName", iedName);
+    device.put("description", description);
+    device.put("displayName", description == null || description.trim().isEmpty()
+        ? iedName : description);
+    return device;
   }
 
   @SuppressWarnings("unchecked")

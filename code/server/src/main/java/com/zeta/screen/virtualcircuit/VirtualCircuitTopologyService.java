@@ -46,10 +46,12 @@ public class VirtualCircuitTopologyService {
   public Map<String, Object> getTopology(Long cabinetId, Long iedDeviceId) {
     Map<String, Object> center = loadCenter(cabinetId, iedDeviceId);
     String centerName = String.valueOf(center.get("iedName"));
+    Map<String, String> virtualDescriptions = new LinkedHashMap<>();
 
     String blockSql =
-        "SELECT cb.id, cb.identity_key, cb.receiver_ied_name, cb.sort_order, cb.service_type, "
-            + "cb.source_ied_name, cb.source_ld_inst, cb.control_name, cb.control_description, "
+        "SELECT cb.id, cb.identity_key, cb.receiver_ied_name, cb.receiver_ied_desc, "
+            + "cb.sort_order, cb.service_type, cb.source_ied_name, cb.source_ied_desc, "
+            + "cb.source_ld_inst, cb.control_name, cb.control_description, "
             + "cb.control_reference, cb.dataset_name, cb.dataset_reference, cb.status, cb.error_message, "
             + "COALESCE(cb.manual_source_ports_json, cb.scd_source_ports_json) source_ports_json, "
             + "COALESCE(cb.manual_target_ports_json, cb.scd_target_ports_json) target_ports_json, "
@@ -66,10 +68,15 @@ public class VirtualCircuitTopologyService {
           Map<String, Object> block = new LinkedHashMap<>();
           block.put("id", rs.getLong("id"));
           block.put("identityKey", rs.getString("identity_key"));
-          block.put("receiverIedName", rs.getString("receiver_ied_name"));
+          String receiverIedName = rs.getString("receiver_ied_name");
+          block.put("receiverIedName", receiverIedName);
+          rememberDescription(
+              virtualDescriptions, receiverIedName, rs.getString("receiver_ied_desc"));
           block.put("sortOrder", rs.getInt("sort_order"));
           block.put("serviceType", rs.getString("service_type"));
           String sourceIedName = rs.getString("source_ied_name");
+          rememberDescription(
+              virtualDescriptions, sourceIedName, rs.getString("source_ied_desc"));
           block.put("sourceIedName", sourceIedName == null || sourceIedName.trim().isEmpty()
               ? "未知发送装置" : sourceIedName);
           block.put("sourceLdInst", rs.getString("source_ld_inst"));
@@ -119,7 +126,7 @@ public class VirtualCircuitTopologyService {
       Map<String, Object> peer = new LinkedHashMap<>();
       peer.put("iedName", name);
       List<Map<String, Object>> candidates = devicesByName.getOrDefault(name, Collections.emptyList());
-      peer.put("displayName", displayName(name, candidates));
+      peer.put("displayName", displayName(name, candidates, virtualDescriptions.get(name)));
       peer.put("ports", portsByIed.getOrDefault(name, Collections.emptyList()));
       peers.add(peer);
     }
@@ -148,6 +155,8 @@ public class VirtualCircuitTopologyService {
       statusTargets.add(target);
     }
 
+    center.put("displayName", displayName(
+        centerName, Collections.singletonList(center), virtualDescriptions.get(centerName)));
     center.put("ports", portsByIed.getOrDefault(centerName, Collections.emptyList()));
     Map<String, Object> result = new LinkedHashMap<>();
     result.put("center", center);
@@ -313,9 +322,22 @@ public class VirtualCircuitTopologyService {
     return new ArrayList<>(grouped.values());
   }
 
-  private String displayName(String fallback, List<Map<String, Object>> candidates) {
-    if (candidates.size() == 1) return String.valueOf(candidates.get(0).get("displayName"));
+  String displayName(
+      String fallback, List<Map<String, Object>> candidates, String virtualDescription) {
+    if (candidates.size() == 1) {
+      String configuredDescription = nullableString(candidates.get(0).get("description"));
+      if (!configuredDescription.trim().isEmpty()) return configuredDescription;
+    }
+    if (virtualDescription != null && !virtualDescription.trim().isEmpty()) {
+      return virtualDescription;
+    }
     return fallback;
+  }
+
+  void rememberDescription(Map<String, String> descriptions, String iedName, String description) {
+    if (iedName == null || iedName.trim().isEmpty()
+        || description == null || description.trim().isEmpty()) return;
+    descriptions.putIfAbsent(iedName, description);
   }
 
   private String nullableString(Object value) {

@@ -106,7 +106,7 @@ class SamplingTestServiceTest {
   }
 
   private Snapshot snapshot() {
-    return new Snapshot(31L, 41L, 11L, "VOLTAGE", "identity", "MU01", "MSVCB01",
+    return new Snapshot(31L, 41L, 11L, "VOLTAGE", "identity", "MU01", null, null, "MSVCB01",
         "MU01/LLN0$MS$MSVCB01", "IED/LD/MMXU$MX$A$phsA$cVal$mag$f", "telemetry-key",
         "A相电压", "dsAin", "FLOAT32", 0, 0, true);
   }

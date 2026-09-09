@@ -34,6 +34,23 @@ public class SamplingSignalCatalogService {
         });
   }
 
+  public Map<String, String> listConfiguredDescriptions(Long cabinetId) {
+    requireCabinet(cabinetId);
+    Map<String, String> descriptions = new LinkedHashMap<>();
+    jdbc.query(
+        "SELECT ied_name, ied_desc FROM ied_device WHERE cabinet_id=:cabinetId ORDER BY id",
+        Collections.singletonMap("cabinetId", cabinetId),
+        rs -> {
+          String iedName = rs.getString("ied_name");
+          String description = rs.getString("ied_desc");
+          if (iedName != null && !iedName.trim().isEmpty()
+              && description != null && !description.trim().isEmpty()) {
+            descriptions.putIfAbsent(iedName, description);
+          }
+        });
+    return descriptions;
+  }
+
   public Map<String, Object> listCandidates(Long cabinetId, Long iedDeviceId) {
     Map<String, Object> device = requireDevice(cabinetId, iedDeviceId);
     List<Snapshot> channels = queryChannels(
@@ -129,7 +146,8 @@ public class SamplingSignalCatalogService {
         "SELECT a.id association_id, a.ied_device_id, a.category, a.control_identity_key, "
             + "a.source_ied_name, a.control_name, a.control_reference, a.sort_order association_order, "
             + "c.id channel_id, c.telemetry_reference, c.telemetry_key, c.telemetry_description, "
-            + "c.dataset_name, c.value_type, c.sort_order channel_order, cb.id current_control_block_id "
+            + "c.dataset_name, c.value_type, c.sort_order channel_order, cb.id current_control_block_id, "
+            + "cb.source_ied_desc, cb.receiver_ied_desc "
             + "FROM sampling_signal_channel c JOIN sampling_signal_association a ON a.id=c.association_id "
             + "JOIN ied_device d ON d.id=a.ied_device_id "
             + "LEFT JOIN scd_virtual_control_block cb ON BINARY cb.identity_key=BINARY a.control_identity_key "
@@ -139,7 +157,8 @@ public class SamplingSignalCatalogService {
     return jdbc.query(sql, params, (rs, row) -> new Snapshot(
         rs.getLong("association_id"), rs.getLong("channel_id"), rs.getLong("ied_device_id"),
         rs.getString("category"), rs.getString("control_identity_key"),
-        rs.getString("source_ied_name"), rs.getString("control_name"),
+        rs.getString("source_ied_name"), rs.getString("source_ied_desc"),
+        rs.getString("receiver_ied_desc"), rs.getString("control_name"),
         rs.getString("control_reference"), rs.getString("telemetry_reference"),
         rs.getString("telemetry_key"), rs.getString("telemetry_description"),
         rs.getString("dataset_name"), rs.getString("value_type"),
@@ -155,6 +174,8 @@ public class SamplingSignalCatalogService {
     private final String category;
     private final String controlIdentityKey;
     private final String sourceIedName;
+    private final String sourceIedDescription;
+    private final String receiverIedDescription;
     private final String controlName;
     private final String controlReference;
     private final String telemetryReference;
@@ -168,7 +189,8 @@ public class SamplingSignalCatalogService {
 
     public Snapshot(
         long associationId, long channelId, long iedDeviceId, String category,
-        String controlIdentityKey, String sourceIedName, String controlName,
+        String controlIdentityKey, String sourceIedName, String sourceIedDescription,
+        String receiverIedDescription, String controlName,
         String controlReference, String telemetryReference, String telemetryKey,
         String telemetryDescription, String datasetName, String valueType,
         int associationOrder, int channelOrder, boolean controlBlockMatched) {
@@ -178,6 +200,8 @@ public class SamplingSignalCatalogService {
       this.category = category;
       this.controlIdentityKey = controlIdentityKey;
       this.sourceIedName = sourceIedName;
+      this.sourceIedDescription = sourceIedDescription;
+      this.receiverIedDescription = receiverIedDescription;
       this.controlName = controlName;
       this.controlReference = controlReference;
       this.telemetryReference = telemetryReference;

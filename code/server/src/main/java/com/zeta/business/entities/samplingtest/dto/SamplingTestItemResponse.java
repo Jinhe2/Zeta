@@ -20,4 +20,5 @@ public class SamplingTestItemResponse {
   private boolean enabled;
   private Instant createdAt;
   private List<SamplingTestChannelResponse> channels;
+  private DigitalSamplingTestDtos.ConfigResponse digitalConfig;
 }

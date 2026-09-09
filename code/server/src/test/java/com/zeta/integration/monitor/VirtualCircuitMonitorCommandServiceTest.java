@@ -45,6 +45,32 @@ class VirtualCircuitMonitorCommandServiceTest {
     }
   }
 
+  @Test
+  void sendsDigitalSamplingPayloadAndWaitsForCompletedResponse() {
+    ScreenQueuePublisher publisher = mock(ScreenQueuePublisher.class);
+    MonitorCommandService service = new MonitorCommandService(
+        Optional.of(publisher), mock(LogicSnapshotRepository.class), mock(MonitorTaskRepository.class),
+        mock(LogicGroupSnapshotService.class), mock(WholeExperimentRunService.class));
+    try {
+      CompletableFuture<ScreenQueueMessage> future =
+          service.sendSamplingSignalStatusRequest(8L, 21L);
+      ArgumentCaptor<ScreenQueueMessage> captor = ArgumentCaptor.forClass(ScreenQueueMessage.class);
+      verify(publisher).publish(captor.capture());
+      ScreenQueueMessage request = captor.getValue();
+      assertThat(request.getCommand()).isEqualTo("summon_ied_sampling_signal_status");
+      assertThat(request.getData()).containsEntry("cabinet_id", 8L).containsEntry("ied_device_id", 21L);
+
+      service.handleResponse(response(request, true, "accepted"));
+      assertThat(future).isNotDone();
+      ScreenQueueMessage completed = response(request, false, "completed");
+      completed.setError("PARTIAL_READ");
+      service.handleResponse(completed);
+      assertThat(future.join()).isSameAs(completed);
+    } finally {
+      service.shutdown();
+    }
+  }
+
   private ScreenQueueMessage response(ScreenQueueMessage request, boolean success, String phase) {
     Map<String, Object> data = new LinkedHashMap<>();
     data.put("phase", phase);

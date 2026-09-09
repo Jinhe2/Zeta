@@ -25,6 +25,21 @@
 .sampling-page__status-table td:first-child { color: #fff; font-weight: 700; }
 .sampling-page__row--passed td:nth-child(3) { color: #72e3a6; }
 .sampling-page__row--failed td:nth-child(3) { color: #ffb5b5; }
+.sampling-page__fatal { color: #ff9c95; }
+.sampling-page__link-state { font-weight: 700; }
+.sampling-page__link-state--green { color: #72e3a6 !important; }
+.sampling-page__link-state--red { color: #ff8b83 !important; }
+.sampling-page__link-state--orange { color: #ffd36a !important; }
+.sampling-page__link-state--gray { color: #a8b6c5 !important; }
+.digital-sampling-circuit { position: relative; width: 100%; height: calc(100% - 4px); min-height: 430px; overflow: hidden; border: 1px solid rgba(142,197,248,.18); border-radius: 12px; background: rgba(5,14,25,.88); }
+.digital-sampling-circuit__legend { position: absolute; top: 10px; left: 10px; z-index: 5; display: flex; gap: 10px; flex-wrap: wrap; padding: 7px 9px; border-radius: 8px; background: rgba(8,20,35,.9); color: #c5d5e4; font-size: 12px; }
+.digital-sampling-circuit__legend span { display: inline-flex; align-items: center; gap: 4px; }
+.digital-sampling-circuit__legend i { width: 14px; height: 4px; border-radius: 4px; }
+.digital-sampling-node { width: 180px; min-height: 86px; display: grid; place-content: center; padding: 14px; box-sizing: border-box; border: 2px solid #4d9872; border-radius: 10px; background: linear-gradient(145deg,#173b31,#102c25); color: #e5fff2; text-align: center; box-shadow: 0 10px 28px rgba(0,0,0,.42); }
+.digital-sampling-node--center { width: 220px; min-height: 120px; border-color: #5e9bd3; background: linear-gradient(145deg,#163b60,#102945); color: #eef7ff; }
+.digital-sampling-node span { margin-top: 5px; color: #a9bfd2; font-size: 12px; }
+.digital-sampling-node .react-flow__handle { width: 10px; height: 10px; border-color: #d6a84c; background: #f4bf4f; }
+.digital-sampling-circuit .react-flow__controls button { background: #10243a; border-color: #29445f; fill: #cfe8ff; }
 .sampling-page__overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(0,0,0,.64); }
 .sampling-page__dialog { width: min(620px, calc(100vw - 40px)); max-height: calc(100vh - 60px); overflow: auto; padding: 28px; border: 1px solid rgba(142,197,248,.35); border-radius: 16px; background: #11243a; color: #e8f0f8; box-shadow: 0 28px 80px rgba(0,0,0,.55); }
 .sampling-page__dialog h2 { margin-top: 0; }

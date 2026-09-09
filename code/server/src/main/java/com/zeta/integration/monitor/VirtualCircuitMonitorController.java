@@ -34,6 +34,16 @@ public class VirtualCircuitMonitorController {
     return await(commandService.sendVirtualCircuitStatusRequest(cabinetId, iedDeviceId));
   }
 
+  @PostMapping("/sampling-signal-status")
+  public Map<String, Object> triggerSamplingSignal(
+      @RequestHeader("Authorization") String authorization,
+      @RequestBody Map<String, Object> body) {
+    authService.requireUser(authorization);
+    long cabinetId = requirePositiveLong(body.get("cabinetId"), "缺少 cabinetId 参数");
+    long iedDeviceId = requirePositiveLong(body.get("iedDeviceId"), "缺少 iedDeviceId 参数");
+    return await(commandService.sendSamplingSignalStatusRequest(cabinetId, iedDeviceId));
+  }
+
   private Map<String, Object> await(CompletableFuture<ScreenQueueMessage> future) {
     try {
       ScreenQueueMessage response = future.get(30, TimeUnit.SECONDS);

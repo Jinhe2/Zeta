@@ -958,6 +958,14 @@ export const api = {
     return request(`/api/admin/sampling-tests/cabinets/${cabinetId}/items`)
   },
 
+  listDigitalSamplingDevices(cabinetId) {
+    return request(`/api/admin/sampling-tests/cabinets/${cabinetId}/digital-devices`)
+  },
+
+  listDigitalSamplingChannels(cabinetId, iedDeviceId) {
+    return request(`/api/admin/sampling-tests/cabinets/${cabinetId}/digital-channels?iedDeviceId=${encodeURIComponent(iedDeviceId)}`)
+  },
+
   createSamplingTestItem(cabinetId, payload) {
     return request(`/api/admin/sampling-tests/cabinets/${cabinetId}/items`, {
       method: 'POST',
@@ -978,6 +986,17 @@ export const api = {
 
   listKnowledgeSamplingTestItems(cabinetId) {
     return request(`/api/knowledge/cabinets/${cabinetId}/sampling-test-items`)
+  },
+
+  getDigitalSamplingTopology(itemId) {
+    return request(`/api/knowledge/sampling-test-items/${itemId}/digital-topology`)
+  },
+
+  triggerSamplingSignalStatus(cabinetId, iedDeviceId) {
+    return request('/api/monitor/commands/sampling-signal-status', {
+      method: 'POST',
+      body: JSON.stringify({ cabinetId, iedDeviceId }),
+    })
   },
 
   listLearningResources(type, cabinetId) {

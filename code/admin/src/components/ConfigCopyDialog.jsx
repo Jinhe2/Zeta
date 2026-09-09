@@ -174,6 +174,7 @@ export default function ConfigCopyDialog({ scope, sourceId, sourceName, onClose,
         </section>}
         {result?.success && <div className="users-page__message">
           配置复制完成：{result.targets.map((target) => `${target.targetName} ${Object.values(target.copiedCounts).reduce((sum, value) => sum + value, 0)} 项`).join('；')}
+          {result.precheck?.targets?.some((target) => target.issues?.some((issue) => issue.code === 'DIGITAL_SAMPLING_SKIPPED')) && '；数字化采样配置已按规则跳过。'}
         </div>}
       </>}
       <div className="users-page__dialog-actions">

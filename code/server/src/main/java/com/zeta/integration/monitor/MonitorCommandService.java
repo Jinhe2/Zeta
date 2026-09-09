@@ -127,6 +127,15 @@ public class MonitorCommandService {
     return sendCommand("summon_ied_virtual_circuit_status", null, data, null);
   }
 
+  /** 读取指定 IED 已配置的 SV 链路状态和采样通道实时量值。 */
+  public CompletableFuture<ScreenQueueMessage> sendSamplingSignalStatusRequest(
+      Long cabinetId, Long iedDeviceId) {
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("cabinet_id", cabinetId);
+    data.put("ied_device_id", iedDeviceId);
+    return sendCommand("summon_ied_sampling_signal_status", null, data, null);
+  }
+
   /** 读取指定 IED 的硬压板实时状态。 */
   public CompletableFuture<ScreenQueueMessage> sendIedSoftPressboardStatusRequest(Long iedDeviceId) {
     Map<String, Object> data = new LinkedHashMap<>();
@@ -570,6 +579,7 @@ public class MonitorCommandService {
         || "summon_terminal_status".equals(command)
         || "summon_ied_comm_status".equals(command)
         || "summon_ied_virtual_circuit_status".equals(command)
+        || "summon_ied_sampling_signal_status".equals(command)
         || "compare_baseline_settings".equals(command)) {
       Map<String, Object> data = message.getData();
       return data != null && "completed".equals(String.valueOf(data.getOrDefault("phase", "")));

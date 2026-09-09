@@ -67,8 +67,10 @@ CREATE TABLE IF NOT EXISTS terminal_operation_terminals (
 CREATE TABLE IF NOT EXISTS sampling_test_items (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     screen_cabinet_id BIGINT UNSIGNED NOT NULL,
+    ied_device_id BIGINT UNSIGNED NULL COMMENT '数字化采样配置关联的 ct-screen.ied_device.id',
+    ied_device_id BIGINT UNSIGNED NULL COMMENT '数字化采样配置关联的 ct-screen.ied_device.id',
     title VARCHAR(128) NOT NULL,
-    media_type VARCHAR(32) NOT NULL COMMENT 'IMAGE / VIDEO / SAMPLING_CONFIGURATION',
+    media_type VARCHAR(32) NOT NULL COMMENT 'IMAGE / VIDEO / SAMPLING_CONFIGURATION / DIGITAL_SAMPLING_CONFIGURATION',
     image_url VARCHAR(512) NULL,
     image_data LONGBLOB NULL,
     image_content_type VARCHAR(100) NULL,
@@ -94,6 +96,56 @@ CREATE TABLE IF NOT EXISTS sampling_test_channels (
     UNIQUE KEY uk_sampling_channel_terminal (sampling_test_item_id, terminal_id),
     INDEX idx_sampling_channel_item (sampling_test_item_id, sort_order, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='采样测试八路通道配置';
+
+CREATE TABLE IF NOT EXISTS digital_sampling_test_channels (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    sampling_test_item_id BIGINT UNSIGNED NOT NULL,
+    sampling_signal_association_id BIGINT UNSIGNED NOT NULL COMMENT 'ct-screen.sampling_signal_association.id 快照',
+    sampling_signal_channel_id BIGINT UNSIGNED NOT NULL COMMENT 'ct-screen.sampling_signal_channel.id 快照',
+    ied_device_id BIGINT UNSIGNED NOT NULL COMMENT 'ct-screen.ied_device.id 快照',
+    category VARCHAR(16) NOT NULL,
+    control_identity_key CHAR(64) NOT NULL,
+    source_ied_name VARCHAR(128) NULL,
+    control_name VARCHAR(128) NULL,
+    control_reference VARCHAR(512) NULL,
+    telemetry_reference VARCHAR(768) NOT NULL,
+    telemetry_key CHAR(64) NOT NULL,
+    telemetry_description VARCHAR(512) NULL,
+    dataset_name VARCHAR(128) NULL,
+    value_type VARCHAR(64) NULL,
+    baseline_magnitude DECIMAL(18,6) NOT NULL,
+    baseline_angle DECIMAL(12,6) NOT NULL,
+    sort_order INT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_digital_sampling_channel (sampling_test_item_id, sampling_signal_channel_id),
+    UNIQUE KEY uk_digital_sampling_ref (sampling_test_item_id, telemetry_key),
+    INDEX idx_digital_sampling_item (sampling_test_item_id, sort_order, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数字化采样测试通道快照';
+
+CREATE TABLE IF NOT EXISTS digital_sampling_test_channels (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    sampling_test_item_id BIGINT UNSIGNED NOT NULL,
+    sampling_signal_association_id BIGINT UNSIGNED NOT NULL COMMENT 'ct-screen.sampling_signal_association.id 快照',
+    sampling_signal_channel_id BIGINT UNSIGNED NOT NULL COMMENT 'ct-screen.sampling_signal_channel.id 快照',
+    ied_device_id BIGINT UNSIGNED NOT NULL,
+    category VARCHAR(16) NOT NULL,
+    control_identity_key CHAR(64) NOT NULL,
+    source_ied_name VARCHAR(128) NULL,
+    control_name VARCHAR(128) NULL,
+    control_reference VARCHAR(512) NULL,
+    telemetry_reference VARCHAR(768) NOT NULL,
+    telemetry_key CHAR(64) NOT NULL,
+    telemetry_description VARCHAR(512) NULL,
+    dataset_name VARCHAR(128) NULL,
+    value_type VARCHAR(64) NULL,
+    baseline_magnitude DECIMAL(18,6) NOT NULL,
+    baseline_angle DECIMAL(12,6) NOT NULL,
+    sort_order INT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_digital_sampling_channel (sampling_test_item_id, sampling_signal_channel_id),
+    UNIQUE KEY uk_digital_sampling_ref (sampling_test_item_id, telemetry_key),
+    INDEX idx_digital_sampling_item (sampling_test_item_id, sort_order, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数字化采样测试通道快照';
 
 -- ============================================================================
 -- 软压板基准清单（引用屏柜库装置或逻辑框图 ID）

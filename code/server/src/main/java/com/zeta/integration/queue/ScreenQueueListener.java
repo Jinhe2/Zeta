@@ -81,6 +81,7 @@ public class ScreenQueueListener {
                 command.equals("summon_terminal_status") ||
                 command.equals("summon_ied_comm_status") ||
                 command.equals("summon_ied_virtual_circuit_status") ||
+                command.equals("summon_ied_sampling_signal_status") ||
                 command.equals("compare_baseline_settings") ||
                 command.equals("summon_logic_monitor") ||
                 command.equals("summon_logic_group_monitor"))) {

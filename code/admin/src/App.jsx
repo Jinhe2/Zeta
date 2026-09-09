@@ -55,6 +55,10 @@ import StudentResourcesPage from './pages/student/StudentResourcesPage'
 import SamplingCabinetListPage from './pages/admin/business/sampling/SamplingCabinetListPage'
 import SamplingItemsPage from './pages/admin/business/sampling/SamplingItemsPage'
 import SamplingTestPage from './pages/student/SamplingTestPage'
+import {
+  CoachLearningAvailabilityProvider,
+  PhysicalCircuitRouteGuard,
+} from './pages/student/CoachLearningAvailability'
 
 function LegacyDiagramRedirect() {
   const { id } = useParams()
@@ -116,17 +120,24 @@ export default function App() {
                 </BindingGuard>
               </RequireAuth>
             }
-          >
+            >
             <Route index element={<StudentHomePage />} />
-            <Route path="modes/coach" element={<CoachModePage />} />
-            <Route path="modes/coach/cabinet" element={<CabinetCognitionPage />} />
-            <Route path="modes/coach/virtual-circuit" element={<VirtualCircuitDeviceListPage />} />
-            <Route path="modes/coach/virtual-circuit/:iedDeviceId" element={<VirtualCircuitLearningPage />} />
-            <Route path="modes/coach/circuit" element={<CircuitLearningPage />} />
-            <Route path="modes/coach/circuit/:category/:name" element={<CircuitViewerPage />} />
-            <Route path="modes/coach/sampling" element={<SamplingTestPage />} />
-            <Route path="modes/coach/drawing" element={<DrawingLearningPage />} />
-            <Route path="modes/coach/accident" element={<StudentPlaceholderPage title="事故处理" description="学习事故处理流程与案例分析，功能开发中。" />} />
+            <Route
+              path="modes/coach"
+              element={<CoachLearningAvailabilityProvider><Outlet /></CoachLearningAvailabilityProvider>}
+            >
+              <Route index element={<CoachModePage />} />
+              <Route path="cabinet" element={<CabinetCognitionPage />} />
+              <Route path="virtual-circuit" element={<VirtualCircuitDeviceListPage />} />
+              <Route path="virtual-circuit/:iedDeviceId" element={<VirtualCircuitLearningPage />} />
+              <Route path="circuit" element={<PhysicalCircuitRouteGuard />}>
+                <Route index element={<CircuitLearningPage />} />
+                <Route path=":category/:name" element={<CircuitViewerPage />} />
+              </Route>
+              <Route path="sampling" element={<SamplingTestPage />} />
+              <Route path="drawing" element={<DrawingLearningPage />} />
+              <Route path="accident" element={<StudentPlaceholderPage title="事故处理" description="学习事故处理流程与案例分析，功能开发中。" />} />
+            </Route>
             <Route path="modes/exam" element={<StudentPlaceholderPage title="测评模式" description="模拟测评考核，功能开发中。" />} />
             <Route path="modes/panorama" element={<PanoramaListPage />} />
             <Route path="modes/panorama/groups/:groupId" element={<StudentLogicGroupDetailPage />} />

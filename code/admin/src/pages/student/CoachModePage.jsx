@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
-import { api } from '../../api/client'
-import { resolveStudentCabinetId, useStudentCabinetId } from './studentCabinet'
 import IedCommunicationStatus from '../../components/IedCommunicationStatus'
+import { useCoachLearningAvailability } from './CoachLearningAvailability'
 import './TabletShell.css'
 import './CoachModePage.css'
 import './CoachVirtualCircuit.css'
@@ -107,32 +106,35 @@ const COACH_ENTRIES = [
     route: '/student/modes/panorama',
     navigateState: { from: 'coach', section: 'logic' },
   },
-  {
-    id: 'circuit',
-    label: '回路学习',
-    Icon: IconCircuit,
-    desc: '掌握保护回路、控制回路与信号回路',
-    route: '/student/modes/coach/circuit',
-  },
 ]
 
 export default function CoachModePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { logout } = useAuth()
-  const selectedCabinetId = useStudentCabinetId()
-  const [virtualDevices, setVirtualDevices] = useState([])
+  const { status, hasVirtualCircuit, error, retry } = useCoachLearningAvailability()
+  const [coachNotice] = useState(() => location.state?.coachNotice || '')
 
   useEffect(() => {
-    let cancelled = false
-    api.getKnowledgeTree()
-      .then((tree) => {
-        const cabinetId = resolveStudentCabinetId(tree, selectedCabinetId)
-        return cabinetId ? api.listVirtualCircuitDevices(cabinetId) : []
-      })
-      .then((devices) => { if (!cancelled) setVirtualDevices(devices || []) })
-      .catch(() => { if (!cancelled) setVirtualDevices([]) })
-    return () => { cancelled = true }
-  }, [selectedCabinetId])
+    if (!location.state?.coachNotice) return
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
+
+  const learningEntry = status === 'ready'
+    ? (hasVirtualCircuit
+        ? {
+            id: 'virtual',
+            label: '虚回路学习',
+            desc: '查看装置间 GOOSE、SV 虚端子连接与实时链路状态',
+            route: '/student/modes/coach/virtual-circuit',
+          }
+        : {
+            id: 'circuit',
+            label: '回路学习',
+            desc: '掌握保护回路、控制回路与信号回路',
+            route: '/student/modes/coach/circuit',
+          })
+    : null
 
   return (
     <div className="tablet-shell">
@@ -158,35 +160,54 @@ export default function CoachModePage() {
       </header>
 
       <main className="tablet-shell__main coach-mode__main">
-        <div className="coach-mode__floating">
-          {COACH_ENTRIES.map((entry) => {
-            const { Icon } = entry
-            return (
+        <div className="coach-mode__content">
+          {coachNotice && <p className="coach-mode__notice" role="status">{coachNotice}</p>}
+          <div className="coach-mode__floating">
+            {COACH_ENTRIES.map((entry) => {
+              const { Icon } = entry
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  className={`coach-mode__card coach-mode__card--${entry.id}${entry.disabled ? ' coach-mode__card--disabled' : ''}`}
+                  disabled={entry.disabled}
+                  onClick={() => {
+                    if (!entry.disabled) navigate(entry.route, { state: entry.navigateState })
+                  }}
+                >
+                  <span className="coach-mode__card-icon">
+                    <Icon />
+                  </span>
+                  <span className="coach-mode__card-label">{entry.label}</span>
+                  <span className="coach-mode__card-desc">{entry.desc}</span>
+                  {entry.disabled && <span className="coach-mode__card-dev-label">开发中</span>}
+                </button>
+              )
+            })}
+            {learningEntry ? (
               <button
-                key={entry.id}
                 type="button"
-                className={`coach-mode__card coach-mode__card--${entry.id}${entry.disabled ? ' coach-mode__card--disabled' : ''}`}
-                disabled={entry.disabled}
-                onClick={() => {
-                  if (!entry.disabled) navigate(entry.route, { state: entry.navigateState })
-                }}
+                className={`coach-mode__card coach-mode__card--${learningEntry.id}`}
+                onClick={() => navigate(learningEntry.route)}
               >
-                <span className="coach-mode__card-icon">
-                  <Icon />
-                </span>
-                <span className="coach-mode__card-label">{entry.label}</span>
-                <span className="coach-mode__card-desc">{entry.desc}</span>
-                {entry.disabled && <span className="coach-mode__card-dev-label">开发中</span>}
+                <span className="coach-mode__card-icon"><IconCircuit /></span>
+                <span className="coach-mode__card-label">{learningEntry.label}</span>
+                <span className="coach-mode__card-desc">{learningEntry.desc}</span>
               </button>
-            )
-          })}
-          {virtualDevices.length > 0 && (
-            <button type="button" className="coach-mode__card coach-mode__card--virtual" onClick={() => navigate('/student/modes/coach/virtual-circuit')}>
-              <span className="coach-mode__card-icon"><IconCircuit /></span>
-              <span className="coach-mode__card-label">虚回路学习</span>
-              <span className="coach-mode__card-desc">查看装置间 GOOSE、SV 虚端子连接与实时链路状态</span>
-            </button>
-          )}
+            ) : status === 'error' ? (
+              <button type="button" className="coach-mode__card coach-mode__card--circuit" onClick={retry}>
+                <span className="coach-mode__card-icon"><IconCircuit /></span>
+                <span className="coach-mode__card-label">加载失败</span>
+                <span className="coach-mode__card-desc">{error || '加载学习模块失败'}，点击重试</span>
+              </button>
+            ) : (
+              <button type="button" className="coach-mode__card coach-mode__card--circuit coach-mode__card--disabled" disabled>
+                <span className="coach-mode__card-icon"><IconCircuit /></span>
+                <span className="coach-mode__card-label">正在加载</span>
+                <span className="coach-mode__card-desc">正在判断当前装置的学习方式…</span>
+              </button>
+            )}
+          </div>
         </div>
       </main>
       <IedCommunicationStatus />

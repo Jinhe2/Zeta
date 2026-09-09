@@ -19,6 +19,9 @@ public class SamplingTestItem {
   @Column(name = "screen_cabinet_id", nullable = false)
   private Long screenCabinetId;
 
+  @Column(name = "ied_device_id")
+  private Long iedDeviceId;
+
   @Column(nullable = false, length = 128)
   private String title;
 

@@ -14,7 +14,7 @@ export default function SamplingCabinetListPage() {
 
   return <div className="users-page">
     <h2 className="users-page__title">采样测试</h2>
-    <p className="users-page__desc">按屏柜维护采样测试的图片、视频和八路采样配置。</p>
+    <p className="users-page__desc">按屏柜维护采样测试的图片、视频、端子采样配置和数字化采样配置。</p>
     {error && <div className="users-page__error">{error}</div>}
     {loading ? <p className="users-page__loading">加载中…</p> : cabinets.length === 0 ? <p className="users-page__empty">暂无屏柜数据。</p> : <div className="users-page__table-wrap">
       <table className="users-page__table"><thead><tr><th>名称</th><th>编码</th><th>描述</th><th>操作</th></tr></thead><tbody>

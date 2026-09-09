@@ -88,6 +88,7 @@ public class ConfigCopyService {
   private final ExperimentGuideItemRepository experimentGuideItemRepository;
   private final SamplingTestItemRepository samplingItemRepository;
   private final SamplingTestChannelRepository samplingChannelRepository;
+  private final DigitalSamplingTestChannelRepository digitalSamplingChannelRepository;
   private final LearningResourceRepository resourceRepository;
   private final SettingListItemRepository settingItemRepository;
   private final LogicSettingSelectionRepository selectionRepository;
@@ -125,6 +126,7 @@ public class ConfigCopyService {
       ExperimentGuideItemRepository experimentGuideItemRepository,
       SamplingTestItemRepository samplingItemRepository,
       SamplingTestChannelRepository samplingChannelRepository,
+      DigitalSamplingTestChannelRepository digitalSamplingChannelRepository,
       LearningResourceRepository resourceRepository,
       SettingListItemRepository settingItemRepository,
       LogicSettingSelectionRepository selectionRepository,
@@ -160,6 +162,7 @@ public class ConfigCopyService {
     this.experimentGuideItemRepository = experimentGuideItemRepository;
     this.samplingItemRepository = samplingItemRepository;
     this.samplingChannelRepository = samplingChannelRepository;
+    this.digitalSamplingChannelRepository = digitalSamplingChannelRepository;
     this.resourceRepository = resourceRepository;
     this.settingItemRepository = settingItemRepository;
     this.selectionRepository = selectionRepository;
@@ -344,6 +347,17 @@ public class ConfigCopyService {
     for (ConfigCopyModule module : request.getModules()) {
       target.sourceCounts.put(module, countModule(request.getScope(), request.getSourceId(), module));
       target.overwriteCounts.put(module, countModule(request.getScope(), target.targetId, module));
+    }
+    if (request.getScope() == ConfigCopyScope.CABINET
+        && request.getModules().contains(ConfigCopyModule.SAMPLING_TEST)) {
+      long skipped = samplingItemRepository
+          .findByScreenCabinetIdOrderBySortOrderAscIdAsc(request.getSourceId()).stream()
+          .filter(item -> item.getMediaType() == SamplingTestMediaType.DIGITAL_SAMPLING_CONFIGURATION)
+          .count();
+      if (skipped > 0) {
+        target.issues.add(new ConfigCopyIssueResponse(
+            "DIGITAL_SAMPLING_SKIPPED", "将跳过 " + skipped + " 个数字化采样配置条目", request.getSourceId()));
+      }
     }
     return target;
   }
@@ -1278,6 +1292,7 @@ public class ConfigCopyService {
     int copied = 0;
     for (SamplingTestItem source : samplingItemRepository
         .findByScreenCabinetIdOrderBySortOrderAscIdAsc(sourceCabinetId)) {
+      if (source.getMediaType() == SamplingTestMediaType.DIGITAL_SAMPLING_CONFIGURATION) continue;
       SamplingTestItem target = new SamplingTestItem();
       target.setScreenCabinetId(targetCabinetId); target.setTitle(source.getTitle());
       target.setMediaType(source.getMediaType()); target.setImageUrl(source.getImageUrl());
@@ -1378,6 +1393,8 @@ public class ConfigCopyService {
     items.stream().map(SamplingTestItem::getVideoPath).filter(StringUtils::hasText)
         .forEach(mediaCleanupService::scheduleCognitionVideoDeletion);
     samplingChannelRepository.deleteBySamplingTestItemIdIn(
+        items.stream().map(SamplingTestItem::getId).collect(Collectors.toList()));
+    digitalSamplingChannelRepository.deleteBySamplingTestItemIdIn(
         items.stream().map(SamplingTestItem::getId).collect(Collectors.toList()));
     samplingItemRepository.deleteByScreenCabinetId(cabinetId);
   }

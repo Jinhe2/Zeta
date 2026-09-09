@@ -6,7 +6,7 @@ import StructureCognitionContent from './cabinet/StructureCognitionContent'
 import DeviceCognitionContent from './cabinet/DeviceCognitionContent'
 import PlateCognitionContent from './cabinet/PlateCognitionContent'
 import TerminalCognitionContent from './cabinet/TerminalCognitionContent'
-import { useStudentCabinetId } from './studentCabinet'
+import { useCoachLearningAvailability } from './CoachLearningAvailability'
 import './TabletShell.css'
 import './CabinetCognitionPage.css'
 
@@ -117,7 +117,17 @@ async function buildDeviceSectionPages(sectionId, cabinetItems) {
 export default function CabinetCognitionPage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const selectedCabinetId = useStudentCabinetId()
+  const {
+    status: availabilityStatus,
+    cabinetId,
+    hasVirtualCircuit,
+    error: availabilityError,
+    retry: retryAvailability,
+  } = useCoachLearningAvailability()
+  const availableSections = useMemo(
+    () => SECTIONS.filter((section) => !(hasVirtualCircuit && section.id === 'terminal')),
+    [hasVirtualCircuit],
+  )
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id)
   const [cabinetItems, setCabinetItems] = useState([])
   const [sectionPages, setSectionPages] = useState({})
@@ -131,12 +141,12 @@ export default function CabinetCognitionPage() {
   const [navigationError, setNavigationError] = useState(null)
   const currentSection = SECTIONS.find((s) => s.id === activeSection)
   const navigationPages = useMemo(() => (
-    SECTIONS.flatMap((section) => sectionPages[section.id] ?? [])
-  ), [sectionPages])
+    availableSections.flatMap((section) => sectionPages[section.id] ?? [])
+  ), [availableSections, sectionPages])
   const currentPage = navigationPages.find((page) => page.key === currentPageKey)
     ?? navigationPages.find((page) => page.sectionId === activeSection)
     ?? fallbackPage(activeSection)
-  const isLastSection = activeSection === SECTIONS[SECTIONS.length - 1].id
+  const isLastSection = activeSection === availableSections[availableSections.length - 1]?.id
 
   const buildSectionPages = useCallback(async (sectionId, items) => {
     if (sectionId === 'structure') {
@@ -174,7 +184,7 @@ export default function CabinetCognitionPage() {
     let cancelled = false
 
     async function loadInitialNavigationPages() {
-      if (selectedCabinetId === undefined) {
+      if (availabilityStatus !== 'ready') {
         setNavigationLoading(true)
         return
       }
@@ -182,7 +192,6 @@ export default function CabinetCognitionPage() {
       setNavigationLoading(true)
       setNavigationError(null)
       try {
-        const cabinetId = selectedCabinetId
         if (!cabinetId) {
           throw new Error('未找到屏柜学习数据')
         }
@@ -219,7 +228,7 @@ export default function CabinetCognitionPage() {
     return () => {
       cancelled = true
     }
-  }, [buildSectionPages, selectedCabinetId])
+  }, [availabilityStatus, buildSectionPages, cabinetId])
 
   const currentPageIndex = useMemo(
     () => navigationPages.findIndex((page) => page.key === currentPage?.key),
@@ -267,8 +276,8 @@ export default function CabinetCognitionPage() {
       applyPage(navigationPages[currentPageIndex + 1], 'next')
       return
     }
-    const sectionIndex = SECTIONS.findIndex((section) => section.id === activeSection)
-    const nextSection = SECTIONS[sectionIndex + 1]
+    const sectionIndex = availableSections.findIndex((section) => section.id === activeSection)
+    const nextSection = availableSections[sectionIndex + 1]
     if (!nextSection) return
     const pages = await ensureSectionPages(nextSection.id)
     applyPage(pages[0] ?? fallbackPage(nextSection.id), 'next')
@@ -303,6 +312,7 @@ export default function CabinetCognitionPage() {
       )
     }
     if (activeSection === 'terminal') {
+      if (hasVirtualCircuit) return null
       return (
         <TerminalCognitionContent
           navigationTarget={currentPage}
@@ -346,49 +356,58 @@ export default function CabinetCognitionPage() {
       </header>
 
       <main className="tablet-shell__main tablet-shell__main--cabinet">
-        <div className="cabinet-page__layout">
-          <nav className="cabinet-page__nav" aria-label="屏柜学习分类">
-            <div className="cabinet-page__section-nav">
-              {SECTIONS.map((section) => (
+        {availabilityStatus === 'loading' ? (
+          <div className="cabinet-page__availability" role="status">正在判断当前装置的学习方式…</div>
+        ) : availabilityStatus === 'error' ? (
+          <div className="cabinet-page__availability" role="alert">
+            <p>{availabilityError || '加载学习模块失败'}</p>
+            <button type="button" onClick={retryAvailability}>重新加载</button>
+          </div>
+        ) : (
+          <div className="cabinet-page__layout">
+            <nav className="cabinet-page__nav" aria-label="屏柜学习分类">
+              <div className="cabinet-page__section-nav">
+                {availableSections.map((section) => (
+                  <button
+                    key={section.id}
+                    type="button"
+                    className={`cabinet-page__nav-btn${activeSection === section.id ? ' cabinet-page__nav-btn--active' : ''}`}
+                    onClick={() => handleSectionSelect(section.id)}
+                  >
+                    {section.label}
+                  </button>
+                ))}
+              </div>
+              <div className="cabinet-page__step-actions" aria-label="屏柜学习步骤导航">
                 <button
-                  key={section.id}
                   type="button"
-                  className={`cabinet-page__nav-btn${activeSection === section.id ? ' cabinet-page__nav-btn--active' : ''}`}
-                  onClick={() => handleSectionSelect(section.id)}
+                  className="cabinet-page__step-btn"
+                  disabled={navigationLoading || currentPageIndex <= 0}
+                  onClick={goPrevious}
                 >
-                  {section.label}
+                  上一步
                 </button>
-              ))}
-            </div>
-            <div className="cabinet-page__step-actions" aria-label="屏柜学习步骤导航">
-              <button
-                type="button"
-                className="cabinet-page__step-btn"
-                disabled={navigationLoading || currentPageIndex <= 0}
-                onClick={goPrevious}
-              >
-                上一步
-              </button>
-              <button
-                type="button"
-                className="cabinet-page__step-btn cabinet-page__step-btn--primary"
-                disabled={navigationLoading || (isLastSection && (currentPageIndex < 0 || currentPageIndex >= navigationPages.length - 1))}
-                onClick={goNext}
-              >
-                下一步
-              </button>
-            </div>
-          </nav>
+                <button
+                  type="button"
+                  className="cabinet-page__step-btn cabinet-page__step-btn--primary"
+                  disabled={navigationLoading || (isLastSection && (currentPageIndex < 0 || currentPageIndex >= navigationPages.length - 1))}
+                  onClick={goNext}
+                >
+                  下一步
+                </button>
+              </div>
+            </nav>
 
-          <section className="cabinet-page__content" aria-live="polite">
-            {navigationError && (
-              <p className="cabinet-page__nav-error">{navigationError}</p>
-            )}
-            <div className="cabinet-page__body">
-              {renderSectionContent()}
-            </div>
-          </section>
-        </div>
+            <section className="cabinet-page__content" aria-live="polite">
+              {navigationError && (
+                <p className="cabinet-page__nav-error">{navigationError}</p>
+              )}
+              <div className="cabinet-page__body">
+                {renderSectionContent()}
+              </div>
+            </section>
+          </div>
+        )}
       </main>
     </div>
   )

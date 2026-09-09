@@ -8,3 +8,18 @@
 .sampling-items__channel-code { font-weight: 700; color: #8ec5f8; }
 .sampling-items__dialog { box-sizing: border-box; width: min(960px, 100%); max-width: 960px; max-height: calc(100vh - 48px); overflow-x: hidden; overflow-y: auto; }
 .sampling-items__badge { display: inline-flex; padding: 4px 8px; border-radius: 999px; background: rgba(94,179,255,.18); color: #b9ddff; }
+.sampling-items__badge--digital { background: rgba(34,197,94,.18); color: #9aefbd; }
+.sampling-items__digital { display: grid; gap: 12px; }
+.sampling-items__digital-title { font-weight: 700; color: #dceafa; }
+.sampling-items__digital-empty { margin: 0; color: #91a6ba; }
+.sampling-items__association { overflow: hidden; border: 1px solid rgba(142,197,248,.28); border-radius: 9px; background: rgba(7,16,29,.55); }
+.sampling-items__association > header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; background: rgba(94,179,255,.12); color: #dceafa; }
+.sampling-items__association > header span { color: #9fb3c6; font-size: 13px; }
+.sampling-items__association em, .sampling-items__invalid-channel em { color: #ffaaa3; font-style: normal; font-size: 12px; }
+.sampling-items__association--invalid { border-color: rgba(255,120,110,.6); }
+.sampling-items__digital-channel { display: grid; grid-template-columns: minmax(280px,1fr) 140px 140px; gap: 10px; align-items: end; padding: 10px 12px; border-top: 1px solid rgba(142,197,248,.17); }
+.sampling-items__digital-channel .users-page__checkbox { align-self: center; }
+.sampling-items__digital-channel .users-page__checkbox span { min-width: 0; }
+.sampling-items__digital-channel small, .sampling-items__invalid-channel small { display: block; margin-top: 3px; color: #91a6ba; word-break: break-all; }
+.sampling-items__invalid-channel { display: flex; justify-content: space-between; gap: 15px; padding: 12px; border: 1px solid rgba(255,120,110,.6); border-radius: 8px; background: rgba(110,25,20,.25); }
+@media (max-width: 900px) { .sampling-items__digital-channel { grid-template-columns: 1fr; } }

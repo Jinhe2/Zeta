@@ -272,6 +272,23 @@
   padding: 18px 4px 26px;
 }
 
+.coach-mode__content {
+  width: 100%;
+}
+
+.coach-mode__notice {
+  width: fit-content;
+  max-width: calc(100% - 40px);
+  margin: 0 auto 4px;
+  padding: 10px 18px;
+  border: 1px solid rgba(103, 232, 249, 0.55);
+  border-radius: 10px;
+  background: rgba(14, 116, 144, 0.78);
+  color: #ecfeff;
+  font-size: 16px;
+  text-align: center;
+}
+
 /* ── 卡片 ── */
 
 .coach-mode__card {

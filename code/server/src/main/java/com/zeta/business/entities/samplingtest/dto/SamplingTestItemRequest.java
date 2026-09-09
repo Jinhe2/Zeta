@@ -30,4 +30,7 @@ public class SamplingTestItemRequest {
 
   @Valid
   private List<SamplingTestChannelRequest> channels;
+
+  @Valid
+  private DigitalSamplingTestDtos.ConfigRequest digitalConfig;
 }

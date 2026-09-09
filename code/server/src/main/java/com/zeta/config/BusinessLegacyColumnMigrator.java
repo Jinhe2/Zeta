@@ -99,6 +99,20 @@ public class BusinessLegacyColumnMigrator implements CommandLineRunner {
                 + "UNIQUE KEY uk_sampling_channel_terminal (sampling_test_item_id, terminal_id), "
                 + "INDEX idx_sampling_channel_item (sampling_test_item_id, sort_order, id)) "
                 + "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='采样测试八路通道配置'");
+        addColumnIfMissing("sampling_test_items", "ied_device_id", "BIGINT UNSIGNED NULL");
+        executeRequired("CREATE TABLE IF NOT EXISTS digital_sampling_test_channels ("
+                + "id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, sampling_test_item_id BIGINT UNSIGNED NOT NULL, "
+                + "sampling_signal_association_id BIGINT UNSIGNED NOT NULL, sampling_signal_channel_id BIGINT UNSIGNED NOT NULL, "
+                + "ied_device_id BIGINT UNSIGNED NOT NULL, category VARCHAR(16) NOT NULL, "
+                + "control_identity_key CHAR(64) NOT NULL, source_ied_name VARCHAR(128) NULL, "
+                + "control_name VARCHAR(128) NULL, control_reference VARCHAR(512) NULL, "
+                + "telemetry_reference VARCHAR(768) NOT NULL, telemetry_key CHAR(64) NOT NULL, "
+                + "telemetry_description VARCHAR(512) NULL, dataset_name VARCHAR(128) NULL, value_type VARCHAR(64) NULL, "
+                + "baseline_magnitude DECIMAL(18,6) NOT NULL, baseline_angle DECIMAL(12,6) NOT NULL, sort_order INT NOT NULL, "
+                + "PRIMARY KEY (id), UNIQUE KEY uk_digital_sampling_channel (sampling_test_item_id, sampling_signal_channel_id), "
+                + "UNIQUE KEY uk_digital_sampling_ref (sampling_test_item_id, telemetry_key), "
+                + "INDEX idx_digital_sampling_item (sampling_test_item_id, sort_order, id)) "
+                + "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数字化采样测试通道快照'");
     }
 
     private void migrateUsers() {

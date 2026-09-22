@@ -31,6 +31,35 @@
   background: rgba(8, 20, 35, .62);
 }
 
+/* 桌面端左右面板独立滚动，避免备选项和最近记录互相挤压。 */
+@media (min-width: 901px) {
+  .whole-experiment-selector__candidates,
+  .whole-experiment-selector__assembly {
+    min-height: 0;
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(142, 197, 248, .5) rgba(255, 255, 255, .06);
+  }
+
+  .whole-experiment-selector__candidates::-webkit-scrollbar,
+  .whole-experiment-selector__assembly::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .whole-experiment-selector__candidates::-webkit-scrollbar-track,
+  .whole-experiment-selector__assembly::-webkit-scrollbar-track {
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .04);
+  }
+
+  .whole-experiment-selector__candidates::-webkit-scrollbar-thumb,
+  .whole-experiment-selector__assembly::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: rgba(142, 197, 248, .5);
+  }
+}
+
 .whole-experiment-selector__candidates {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

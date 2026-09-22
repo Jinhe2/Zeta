@@ -22,6 +22,14 @@ function makeStep(group, page, item, pageIndex, itemIndex) {
   }
 }
 
+function findFirstStep(group, detail) {
+  for (const [pageIndex, page] of (detail.pages ?? []).entries()) {
+    const item = page.items?.[0]
+    if (item) return makeStep(group, page, item, pageIndex, 0)
+  }
+  return null
+}
+
 export default function DrawingLearningPage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
@@ -48,11 +56,15 @@ export default function DrawingLearningPage() {
         const cabinetId = selectedCabinetId
         if (!cabinetId) throw new Error('未找到图纸学习数据')
         const data = await api.listKnowledgeDrawingGroups(cabinetId)
+        const visibleGroups = DISPLAY_TYPES.flatMap((type) => data.filter((group) => group.drawingType === type))
+        const firstGroup = visibleGroups.find((group) => group.cognitionItemCount > 0) ?? visibleGroups[0]
+        const firstDetail = firstGroup ? await api.getKnowledgeDrawingGroup(firstGroup.id) : null
+        const firstStep = firstGroup && firstDetail ? findFirstStep(firstGroup, firstDetail) : null
         if (!cancelled) {
           setGroups(data)
-          setGroupDetails({})
-          setActiveGroupId(null)
-          setCurrentStepKey(null)
+          setGroupDetails(firstGroup && firstDetail ? { [firstGroup.id]: firstDetail } : {})
+          setActiveGroupId(firstGroup?.id ?? null)
+          setCurrentStepKey(firstStep?.key ?? null)
         }
       } catch (err) {
         if (!cancelled) {
@@ -113,9 +125,8 @@ export default function DrawingLearningPage() {
     if (!detail) return
     setActiveGroupId(groupId)
     const group = groups.find((candidate) => candidate.id === groupId) ?? detail
-    const firstPage = detail.pages?.[0]
-    const firstItem = firstPage?.items?.[0]
-    setCurrentStepKey(firstPage && firstItem ? makeStep(group, firstPage, firstItem, 0, 0).key : null)
+    const firstStep = findFirstStep(group, detail)
+    setCurrentStepKey(firstStep?.key ?? null)
   }
 
   const selectGroup = async (groupId) => {
@@ -142,32 +153,6 @@ export default function DrawingLearningPage() {
     if (nextUnloaded) {
       await startGroup(nextUnloaded.id)
     }
-  }
-
-  const renderOverviewTable = (type) => {
-    const rows = groups.filter((group) => group.drawingType === type)
-    return (
-      <section className="drawing-learning__overview-section">
-        <h2>{TYPE_LABELS[type]}</h2>
-        <table className="drawing-learning__table">
-          <thead>
-            <tr><th>分组</th><th>图纸数</th><th>认知条目数</th><th>操作</th></tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr><td colSpan={4}>暂无{TYPE_LABELS[type]}分组</td></tr>
-            ) : rows.map((group) => (
-              <tr key={group.id}>
-                <td>{group.name}</td>
-                <td>{group.pageCount}</td>
-                <td>{group.cognitionItemCount}</td>
-                <td><button type="button" onClick={() => startGroup(group.id)}>开始学习</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    )
   }
 
   const renderLearning = () => (
@@ -270,12 +255,8 @@ export default function DrawingLearningPage() {
         {error && <div className="drawing-learning__error">{error}</div>}
         {loading ? (
           <p className="drawing-learning__loading">加载中…</p>
-        ) : activeGroupId ? (
-          renderLearning()
         ) : (
-          <div className="drawing-learning__overview">
-            {renderOverviewTable('WHITEPRINT')}
-          </div>
+          renderLearning()
         )}
       </main>
     </div>

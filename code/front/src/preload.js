@@ -17,4 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   /** 是否为 Electron 环境 */
   isElectron: true,
+
+  /** 获取原生设备绑定标识（不暴露原始硬件序列号） */
+  getDeviceId: () => ipcRenderer.sendSync('device-id:get-sync'),
 })

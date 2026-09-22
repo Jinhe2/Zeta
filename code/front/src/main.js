@@ -1,4 +1,6 @@
 const { app, BrowserWindow, Menu, screen, dialog, ipcMain } = require('electron')
+const crypto = require('crypto')
+const { execFileSync } = require('child_process')
 const path = require('path')
 const fs = require('fs')
 
@@ -113,6 +115,76 @@ function saveUserSettings(partial) {
 
 let settings = loadSettings()
 
+// ── 原生设备标识 ────────────────────────────────────────────
+// 绑定标识在 Electron 中不依赖浏览器 localStorage，清理网页缓存不会导致设备解绑。
+// 原始硬件标识只在本地使用，提交给服务端的是带应用盐的 SHA-256 摘要。
+let nativeDeviceIdCache = null
+
+function readNativeDeviceFingerprint() {
+  try {
+    if (process.platform === 'win32') {
+      const output = execFileSync('reg.exe', [
+        'query', 'HKLM\\SOFTWARE\\Microsoft\\Cryptography', '/v', 'MachineGuid',
+      ], { encoding: 'utf8', windowsHide: true, timeout: 3000 })
+      const match = output.match(/MachineGuid\s+REG_SZ\s+([^\r\n]+)/i)
+      if (match?.[1]?.trim()) return match[1].trim()
+    }
+
+    if (process.platform === 'darwin') {
+      const output = execFileSync('ioreg', ['-rd1', '-c', 'IOPlatformExpertDevice'], {
+        encoding: 'utf8', timeout: 3000,
+      })
+      const match = output.match(/IOPlatformUUID"\s*=\s*"([^\"]+)"/)
+      if (match?.[1]?.trim()) return match[1].trim()
+    }
+
+    if (process.platform === 'linux') {
+      const output = execFileSync('cat', ['/etc/machine-id'], {
+        encoding: 'utf8', timeout: 3000,
+      })
+      if (output.trim()) return output.trim()
+    }
+  } catch (error) {
+    log('⚠️ failed to read native device fingerprint:', error.message)
+  }
+  return null
+}
+
+function getNativeDeviceId() {
+  if (nativeDeviceIdCache) return nativeDeviceIdCache
+
+  const fingerprint = readNativeDeviceFingerprint()
+  if (fingerprint) {
+    nativeDeviceIdCache = `native-${crypto
+      .createHash('sha256')
+      .update(`zeta-device-bind-v1:${fingerprint}`)
+      .digest('hex')
+      .slice(0, 57)}`
+    return nativeDeviceIdCache
+  }
+
+  // 原生标识不可读时，使用 Electron userData 下的持久化回退值。
+  // 该文件不属于网页缓存，清理 localStorage 不会影响它。
+  const fallbackPath = path.join(app.getPath('userData'), 'device-id')
+  try {
+    if (fs.existsSync(fallbackPath)) {
+      const value = fs.readFileSync(fallbackPath, 'utf8').trim()
+      if (value) {
+        nativeDeviceIdCache = value
+        return value
+      }
+    }
+    const value = `native-${crypto.randomUUID()}`
+    fs.mkdirSync(path.dirname(fallbackPath), { recursive: true })
+    fs.writeFileSync(fallbackPath, value, 'utf8')
+    nativeDeviceIdCache = value
+    return value
+  } catch (error) {
+    log('⚠️ failed to persist native device id:', error.message)
+    return null
+  }
+}
+
 ipcMain.on('settings:get-sync', (event) => {
   event.returnValue = { ...settings }
 })
@@ -120,6 +192,10 @@ ipcMain.on('settings:get-sync', (event) => {
 ipcMain.handle('settings:save', (_, partial) => {
   settings = saveUserSettings(partial)
   return { ...settings }
+})
+
+ipcMain.on('device-id:get-sync', (event) => {
+  event.returnValue = getNativeDeviceId()
 })
 
 // ── 窗口创建 ────────────────────────────────────────────────

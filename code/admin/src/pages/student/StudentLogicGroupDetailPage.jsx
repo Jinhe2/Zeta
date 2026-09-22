@@ -364,30 +364,36 @@ export default function StudentLogicGroupDetailPage({ experimentType = 'group' }
   }, [memberResults])
 
   const openMemberById = (logicDiagramId) => {
-    if (selectedSnapshotId == null) {
-      setError('请先选择一条组合实验记录')
-      return
+    const selectedSnapshot = selectedSnapshotId == null
+      ? null
+      : snapshots.find((snapshot) => snapshot.id === selectedSnapshotId)
+    const hasSnapshot = selectedSnapshotId != null && selectedSnapshot != null
+
+    if (hasSnapshot) {
+      if (whole && selectedSnapshot.resultStatus !== 'SNAPSHOT_READY') {
+        setError(selectedSnapshot.errorMessage || '该实验暂无有效断面，请等待实验结束或检查监测结果')
+        return
+      }
+      if (selectedSnapshot.resultStatus === 'DEVICE_NOT_STARTED') {
+        setError('该实验记录未生成断面数据，保护装置未启动')
+        return
+      }
+      if (selectedSnapshot.resultStatus === 'INVALID_SNAPSHOT') {
+        setError('该实验记录的断面数据异常，无法查看')
+        return
+      }
     }
-    const selectedSnapshot = snapshots.find((snapshot) => snapshot.id === selectedSnapshotId)
-    if (whole && selectedSnapshot?.resultStatus !== 'SNAPSHOT_READY') {
-      setError(selectedSnapshot?.errorMessage || '该实验暂无有效断面，请等待实验结束或检查监测结果')
-      return
-    }
-    if (selectedSnapshot?.resultStatus === 'DEVICE_NOT_STARTED') {
-      setError('该实验记录未生成断面数据，保护装置未启动')
-      return
-    }
-    if (selectedSnapshot?.resultStatus === 'INVALID_SNAPSHOT') {
-      setError('该实验记录的断面数据异常，无法查看')
-      return
-    }
-    navigate(`/student/modes/panorama/${logicDiagramId}?${whole ? 'wholeRunId' : 'groupSnapshotId'}=${selectedSnapshotId}`, {
+
+    const resultQuery = hasSnapshot
+      ? `?${whole ? 'wholeRunId' : 'groupSnapshotId'}=${selectedSnapshotId}`
+      : ''
+    navigate(`/student/modes/panorama/${logicDiagramId}${resultQuery}`, {
       state: {
         from: 'coach',
         section: 'logic',
         deviceId: detail?.iedDeviceId,
-        ...(whole ? { wholeExperimentId: Number(groupId), wholeRunId: selectedSnapshotId }
-          : { groupId: Number(groupId) }),
+        ...(hasSnapshot && whole ? { wholeExperimentId: Number(groupId), wholeRunId: selectedSnapshotId }
+          : hasSnapshot ? { groupId: Number(groupId) } : { fromLogicGroup: true, groupId: Number(groupId) }),
       },
     })
   }
@@ -436,7 +442,9 @@ export default function StudentLogicGroupDetailPage({ experimentType = 'group' }
                 <div className="diagram-canvas__header">
                   <div>
                     <span>{label}逻辑框图</span>
-                    <span className="logic-group__hint">点击基础逻辑节点查看当前记录的节点断面</span>
+                    <span className="logic-group__hint">
+                      {selectedSnapshotId == null ? '点击基础逻辑节点查看逻辑图并开始实验' : '点击基础逻辑节点查看当前记录的节点断面'}
+                    </span>
                   </div>
                   <div className="logic-group__actions">
                     {overallPassed != null && !monitoring && (

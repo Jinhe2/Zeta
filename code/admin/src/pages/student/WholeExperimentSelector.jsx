@@ -169,7 +169,7 @@ export default function WholeExperimentSelector({ deviceId, logics, navigationSt
 
           <div className="whole-experiment-selector__recent">
             <div className="whole-experiment-selector__recent-title">
-              <h3>最近使用的组合</h3>
+              <h3>最近使用的组合{!loading && recent.length > 0 ? `（${recent.length}）` : ''}</h3>
               <button type="button" className="whole-experiment-selector__refresh" onClick={loadRecent} disabled={loading || saving}>
                 {loading ? '加载中…' : '刷新'}
               </button>

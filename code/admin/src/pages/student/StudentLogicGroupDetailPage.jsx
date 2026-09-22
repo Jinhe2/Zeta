@@ -512,9 +512,11 @@ export default function StudentLogicGroupDetailPage({ experimentType = 'group' }
                       </span>
                       <span className="diagram-page__history-transitions">{snap.totalTransitions ?? 0} 次变位</span>
                       {whole && snap.resultStatus === 'PENDING' ? (
-                        <span>{snap.status === 'RESPONSE_TIMEOUT' ? '响应超时，状态待确认' : '实验进行中'}</span>
+                        <span className="diagram-page__history-status diagram-page__history-status--pending">
+                          {snap.status === 'RESPONSE_TIMEOUT' ? '响应超时，状态待确认' : '实验进行中'}
+                        </span>
                       ) : whole && (snap.status === 'START_FAILED' || snap.status === 'FAILED') ? (
-                        <span title={snap.errorMessage} className="diagram-page__history-status--failed">
+                        <span title={snap.errorMessage} className="diagram-page__history-status diagram-page__history-status--failed">
                           {snap.status === 'START_FAILED' ? '启动失败' : '实验失败'}
                         </span>
                       ) : snap.resultStatus === 'DEVICE_NOT_STARTED' ? (

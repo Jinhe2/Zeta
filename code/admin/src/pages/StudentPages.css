@@ -819,7 +819,9 @@
   font-family: ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   flex: 1 1 130px;
-  min-width: 86px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -882,6 +884,11 @@
 .diagram-page__history-status--generating {
   background: rgba(255, 193, 7, 0.2);
   color: #ffd54f;
+}
+
+.diagram-page__history-status--pending {
+  background: rgba(255, 193, 7, 0.16);
+  color: #ffe082;
 }
 
 .diagram-canvas__hint {

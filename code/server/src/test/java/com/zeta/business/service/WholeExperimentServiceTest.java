@@ -72,8 +72,8 @@ class WholeExperimentServiceTest {
     assertThrows(ResponseStatusException.class, () -> service.validatedMembers(1L, 100L));
   }
 
-  @Test void 最近列表按学员装置限定五种() {
+  @Test void 最近列表按学员装置加载全部组合() {
     service.recent(1L, 7L);
-    verify(repository).findTop5ByUserIdAndDeviceIdAndLastStartedAtIsNotNullOrderByLastStartedAtDescIdDesc(1L, 7L);
+    verify(repository).findByUserIdAndDeviceIdOrderByRecent(1L, 7L);
   }
 }

@@ -28,20 +28,27 @@ public class WholeExperimentService {
     List<Member> ordered = validate(request.getDeviceId(), request.getLogicDiagramIds());
     String signature = ordered.stream().map(m -> String.valueOf(m.getLogicDiagramId()))
         .collect(Collectors.joining(","));
+    if (repository.findByUserIdAndDeviceIdAndMemberSignature(
+        userId, request.getDeviceId(), signature).isPresent()) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "该整组实验组合已经存在");
+    }
     repository.insertIfAbsent(userId, request.getDeviceId(), signature);
     WholeExperiment experiment = repository.lockBySignature(userId, request.getDeviceId(), signature);
-    if (members.findByExperimentIdOrderBySequenceNoAsc(experiment.getId()).isEmpty()) {
-      for (Member item : ordered) {
-        WholeExperimentMember member = new WholeExperimentMember();
-        member.setExperimentId(experiment.getId());
-        member.setLogicDiagramId(item.getLogicDiagramId());
-        member.setSequenceNo(item.getSortOrder());
-        member.setCode(item.getCode());
-        member.setTitle(item.getTitle());
-        members.save(member);
-      }
-      members.flush();
+    List<WholeExperimentMember> existingMembers =
+        members.findByExperimentIdOrderBySequenceNoAsc(experiment.getId());
+    if (!existingMembers.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "该整组实验组合已经存在");
     }
+    for (Member item : ordered) {
+      WholeExperimentMember member = new WholeExperimentMember();
+      member.setExperimentId(experiment.getId());
+      member.setLogicDiagramId(item.getLogicDiagramId());
+      member.setSequenceNo(item.getSortOrder());
+      member.setCode(item.getCode());
+      member.setTitle(item.getTitle());
+      members.save(member);
+    }
+    members.flush();
     return detail(userId, experiment.getId());
   }
 
@@ -51,8 +58,8 @@ public class WholeExperimentService {
   }
 
   public List<Detail> recent(Long userId, Long deviceId) {
-    return repository.findTop5ByUserIdAndDeviceIdAndLastStartedAtIsNotNullOrderByLastStartedAtDescIdDesc(
-        userId, deviceId).stream().map(e -> detail(userId, e.getId())).collect(Collectors.toList());
+    return repository.findByUserIdAndDeviceIdOrderByRecent(userId, deviceId).stream()
+        .map(e -> detail(userId, e.getId())).collect(Collectors.toList());
   }
 
   public Detail detail(Long userId, Long id) {

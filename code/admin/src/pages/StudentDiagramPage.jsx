@@ -854,7 +854,7 @@ export default function StudentDiagramPage() {
                       showDevInfo={false}
                       nodeStates={nodeStates}
                       selectedNodeId={selectedLogicNodeId}
-                      onNodeSelect={isGroupResultMode ? undefined : handleLogicNodeSelect}
+                      onNodeSelect={handleLogicNodeSelect}
                       toolbarBeforeZoom={nodeStates ? (
                         <div className="diagram-canvas__state-legend" aria-label="节点状态图例">
                           <span className="diagram-canvas__state-legend-item">

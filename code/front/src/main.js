@@ -123,11 +123,28 @@ let nativeDeviceIdCache = null
 function readNativeDeviceFingerprint() {
   try {
     if (process.platform === 'win32') {
+      // MachineGuid 会随 Windows 镜像一起被克隆，不能作为唯一硬件标识。
+      // 优先使用系统产品 UUID、BIOS 序列号和主板序列号的组合。
+      try {
+        const output = execFileSync('powershell.exe', [
+          '-NoProfile', '-NonInteractive', '-Command',
+          "$p=Get-CimInstance Win32_ComputerSystemProduct; $b=Get-CimInstance Win32_BIOS; $m=Get-CimInstance Win32_BaseBoard; $n=(Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object {$_.IPEnabled -and $_.MACAddress} | Select-Object -ExpandProperty MACAddress) -join ','; [pscustomobject]@{uuid=$p.UUID; bios=$b.SerialNumber; board=$m.SerialNumber; mac=$n} | ConvertTo-Json -Compress",
+        ], { encoding: 'utf8', windowsHide: true, timeout: 5000 })
+        const info = JSON.parse(output)
+        const values = [info.uuid, info.bios, info.board]
+          .map((value) => String(value ?? '').trim())
+          .filter((value) => value && !/^to be filled|^default string|^unknown|^none$/i.test(value))
+        if (values.length > 0) return `windows-hardware:${values.join('|')}`
+      } catch (error) {
+        log('⚠️ failed to read Windows hardware fingerprint:', error.message)
+      }
+
+      // 老系统没有 CIM/PowerShell 时再退回 MachineGuid。
       const output = execFileSync('reg.exe', [
         'query', 'HKLM\\SOFTWARE\\Microsoft\\Cryptography', '/v', 'MachineGuid',
       ], { encoding: 'utf8', windowsHide: true, timeout: 3000 })
       const match = output.match(/MachineGuid\s+REG_SZ\s+([^\r\n]+)/i)
-      if (match?.[1]?.trim()) return match[1].trim()
+      if (match?.[1]?.trim()) return `windows-machine:${match[1].trim()}`
     }
 
     if (process.platform === 'darwin') {
@@ -157,7 +174,7 @@ function getNativeDeviceId() {
   if (fingerprint) {
     nativeDeviceIdCache = `native-${crypto
       .createHash('sha256')
-      .update(`zeta-device-bind-v1:${fingerprint}`)
+      .update(`zeta-device-bind-v2:${fingerprint}`)
       .digest('hex')
       .slice(0, 57)}`
     return nativeDeviceIdCache

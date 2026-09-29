@@ -124,16 +124,22 @@ function readNativeDeviceFingerprint() {
   try {
     if (process.platform === 'win32') {
       // MachineGuid 会随 Windows 镜像一起被克隆，不能作为唯一硬件标识。
-      // 优先使用系统产品 UUID、BIOS 序列号和主板序列号的组合。
+      // 优先使用系统产品 UUID、BIOS 序列号、主板序列号和物理网口 MAC 的组合。
       try {
         const output = execFileSync('powershell.exe', [
           '-NoProfile', '-NonInteractive', '-Command',
-          "$p=Get-CimInstance Win32_ComputerSystemProduct; $b=Get-CimInstance Win32_BIOS; $m=Get-CimInstance Win32_BaseBoard; $n=(Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object {$_.IPEnabled -and $_.MACAddress} | Select-Object -ExpandProperty MACAddress) -join ','; [pscustomobject]@{uuid=$p.UUID; bios=$b.SerialNumber; board=$m.SerialNumber; mac=$n} | ConvertTo-Json -Compress",
+          "$p=Get-CimInstance Win32_ComputerSystemProduct; $b=Get-CimInstance Win32_BIOS; $m=Get-CimInstance Win32_BaseBoard; $n=(Get-CimInstance Win32_NetworkAdapter | Where-Object {$_.PhysicalAdapter -and $_.MACAddress} | Select-Object -ExpandProperty MACAddress | Sort-Object -Unique) -join ','; [pscustomobject]@{uuid=$p.UUID; bios=$b.SerialNumber; board=$m.SerialNumber; mac=$n} | ConvertTo-Json -Compress",
         ], { encoding: 'utf8', windowsHide: true, timeout: 5000 })
         const info = JSON.parse(output)
         const values = [info.uuid, info.bios, info.board]
           .map((value) => String(value ?? '').trim())
           .filter((value) => value && !/^to be filled|^default string|^unknown|^none$/i.test(value))
+        const macs = String(info.mac ?? '')
+          .split(',')
+          .map((value) => value.trim().toUpperCase().replace(/[^0-9A-F]/g, ''))
+          .filter((value) => /^[0-9A-F]{12}$/.test(value))
+          .sort()
+        if (macs.length > 0) values.push(`mac=${macs.join(',')}`)
         if (values.length > 0) return `windows-hardware:${values.join('|')}`
       } catch (error) {
         log('⚠️ failed to read Windows hardware fingerprint:', error.message)
@@ -172,11 +178,11 @@ function getNativeDeviceId() {
 
   const fingerprint = readNativeDeviceFingerprint()
   if (fingerprint) {
-    nativeDeviceIdCache = `native-${crypto
+    nativeDeviceIdCache = `native2-${crypto
       .createHash('sha256')
       .update(`zeta-device-bind-v2:${fingerprint}`)
       .digest('hex')
-      .slice(0, 57)}`
+      .slice(0, 56)}`
     return nativeDeviceIdCache
   }
 
@@ -186,12 +192,17 @@ function getNativeDeviceId() {
   try {
     if (fs.existsSync(fallbackPath)) {
       const value = fs.readFileSync(fallbackPath, 'utf8').trim()
-      if (value) {
+      if (value.startsWith('native2-')) {
         nativeDeviceIdCache = value
-        return value
+        return nativeDeviceIdCache
+      }
+      if (value.startsWith('native-')) {
+        nativeDeviceIdCache = `native2-${value.slice('native-'.length)}`
+        fs.writeFileSync(fallbackPath, nativeDeviceIdCache, 'utf8')
+        return nativeDeviceIdCache
       }
     }
-    const value = `native-${crypto.randomUUID()}`
+    const value = `native2-${crypto.randomUUID()}`
     fs.mkdirSync(path.dirname(fallbackPath), { recursive: true })
     fs.writeFileSync(fallbackPath, value, 'utf8')
     nativeDeviceIdCache = value

@@ -1,6 +1,6 @@
 const TO_RADIANS = Math.PI / 180
-const DEFAULT_OUTPUT_MAX_SIZE = 1600
-const DEFAULT_JPEG_QUALITY = 0.86
+const DEFAULT_OUTPUT_MAX_SIZE = 16384
+const DEFAULT_JPEG_QUALITY = 0.98
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -66,6 +66,8 @@ export async function getCroppedImageBlob(
 
   croppedCanvas.width = outW
   croppedCanvas.height = outH
+  croppedCtx.imageSmoothingEnabled = true
+  croppedCtx.imageSmoothingQuality = 'high'
 
   croppedCtx.drawImage(
     canvas,

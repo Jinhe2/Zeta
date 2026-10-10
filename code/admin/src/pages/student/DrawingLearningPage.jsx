@@ -13,7 +13,7 @@ const DISPLAY_TYPES = ['WHITEPRINT']
 
 function makeStep(group, page, item, pageIndex, itemIndex) {
   return {
-    key: `${group.id}:${page.id}:${item.id}`,
+    key: `${group.id}:${page.id}:${item?.id ?? 'page'}`,
     group,
     page,
     item,
@@ -23,11 +23,8 @@ function makeStep(group, page, item, pageIndex, itemIndex) {
 }
 
 function findFirstStep(group, detail) {
-  for (const [pageIndex, page] of (detail.pages ?? []).entries()) {
-    const item = page.items?.[0]
-    if (item) return makeStep(group, page, item, pageIndex, 0)
-  }
-  return null
+  const page = detail.pages?.[0]
+  return page ? makeStep(group, page, page.items?.[0] ?? null, 0, 0) : null
 }
 
 export default function DrawingLearningPage() {
@@ -108,9 +105,14 @@ export default function DrawingLearningPage() {
     sortedGroups.forEach((group) => {
       const detail = groupDetails[group.id]
       detail?.pages?.forEach((page, pageIndex) => {
-        page.items?.forEach((item, itemIndex) => {
-          steps.push(makeStep(group, page, item, pageIndex, itemIndex))
-        })
+        const items = page.items ?? []
+        if (items.length === 0) {
+          steps.push(makeStep(group, page, null, pageIndex, 0))
+        } else {
+          items.forEach((item, itemIndex) => {
+            steps.push(makeStep(group, page, item, pageIndex, itemIndex))
+          })
+        }
       })
     })
     return steps
@@ -181,16 +183,16 @@ export default function DrawingLearningPage() {
           <>
             {activeDetail?.pages?.length > 1 && (
               <div className="drawing-learning__page-tabs">
-                {activeDetail.pages.map((page) => (
+                {activeDetail.pages.map((page, pageIndex) => (
                   <button
                     key={page.id}
                     type="button"
                     className={page.id === currentStep.page.id ? 'drawing-learning__page-tab--active' : ''}
                     onClick={() => {
                       const firstItem = page.items?.[0]
-                      if (!firstItem) return
                       const group = groups.find((candidate) => candidate.id === activeGroupId)
-                      setCurrentStepKey(makeStep(group, page, firstItem, 0, 0).key)
+                      if (!group) return
+                      setCurrentStepKey(makeStep(group, page, firstItem ?? null, pageIndex, 0).key)
                     }}
                   >
                     {page.title}
@@ -200,7 +202,7 @@ export default function DrawingLearningPage() {
             )}
             <ImageRegionViewer
               imageUrl={imageUrl('drawing-page', currentStep.page.id)}
-              region={hasRegion(currentStep.item) ? normalizeRegion(currentStep.item) : null}
+              region={currentStep.item && hasRegion(currentStep.item) ? normalizeRegion(currentStep.item) : null}
               alt={currentStep.page.title}
             />
           </>
@@ -215,8 +217,14 @@ export default function DrawingLearningPage() {
             <div className="drawing-learning__text-body">
               <p className="drawing-learning__type">{TYPE_LABELS[currentStep.group.drawingType]} / {currentStep.group.name}</p>
               <h2>{currentStep.page.title}</h2>
-              <h3>{currentStep.item.title}</h3>
-              <p>{currentStep.item.content}</p>
+              {currentStep.item ? (
+                <>
+                  <h3>{currentStep.item.title}</h3>
+                  <p>{currentStep.item.content}</p>
+                </>
+              ) : (
+                <p className="drawing-learning__empty-note">该图纸暂无认知条目。</p>
+              )}
             </div>
             <div className="drawing-learning__steps">
               <button type="button" disabled={currentIndex <= 0} onClick={goPrevious}>上一步</button>

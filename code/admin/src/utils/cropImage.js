@@ -7,8 +7,12 @@ const createImage = (url) =>
     image.src = url
   })
 
-export const DEFAULT_IMAGE_OUTPUT_MAX_SIZE = 1600
-export const DEFAULT_IMAGE_OUTPUT_QUALITY = 0.86
+// 保留认知图片中的细线和小字。仅对超过浏览器安全画布尺寸的极端图片降采样。
+export const DEFAULT_IMAGE_OUTPUT_MAX_SIZE = 16384
+export const DEFAULT_IMAGE_OUTPUT_QUALITY = 0.98
+
+const LOSSLESS_IMAGE_TYPES = new Set(['image/png'])
+const EDITABLE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 function getRadianAngle(degreeValue) {
   return (degreeValue * Math.PI) / 180
@@ -28,17 +32,20 @@ function rotateSize(width, height, rotation) {
  * @param {{ x: number, y: number, width: number, height: number }} pixelCrop
  * @param {number} rotation 角度
  * @param {{ horizontal?: boolean, vertical?: boolean }} flip
- * @param {number} maxOutputSize 最长边上限（像素）
- * @param {number} quality JPEG 输出质量
+ * @param {{ outputType?: string, maxOutputSize?: number, quality?: number }} output 输出配置
  */
 export async function getCroppedImageBlob(
   imageSrc,
   pixelCrop,
   rotation = 0,
   flip = { horizontal: false, vertical: false },
-  maxOutputSize = DEFAULT_IMAGE_OUTPUT_MAX_SIZE,
-  quality = DEFAULT_IMAGE_OUTPUT_QUALITY,
+  output = {},
 ) {
+  const {
+    outputType = 'image/jpeg',
+    maxOutputSize = DEFAULT_IMAGE_OUTPUT_MAX_SIZE,
+    quality = DEFAULT_IMAGE_OUTPUT_QUALITY,
+  } = output
   const image = await createImage(imageSrc)
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
@@ -64,17 +71,16 @@ export async function getCroppedImageBlob(
     throw new Error('无法创建裁切画布')
   }
 
-  let outW = pixelCrop.width
-  let outH = pixelCrop.height
-  const longest = Math.max(outW, outH)
-  if (longest > maxOutputSize) {
-    const scale = maxOutputSize / longest
-    outW = Math.round(outW * scale)
-    outH = Math.round(outH * scale)
-  }
+  const { width: outW, height: outH } = resolveImageOutputSize(
+    pixelCrop.width,
+    pixelCrop.height,
+    maxOutputSize,
+  )
 
   croppedCanvas.width = outW
   croppedCanvas.height = outH
+  croppedCtx.imageSmoothingEnabled = true
+  croppedCtx.imageSmoothingQuality = 'high'
 
   croppedCtx.drawImage(
     canvas,
@@ -97,8 +103,8 @@ export async function getCroppedImageBlob(
           reject(new Error('导出图片失败'))
         }
       },
-      'image/jpeg',
-      quality,
+      outputType,
+      LOSSLESS_IMAGE_TYPES.has(outputType) ? undefined : quality,
     )
   })
 }
@@ -121,6 +127,33 @@ export function isSvgFile(file) {
   return file.type === 'image/svg+xml' || /\.svg$/i.test(file.name)
 }
 
+export function isGifFile(file) {
+  return file.type === 'image/gif' || /\.gif$/i.test(file.name)
+}
+
 export function isRasterImageFile(file) {
   return file.type.startsWith('image/') && !isSvgFile(file)
+}
+
+export function resolveImageOutputType(type = '') {
+  const normalized = String(type).toLowerCase()
+  return EDITABLE_IMAGE_TYPES.has(normalized) ? normalized : 'image/png'
+}
+
+export function extensionForImageType(type) {
+  if (type === 'image/png') return 'png'
+  if (type === 'image/webp') return 'webp'
+  return 'jpg'
+}
+
+export function resolveImageOutputSize(width, height, maxOutputSize = DEFAULT_IMAGE_OUTPUT_MAX_SIZE) {
+  const longest = Math.max(width, height)
+  if (!Number.isFinite(maxOutputSize) || maxOutputSize <= 0 || longest <= maxOutputSize) {
+    return { width: Math.round(width), height: Math.round(height) }
+  }
+  const scale = maxOutputSize / longest
+  return {
+    width: Math.round(width * scale),
+    height: Math.round(height * scale),
+  }
 }

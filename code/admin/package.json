@@ -11,6 +11,7 @@
     "test:sampling": "node --test src/utils/samplingValidation.test.js src/utils/digitalSampling.test.js",
     "test:setting": "node --test src/utils/settingCheck.test.js",
     "test:whole": "node --test src/utils/wholeExperiment.test.js",
+    "test:image": "node --test src/utils/cropImage.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

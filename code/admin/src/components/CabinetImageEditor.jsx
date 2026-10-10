@@ -13,7 +13,7 @@ function defaultCropSize(containerWidth, containerHeight) {
   }
 }
 
-export default function CabinetImageEditor({ imageSrc, onConfirm, onCancel }) {
+export default function CabinetImageEditor({ imageSrc, outputType, onConfirm, onCancel }) {
   const cropAreaRef = useRef(null)
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
   const [initialCropSize, setInitialCropSize] = useState(null)
@@ -95,6 +95,8 @@ export default function CabinetImageEditor({ imageSrc, onConfirm, onCancel }) {
       const blob = await getCroppedImageBlob(imageSrc, croppedAreaPixels, rotation, {
         horizontal: flipH,
         vertical: flipV,
+      }, {
+        outputType,
       })
       await onConfirm(blob)
     } catch (err) {

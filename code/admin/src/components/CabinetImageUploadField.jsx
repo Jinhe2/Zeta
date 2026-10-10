@@ -3,8 +3,11 @@ import { api, imageUrl as resolveImageUrl } from '../api/client'
 import CabinetImageEditor from './CabinetImageEditor'
 import {
   isRasterImageFile,
+  isGifFile,
   isSvgFile,
+  extensionForImageType,
   loadImageSourceFromUrl,
+  resolveImageOutputType,
 } from '../utils/cropImage'
 
 const MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024
@@ -28,7 +31,7 @@ export default function CabinetImageUploadField({
   const localPreviewRef = useRef('')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
-  const [editorSrc, setEditorSrc] = useState(null)
+  const [editorSource, setEditorSource] = useState(null)
   const [localPreviewUrl, setLocalPreviewUrl] = useState('')
 
   const doUpload = uploadImage ?? ((file) => api.uploadCabinetDisplayImage(file))
@@ -77,14 +80,18 @@ export default function CabinetImageUploadField({
   }
 
   const uploadBlob = async (blob) => {
-    const file = new File([blob], `cabinet-display-${Date.now()}.jpg`, { type: 'image/jpeg' })
+    const extension = extensionForImageType(blob.type)
+    const file = new File([blob], `image-${Date.now()}.${extension}`, { type: blob.type })
     await uploadFile(file)
-    setEditorSrc(null)
+    setEditorSource(null)
   }
 
   const openEditorWithFile = (file) => {
     const reader = new FileReader()
-    reader.onload = () => setEditorSrc(reader.result)
+    reader.onload = () => setEditorSource({
+      src: reader.result,
+      outputType: resolveImageOutputType(file.type),
+    })
     reader.onerror = () => setUploadError('读取图片失败')
     reader.readAsDataURL(file)
   }
@@ -99,7 +106,7 @@ export default function CabinetImageUploadField({
       setUploadError(`图片不能超过 ${formatFileSize(MAX_IMAGE_UPLOAD_BYTES)}，当前约 ${formatFileSize(file.size)}`)
       return
     }
-    if (isSvgFile(file)) {
+    if (isSvgFile(file) || isGifFile(file)) {
       await uploadFile(file)
       return
     }
@@ -116,7 +123,8 @@ export default function CabinetImageUploadField({
     setUploadError('')
     try {
       const src = await loadImageSourceFromUrl(recropSource)
-      setEditorSrc(src)
+      const sourceType = /^data:([^;,]+)/i.exec(src)?.[1] ?? ''
+      setEditorSource({ src, outputType: resolveImageOutputType(sourceType) })
     } catch (err) {
       setUploadError(err.message || '无法加载当前图片')
     }
@@ -138,7 +146,7 @@ export default function CabinetImageUploadField({
             type="button"
             className="users-page__btn users-page__btn--ghost cabinet-display-items__pick-btn"
             onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || uploading || Boolean(editorSrc)}
+            disabled={disabled || uploading || Boolean(editorSource)}
           >
             {uploading ? '上传中…' : '选择并编辑图片'}
           </button>
@@ -147,7 +155,7 @@ export default function CabinetImageUploadField({
               type="button"
               className="users-page__link"
               onClick={handleRecrop}
-              disabled={disabled || uploading || Boolean(editorSrc)}
+              disabled={disabled || uploading || Boolean(editorSource)}
             >
               重新裁剪
             </button>
@@ -157,7 +165,7 @@ export default function CabinetImageUploadField({
               type="button"
               className="users-page__link users-page__link--danger"
               onClick={handleClear}
-              disabled={disabled || uploading || Boolean(editorSrc)}
+              disabled={disabled || uploading || Boolean(editorSource)}
             >
               移除图片
             </button>
@@ -181,17 +189,18 @@ export default function CabinetImageUploadField({
           </>
         ) : (
           <span className="cabinet-display-items__upload-hint">
-            支持 JPG、PNG、GIF、WebP（可裁切、旋转、翻转）；SVG 将直接上传，最大 20MB
+            支持 JPG、PNG、WebP（保持高清裁切）；GIF、SVG 将保留原文件直接上传，最大 20MB
           </span>
         )}
       </div>
 
-      {editorSrc && (
+      {editorSource && (
         <CabinetImageEditor
-          key={editorSrc}
-          imageSrc={editorSrc}
+          key={editorSource.src}
+          imageSrc={editorSource.src}
+          outputType={editorSource.outputType}
           onConfirm={uploadBlob}
-          onCancel={() => setEditorSrc(null)}
+          onCancel={() => setEditorSource(null)}
         />
       )}
     </>

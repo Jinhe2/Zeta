@@ -13,7 +13,7 @@ export default function TimerNode({ data }: NodeProps) {
       <div className="v4-node__text">
         <span>{d.label}</span>
         <span className="v4-node__sep" />
-        <span className="v4-node__value">{d.delayValue ?? '-'}s</span>
+        <span className="v4-node__value">{d.delayValue ?? '-'}ms</span>
       </div>
       <Handle type="source" position={Position.Right} className="v4-handle" />
     </div>

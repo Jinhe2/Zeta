@@ -2,6 +2,7 @@ package com.zeta.business.entities.logicgroup.dto;
 
 import com.zeta.screen.logicdiagram.SectionSnapshotResponse;
 import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -34,6 +35,7 @@ public final class LogicGroupSnapshotDtos {
     private Integer totalTransitions;
     private String errorCode;
     private String errorMessage;
+    private List<Map<String, Object>> settings;
     private List<SectionSnapshotResponse> sections;
   }
 }

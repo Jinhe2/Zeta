@@ -1,5 +1,6 @@
 package com.zeta.business.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zeta.business.entities.logicgroup.dto.LogicGroupSnapshotDtos.*;
@@ -47,9 +48,13 @@ public class LogicGroupSnapshotParser {
     if (!"failed".equals(summary.getStatus())) {
       sections = logicSnapshotService.parseSections(buildMemberSnapshotJson(root, member, summary));
     }
+    List<Map<String, Object>> settings = member.path("settings").isArray()
+        ? objectMapper.convertValue(
+            member.path("settings"), new TypeReference<List<Map<String, Object>>>() {})
+        : Collections.emptyList();
     return new MemberDetailResponse(snapshotId, groupId, summary.getLogicDiagramId(), summary.getLogicId(),
         summary.getOrder(), summary.getStatus(), summary.getExperimentPassed(), summary.getTotalTransitions(),
-        summary.getErrorCode(), summary.getErrorMessage(), sections);
+        summary.getErrorCode(), summary.getErrorMessage(), settings, sections);
   }
 
   private JsonNode parseAndValidateRoot(String snapshotJson) {

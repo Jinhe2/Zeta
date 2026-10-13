@@ -195,7 +195,7 @@ function ZetaConfigPanel({ config, configName, filename }: Required<Pick<ConfigI
                 t.name ? String(t.name) : '',
                 t.input ? `输入 ${String(t.input)}` : '',
                 t.delayRef ? `延时 ${String(t.delayRef)}` : '',
-                t.delayValue != null ? `${t.delayValue}s` : '',
+                t.delayValue != null ? `${t.delayValue}ms` : '',
               ].filter(Boolean),
             }))}
           />

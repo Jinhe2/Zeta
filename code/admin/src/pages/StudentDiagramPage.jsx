@@ -118,6 +118,49 @@ function parseSnapshotMeta(snapshotJson) {
   }
 }
 
+/** 提取 monitord 结果中的实际定值，供定值型计时器按 delayRef 关联。 */
+function extractResultSettingValues(snapshotJson) {
+  const settings = Array.isArray(snapshotJson)
+    ? snapshotJson
+    : parseSnapshotMeta(snapshotJson).settings
+  if (!Array.isArray(settings)) return {}
+
+  return Object.fromEntries(settings
+    .filter((setting) => setting?.id && setting.value != null)
+    .map((setting) => [String(setting.id), setting.value]))
+}
+
+/** 只覆盖计时器引用的定值展示值，不修改后端返回的原始逻辑配置。 */
+function mergeTimerResultSettings(config, resultSettingValues) {
+  if (!config || !Object.keys(resultSettingValues).length) return config
+  const timerSettingRefs = new Set((config.timers ?? [])
+    .map((timer) => timer.delayRef)
+    .filter(Boolean)
+    .map(String))
+  if (!timerSettingRefs.size) return config
+
+  const mergedSettings = (config.settings ?? []).map((setting) => {
+    const settingId = String(setting.id ?? '')
+    if (!timerSettingRefs.has(settingId)
+      || !Object.prototype.hasOwnProperty.call(resultSettingValues, settingId)) {
+      return setting
+    }
+    return { ...setting, defaultValue: resultSettingValues[settingId] }
+  })
+  const existingSettingIds = new Set(mergedSettings.map((setting) => String(setting.id ?? '')))
+  for (const settingId of timerSettingRefs) {
+    if (!existingSettingIds.has(settingId)
+      && Object.prototype.hasOwnProperty.call(resultSettingValues, settingId)) {
+      mergedSettings.push({ id: settingId, defaultValue: resultSettingValues[settingId] })
+    }
+  }
+
+  return {
+    ...config,
+    settings: mergedSettings,
+  }
+}
+
 function normalizeBoolean(value) {
   if (typeof value === 'boolean') return value
   if (typeof value === 'string') {
@@ -210,6 +253,7 @@ export default function StudentDiagramPage() {
   const [selectedSnapshotId, setSelectedSnapshotId] = useState(null)
   const [sections, setSections] = useState([])
   const [selectedSectionId, setSelectedSectionId] = useState(null)
+  const [resultSettingValues, setResultSettingValues] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [jsonViewer, setJsonViewer] = useState({ open: false, title: '', json: '' })
@@ -258,6 +302,7 @@ export default function StudentDiagramPage() {
     setSelectedSnapshotId(syntheticSnapshotId)
     setSections(groupSections)
     setSelectedSectionId(pickDefaultSectionId(groupSections, groupOutputNodeIds))
+    setResultSettingValues(extractResultSettingValues(memberResult.settings))
   }, [])
 
   // Load detail + existing snapshots
@@ -280,6 +325,7 @@ export default function StudentDiagramPage() {
         } else {
           setGroupMemberResult(null)
           setSnapshots(resultData)
+          setResultSettingValues({})
         }
       })
       .catch((err) => {
@@ -326,10 +372,15 @@ export default function StudentDiagramPage() {
     setSelectedSnapshotId(snapshotId)
     setSections([])
     setSelectedSectionId(null)
-    api.getSnapshotSections(snapshotId)
-      .then((secs) => {
+    setResultSettingValues({})
+    Promise.all([
+      api.getSnapshotSections(snapshotId),
+      api.getSnapshotDetail(snapshotId),
+    ])
+      .then(([secs, snapshotDetail]) => {
         setSections(secs)
         setSelectedSectionId(pickDefaultSectionId(secs, outputNodeIds))
+        setResultSettingValues(extractResultSettingValues(snapshotDetail?.snapshotJson))
       })
       .catch((err) => setError(err.message))
   }, [outputNodeIds])
@@ -358,9 +409,13 @@ export default function StudentDiagramPage() {
       }
       setSnapshots((prev) => prev.some((s) => s.id === result.id) ? prev : [newSnap, ...prev])
       setSelectedSnapshotId(result.id)
-      return api.getSnapshotSections(result.id).then((secs) => {
+      return Promise.all([
+        api.getSnapshotSections(result.id),
+        api.getSnapshotDetail(result.id),
+      ]).then(([secs, snapshotDetail]) => {
         setSections(secs)
         setSelectedSectionId(pickDefaultSectionId(secs, outputNodeIds))
+        setResultSettingValues(extractResultSettingValues(snapshotDetail?.snapshotJson))
       })
     })
   }, [id, detail, outputNodeIds])
@@ -373,6 +428,7 @@ export default function StudentDiagramPage() {
         const secs = parseSnapshotSections(task.snapshotJson)
         setSections(secs)
         setSelectedSectionId(pickDefaultSectionId(secs, outputNodeIds))
+        setResultSettingValues(extractResultSettingValues(task.snapshotJson))
 
         // 添加到快照列表（去重）
         setSnapshots((prev) => {
@@ -502,6 +558,7 @@ export default function StudentDiagramPage() {
     setSections([])
     setSelectedSectionId(null)
     setSelectedSnapshotId(null)
+    setResultSettingValues({})
     try {
       if (previousTaskUuid) {
         await api.endLogicMonitor(previousTaskUuid).catch(() => {})
@@ -595,6 +652,7 @@ export default function StudentDiagramPage() {
     setSections([])
     setSelectedSectionId(null)
     setSelectedSnapshotId(null)
+    setResultSettingValues({})
     Promise.all([
       api.getProtectionLogic(id),
       isGroupResultMode
@@ -625,6 +683,11 @@ export default function StudentDiagramPage() {
     const section = sections.find((s) => s.id === selectedSectionId)
     return section?.states ?? null
   }, [sections, selectedSectionId])
+
+  const diagramConfig = useMemo(
+    () => mergeTimerResultSettings(detail?.config, resultSettingValues),
+    [detail?.config, resultSettingValues],
+  )
 
   const inputNodeIds = useMemo(
     () => (detail?.config?.inputs ?? []).map((input) => input.id).filter(Boolean),
@@ -850,7 +913,7 @@ export default function StudentDiagramPage() {
                     </div>
                   ) : (
                     <ZetaGraphView
-                      config={detail.config}
+                      config={diagramConfig}
                       showDevInfo={false}
                       nodeStates={nodeStates}
                       selectedNodeId={selectedLogicNodeId}

@@ -33,6 +33,14 @@ const edgeTypes = {
   elk: ElkEdge,
 }
 
+const GRAPH_MIN_ZOOM = 0.05
+const GRAPH_MAX_ZOOM = 2
+const GRAPH_FIT_VIEW_OPTIONS = {
+  padding: 0.08,
+  minZoom: GRAPH_MIN_ZOOM,
+  maxZoom: 1,
+}
+
 export interface GraphViewProps {
   data: GraphData
   /** 是否展示布局引擎等开发信息，学员界面应设为 false */
@@ -64,7 +72,7 @@ function ZoomControls() {
       <button
         type="button"
         aria-label="适应画布"
-        onClick={() => fitView({ padding: 0.15 })}
+        onClick={() => fitView(GRAPH_FIT_VIEW_OPTIONS)}
       >
         ⊡
       </button>
@@ -214,8 +222,10 @@ function GraphFlow({
           nodesConnectable={editable}
           elementsSelectable={editable}
           zoomOnDoubleClick={false}
+          minZoom={GRAPH_MIN_ZOOM}
+          maxZoom={GRAPH_MAX_ZOOM}
           fitView
-          fitViewOptions={{ padding: 0.15 }}
+          fitViewOptions={GRAPH_FIT_VIEW_OPTIONS}
           proOptions={{ hideAttribution: true }}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}

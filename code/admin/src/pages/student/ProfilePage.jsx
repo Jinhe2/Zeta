@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import StudentSubpageBar from './StudentSubpageBar'
+import { api } from '../../api/client'
 import './StudentSubpageLayout.css'
 import './ProfilePage.css'
 
@@ -41,7 +42,14 @@ const MOCK_HONORS = [
   { id: 4, title: '满分挑战', desc: '单次测评获得满分', earned: false },
 ]
 
-function AccountTab({ session, onChangePassword }) {
+function formatLearningDuration(seconds) {
+  const totalMinutes = Math.floor(Math.max(0, Number(seconds) || 0) / 60)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return hours > 0 ? `${hours}小时${minutes}分钟` : `${minutes}分钟`
+}
+
+function AccountTab({ session, onChangePassword, activitySummary, activityLoading }) {
   const displayName = session?.displayName || '学员'
   const username = session?.username || '未获取'
   const studentNo = session?.studentNo || '未分配'
@@ -72,6 +80,21 @@ function AccountTab({ session, onChangePassword }) {
         >
           修改密码
         </button>
+      </section>
+
+      <section className="profile-stats" aria-label="学习时长统计">
+        <div className="profile-stat-card">
+          <span className="profile-stat-card__value">
+            {activityLoading ? '加载中…' : formatLearningDuration(activitySummary?.totalSeconds)}
+          </span>
+          <span className="profile-stat-card__label">累计学习时长</span>
+        </div>
+        <div className="profile-stat-card">
+          <span className="profile-stat-card__value">
+            {activityLoading ? '加载中…' : formatLearningDuration(activitySummary?.currentCabinetTotalSeconds)}
+          </span>
+          <span className="profile-stat-card__label">本屏柜累计时长</span>
+        </div>
       </section>
 
       <section className="profile-info-grid" aria-label="个人信息">
@@ -208,7 +231,22 @@ export default function ProfilePage() {
   const { session } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('account')
+  const [activitySummary, setActivitySummary] = useState(null)
+  const [activityLoading, setActivityLoading] = useState(true)
   const ActivePanel = TAB_PANELS[activeTab]
+
+  useEffect(() => {
+    let cancelled = false
+    api.getMyStudentActivitySummary()
+      .then((data) => {
+        if (!cancelled) setActivitySummary(data)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setActivityLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <div className="student-subpage profile-page">
@@ -231,6 +269,8 @@ export default function ProfilePage() {
         <main className="student-subpage__content">
           <ActivePanel
             session={session}
+            activitySummary={activitySummary}
+            activityLoading={activityLoading}
             onChangePassword={() => navigate('/student/settings/password')}
           />
         </main>

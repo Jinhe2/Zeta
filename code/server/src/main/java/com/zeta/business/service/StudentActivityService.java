@@ -174,6 +174,41 @@ public class StudentActivityService {
   }
 
   @Transactional(value = "businessTransactionManager", readOnly = true)
+  public Map<String, Object> mySummary(Long userId, String rawBindId, Instant now) {
+    String bindId = normalize(rawBindId);
+    CabinetBinding binding = bindId == null ? null : bindings.findByBindId(bindId).orElse(null);
+    Long cabinetId = binding == null ? null : binding.getScreenCabinetId();
+    long totalSeconds = valueOrZero(sessions.sumDurationByUserId(userId));
+    long cabinetSeconds = cabinetId == null
+        ? 0 : valueOrZero(sessions.sumDurationByUserIdAndCabinetId(userId, cabinetId));
+    StudentActivitySession current = null;
+    for (StudentActivitySession session :
+        sessions.findByUserIdAndStatus(userId, StudentActivityStatus.ACTIVE)) {
+      long storedSeconds = session.getDurationSeconds();
+      long effectiveSeconds = seconds(session.getStartedAt(), effectiveEnd(session, now));
+      totalSeconds += effectiveSeconds - storedSeconds;
+      if (cabinetId != null && cabinetId.equals(session.getCabinetId())) {
+        cabinetSeconds += effectiveSeconds - storedSeconds;
+        if (now.isBefore(session.getExpiresAt())
+            && (bindId == null || bindId.equals(session.getDeviceBindId()))) {
+          current = session;
+        }
+      }
+    }
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("measuredAt", now);
+    result.put("online", current != null);
+    result.put("currentSessionSeconds", current == null ? 0L : seconds(current.getStartedAt(), now));
+    result.put("sessionStartedAt", current == null ? null : current.getStartedAt());
+    result.put("currentCabinetId", cabinetId);
+    result.put("currentCabinetName", cabinetId == null ? null
+        : cabinets.findById(cabinetId).map(cabinet -> cabinet.getName()).orElse(null));
+    result.put("currentCabinetTotalSeconds", Math.max(0, cabinetSeconds));
+    result.put("totalSeconds", Math.max(0, totalSeconds));
+    return result;
+  }
+
+  @Transactional(value = "businessTransactionManager", readOnly = true)
   public List<Map<String, Object>> cabinetOnlineReport(Instant now) {
     Instant todayStart = now.atZone(ZoneId.systemDefault()).toLocalDate()
         .atStartOfDay(ZoneId.systemDefault()).toInstant();
@@ -306,6 +341,10 @@ public class StudentActivityService {
 
   private static long seconds(Instant start, Instant end) {
     return Math.max(0, Duration.between(start, end).getSeconds());
+  }
+
+  private static long valueOrZero(Long value) {
+    return value == null ? 0L : value;
   }
 
   private static String normalize(String value) {

@@ -31,6 +31,14 @@ public class StudentActivityController {
     return Collections.singletonMap("ended", true);
   }
 
+  @GetMapping("/me/summary")
+  public Map<String, Object> mySummary(
+      @RequestHeader("Authorization") String authorization,
+      @RequestHeader(value = "X-Device-Bind-Id", required = false) String bindId) {
+    User user = auth.requireRole(authorization, UserRole.STUDENT);
+    return activities.mySummary(user.getId(), bindId, Instant.now());
+  }
+
   @GetMapping("/sessions")
   public List<Map<String, Object>> sessions(
       @RequestHeader("Authorization") String authorization,

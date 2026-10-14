@@ -11,6 +11,14 @@ import org.springframework.data.domain.Pageable;
 public interface StudentActivitySessionRepository extends JpaRepository<StudentActivitySession, Long> {
   List<StudentActivitySession> findByUserIdAndStatus(Long userId, StudentActivityStatus status);
 
+  @Query("select coalesce(sum(s.durationSeconds), 0) from StudentActivitySession s where s.userId = :userId")
+  Long sumDurationByUserId(@Param("userId") Long userId);
+
+  @Query("select coalesce(sum(s.durationSeconds), 0) from StudentActivitySession s "
+      + "where s.userId = :userId and s.cabinetId = :cabinetId")
+  Long sumDurationByUserIdAndCabinetId(
+      @Param("userId") Long userId, @Param("cabinetId") Long cabinetId);
+
   List<StudentActivitySession> findByDeviceBindIdAndStatus(
       String deviceBindId, StudentActivityStatus status);
 

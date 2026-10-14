@@ -263,6 +263,10 @@ export const api = {
     return request('/api/student-activity/end', { method: 'POST', activity: false })
   },
 
+  getMyStudentActivitySummary() {
+    return request('/api/student-activity/me/summary', { activity: false })
+  },
+
   getStudentActivitySessions(params) {
     return request(`/api/student-activity/sessions?${new URLSearchParams(params)}`)
   },

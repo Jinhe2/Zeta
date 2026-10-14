@@ -6,7 +6,7 @@
 .cabinet-monitor__view-switch { display: flex; flex: none; padding: 3px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: #182230; }
 .cabinet-monitor__view-switch button { min-width: 74px; border: 0; border-radius: 6px; background: transparent; color: #78909c; cursor: pointer; }
 .cabinet-monitor__view-switch button.is-active { background: rgba(100,181,246,.16); color: #90caf9; box-shadow: inset 0 0 0 1px rgba(100,181,246,.22); }
-.cabinet-monitor__album { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); grid-auto-flow: row; gap: 0 16px; }
+.cabinet-monitor__album { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); grid-auto-flow: row; gap: 0 18px; }
 .cabinet-monitor__card { position: relative; display: grid; min-width: 0; grid-row: span 5; grid-template-rows: subgrid; margin-bottom: 16px; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: linear-gradient(145deg, rgba(30,43,58,.98), rgba(20,29,41,.98)); box-shadow: 0 10px 28px rgba(0,0,0,.2); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
 .cabinet-monitor__card::before { position: absolute; inset: 0 0 auto; height: 3px; background: #546e7a; content: ''; }
 .cabinet-monitor__card--online { border: 2px solid rgba(76,175,80,.62); background: radial-gradient(circle at 88% 8%, rgba(76,175,80,.16), transparent 38%), linear-gradient(145deg, rgba(27,53,43,.98), rgba(18,31,34,.98)); box-shadow: 0 0 0 1px rgba(129,199,132,.08), 0 16px 38px rgba(20,110,58,.2), inset 0 0 42px rgba(76,175,80,.035); }

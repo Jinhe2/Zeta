@@ -1,0 +1,23 @@
+@import './StudentActivityMonitorPage.css';
+
+.cabinet-monitor__filters { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.cabinet-monitor__filters input, .cabinet-monitor__filters select { padding: 9px 10px; border: 1px solid rgba(255,255,255,.14); border-radius: 6px; background: #182230; color: #e8edf4; }
+.cabinet-monitor__table small, .cabinet-monitor__dialog small { display: block; margin-top: 3px; color: #78909c; }
+.cabinet-monitor__muted { color: #607d8b; }
+.cabinet-monitor__status { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: 12px; }
+.cabinet-monitor__status--online { background: rgba(76,175,80,.16); color: #81c784; }
+.cabinet-monitor__status--idle { background: rgba(144,164,174,.13); color: #90a4ae; }
+.cabinet-monitor__overlay { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.cabinet-monitor__mask { position: absolute; inset: 0; border: 0; background: rgba(0,0,0,.65); }
+.cabinet-monitor__dialog { position: relative; width: min(1100px, 96vw); max-height: 88vh; overflow: auto; padding: 22px; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; background: #131d2a; box-shadow: 0 24px 80px rgba(0,0,0,.45); }
+.cabinet-monitor__dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.cabinet-monitor__dialog-header h3 { margin: 0 0 5px; color: #fff; }
+.cabinet-monitor__dialog-header p { margin: 0; color: #90a4ae; }
+.cabinet-monitor__dialog-header button, .cabinet-monitor__pagination button { padding: 7px 13px; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; background: rgba(255,255,255,.05); color: #e8edf4; cursor: pointer; }
+.cabinet-monitor__history-filters { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.cabinet-monitor__history-filters label { display: grid; gap: 6px; color: #90a4ae; font-size: 12px; }
+.cabinet-monitor__history-filters input, .cabinet-monitor__history-filters select { padding: 9px; border: 1px solid rgba(255,255,255,.14); border-radius: 6px; background: #182230; color: #e8edf4; }
+.cabinet-monitor__pagination { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 15px; color: #90a4ae; font-size: 13px; }
+.cabinet-monitor__pagination button:disabled { opacity: .45; cursor: not-allowed; }
+
+@media (max-width: 900px) { .cabinet-monitor__filters { grid-template-columns: repeat(2, minmax(140px, 1fr)); } .cabinet-monitor__history-filters { grid-template-columns: 1fr; } }

@@ -6,6 +6,7 @@ import './AdminLayout.css'
 const TEACHER_NAV = [
   { to: '/teacher/students', label: '学员管理' },
   { to: '/teacher/student-monitor', label: '学员监控' },
+  { to: '/teacher/cabinet-monitor', label: '屏柜监控' },
   { to: '/teacher/baselines', label: '基准管理' },
   { to: '/teacher/profile', label: '个人中心' },
 ]

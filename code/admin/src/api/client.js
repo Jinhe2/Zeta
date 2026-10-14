@@ -271,6 +271,18 @@ export const api = {
     return request(`/api/student-activity/summary?${new URLSearchParams(params)}`)
   },
 
+  getCabinetOnlineStatus() {
+    return request('/api/student-activity/cabinets/online')
+  },
+
+  getCabinetUsageSummary(params) {
+    return request(`/api/student-activity/cabinets/usage-summary?${new URLSearchParams(params)}`)
+  },
+
+  getCabinetActivitySessions(cabinetId, params) {
+    return request(`/api/student-activity/cabinets/${cabinetId}/sessions?${new URLSearchParams(params)}`)
+  },
+
   changePassword(oldPassword, newPassword) {
     return request('/api/auth/change-password', {
       method: 'POST',

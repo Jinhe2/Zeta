@@ -14,6 +14,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.time.ZoneId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -43,10 +48,20 @@ public class StudentActivityService {
   public void registerActivity(Long userId, String rawBindId, Instant now) {
     String bindId = normalize(rawBindId);
     if (bindId == null) return;
-    CabinetBinding binding = bindings.findByBindId(bindId).orElse(null);
+    CabinetBinding binding = bindings.findByBindIdForActivityUpdate(bindId).orElse(null);
     if (binding == null) return;
     User user = users.findByIdForActivityUpdate(userId).orElse(null);
     if (user == null) return;
+
+    // 同一台绑定设备只保留一个学员的有效会话；正常换账号和异常退出都能及时收口。
+    for (StudentActivitySession session :
+        sessions.findByDeviceBindIdAndStatus(bindId, StudentActivityStatus.ACTIVE)) {
+      if (!session.getUserId().equals(userId)) {
+        Instant end = now.isBefore(session.getExpiresAt()) ? now : session.getExpiresAt();
+        close(session, end, now.isBefore(session.getExpiresAt())
+            ? StudentActivityStatus.REPLACED : StudentActivityStatus.EXPIRED);
+      }
+    }
 
     StudentActivitySession current = null;
     for (StudentActivitySession session : sessions.findByUserIdAndStatus(userId, StudentActivityStatus.ACTIVE)) {
@@ -110,7 +125,7 @@ public class StudentActivityService {
     List<Map<String, Object>> result = new ArrayList<>();
     for (StudentActivitySession session : sessions.findOverlapping(from, to, userId, cabinetId)) {
       Instant start = session.getStartedAt().isAfter(from) ? session.getStartedAt() : from;
-      Instant effectiveEnd = session.getEndedAt() == null ? session.getExpiresAt() : session.getEndedAt();
+      Instant effectiveEnd = effectiveEnd(session, Instant.now());
       Instant end = effectiveEnd.isBefore(to) ? effectiveEnd : to;
       Map<String, Object> row = new LinkedHashMap<>();
       row.put("id", session.getId());
@@ -158,12 +173,135 @@ public class StudentActivityService {
     return new ArrayList<>(grouped.values());
   }
 
+  @Transactional(value = "businessTransactionManager", readOnly = true)
+  public List<Map<String, Object>> cabinetOnlineReport(Instant now) {
+    Instant todayStart = now.atZone(ZoneId.systemDefault()).toLocalDate()
+        .atStartOfDay(ZoneId.systemDefault()).toInstant();
+    Map<Long, Long> todaySeconds = new HashMap<>();
+    for (Map<String, Object> row : sessionReport(todayStart, now, null, null)) {
+      Long cabinetId = ((Number) row.get("cabinetId")).longValue();
+      todaySeconds.put(cabinetId, todaySeconds.getOrDefault(cabinetId, 0L)
+          + ((Number) row.get("durationSeconds")).longValue());
+    }
+    Map<Long, CabinetBinding> bindingByCabinet = new HashMap<>();
+    for (CabinetBinding binding : bindings.findAllByOrderByCreatedAtAsc()) {
+      bindingByCabinet.put(binding.getScreenCabinetId(), binding);
+    }
+    Map<Long, StudentActivitySession> activeByCabinet = new HashMap<>();
+    for (StudentActivitySession session :
+        sessions.findByStatusAndExpiresAtAfter(StudentActivityStatus.ACTIVE, now)) {
+      StudentActivitySession existing = activeByCabinet.get(session.getCabinetId());
+      if (existing == null || session.getLastActivityAt().isAfter(existing.getLastActivityAt())) {
+        activeByCabinet.put(session.getCabinetId(), session);
+      }
+    }
+    List<Map<String, Object>> result = new ArrayList<>();
+    cabinets.findAllByOrderByIdAsc().forEach(cabinet -> {
+      CabinetBinding binding = bindingByCabinet.get(cabinet.getId());
+      StudentActivitySession active = activeByCabinet.get(cabinet.getId());
+      Map<String, Object> row = new LinkedHashMap<>();
+      row.put("cabinetId", cabinet.getId());
+      row.put("cabinetName", cabinet.getName());
+      row.put("bound", binding != null);
+      row.put("deviceBindId", binding == null ? null : binding.getBindId());
+      row.put("bindLabel", binding == null ? null : binding.getBindLabel());
+      row.put("online", active != null);
+      row.put("todayDurationSeconds", todaySeconds.getOrDefault(cabinet.getId(), 0L));
+      if (active != null) {
+        row.put("userId", active.getUserId());
+        users.findById(active.getUserId()).ifPresent(user -> {
+          row.put("studentNo", user.getStudentNo());
+          row.put("studentName", user.getDisplayName());
+        });
+        row.put("sessionStartedAt", active.getStartedAt());
+        row.put("lastActivityAt", active.getLastActivityAt());
+        row.put("expiresAt", active.getExpiresAt());
+        row.put("currentOnlineSeconds", seconds(active.getStartedAt(), now));
+      }
+      result.add(row);
+    });
+    return result;
+  }
+
+  @Transactional(value = "businessTransactionManager", readOnly = true)
+  public List<Map<String, Object>> cabinetUsageSummary(Instant from, Instant to) {
+    Map<Long, Map<String, Object>> grouped = new LinkedHashMap<>();
+    for (Map<String, Object> session : sessionReport(from, to, null, null)) {
+      Long cabinetId = ((Number) session.get("cabinetId")).longValue();
+      Map<String, Object> row = grouped.computeIfAbsent(cabinetId, ignored -> {
+        Map<String, Object> value = new LinkedHashMap<>();
+        value.put("cabinetId", cabinetId);
+        value.put("cabinetName", session.get("cabinetName"));
+        value.put("durationSeconds", 0L);
+        value.put("sessionCount", 0);
+        value.put("studentCount", 0);
+        value.put("studentIds", new java.util.HashSet<Long>());
+        return value;
+      });
+      row.put("durationSeconds", (Long) row.get("durationSeconds")
+          + ((Number) session.get("durationSeconds")).longValue());
+      row.put("sessionCount", (Integer) row.get("sessionCount") + 1);
+      @SuppressWarnings("unchecked")
+      java.util.Set<Long> studentIds = (java.util.Set<Long>) row.get("studentIds");
+      studentIds.add(((Number) session.get("userId")).longValue());
+      row.put("studentCount", studentIds.size());
+    }
+    grouped.values().forEach(row -> row.remove("studentIds"));
+    return new ArrayList<>(grouped.values());
+  }
+
+  @Transactional(value = "businessTransactionManager", readOnly = true)
+  public Map<String, Object> cabinetHistory(Long cabinetId, Instant from, Instant to,
+      Long userId, int page, int size, boolean durationAscending) {
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    Sort.Direction direction = durationAscending ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Page<StudentActivitySession> data = sessions.findCabinetHistory(cabinetId, from, to, userId,
+        PageRequest.of(Math.max(page, 0), safeSize,
+            Sort.by(direction, "durationSeconds").and(Sort.by(Sort.Direction.DESC, "startedAt"))));
+    List<Map<String, Object>> content = new ArrayList<>();
+    for (StudentActivitySession session : data.getContent()) {
+      content.add(toSessionRow(session, from, to));
+    }
+    Map<String, Object> response = new LinkedHashMap<>();
+    response.put("content", content);
+    response.put("page", data.getNumber());
+    response.put("size", data.getSize());
+    response.put("totalElements", data.getTotalElements());
+    response.put("totalPages", data.getTotalPages());
+    return response;
+  }
+
+  private Map<String, Object> toSessionRow(StudentActivitySession session, Instant from, Instant to) {
+    Instant start = session.getStartedAt().isAfter(from) ? session.getStartedAt() : from;
+    Instant effectiveEnd = effectiveEnd(session, Instant.now());
+    Instant end = effectiveEnd.isBefore(to) ? effectiveEnd : to;
+    Map<String, Object> row = new LinkedHashMap<>();
+    row.put("id", session.getId());
+    row.put("userId", session.getUserId());
+    users.findById(session.getUserId()).ifPresent(user -> {
+      row.put("studentNo", user.getStudentNo());
+      row.put("studentName", user.getDisplayName());
+    });
+    row.put("startedAt", session.getStartedAt());
+    row.put("endedAt", session.getEndedAt());
+    row.put("lastActivityAt", session.getLastActivityAt());
+    row.put("status", session.getStatus());
+    row.put("bindLabel", session.getBindLabelSnapshot());
+    row.put("durationSeconds", seconds(start, end));
+    return row;
+  }
+
   private void close(StudentActivitySession session, Instant endedAt, StudentActivityStatus status) {
     session.setEndedAt(endedAt);
     session.setExpiresAt(endedAt);
     session.setDurationSeconds(seconds(session.getStartedAt(), endedAt));
     session.setStatus(status);
     sessions.save(session);
+  }
+
+  private static Instant effectiveEnd(StudentActivitySession session, Instant now) {
+    if (session.getEndedAt() != null) return session.getEndedAt();
+    return session.getExpiresAt().isBefore(now) ? session.getExpiresAt() : now;
   }
 
   private static long seconds(Instant start, Instant end) {

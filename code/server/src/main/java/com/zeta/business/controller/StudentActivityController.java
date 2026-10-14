@@ -53,6 +53,37 @@ public class StudentActivityController {
     return activities.summaryReport(from, to, userId, cabinetId);
   }
 
+  @GetMapping("/cabinets/online")
+  public List<Map<String, Object>> cabinetOnline(
+      @RequestHeader("Authorization") String authorization) {
+    auth.requireAnyRole(authorization, UserRole.ADMIN, UserRole.TEACHER);
+    return activities.cabinetOnlineReport(Instant.now());
+  }
+
+  @GetMapping("/cabinets/usage-summary")
+  public List<Map<String, Object>> cabinetUsageSummary(
+      @RequestHeader("Authorization") String authorization,
+      @RequestParam Instant from, @RequestParam Instant to) {
+    auth.requireAnyRole(authorization, UserRole.ADMIN, UserRole.TEACHER);
+    validateRange(from, to);
+    return activities.cabinetUsageSummary(from, to);
+  }
+
+  @GetMapping("/cabinets/{cabinetId}/sessions")
+  public Map<String, Object> cabinetHistory(
+      @RequestHeader("Authorization") String authorization,
+      @PathVariable Long cabinetId,
+      @RequestParam Instant from, @RequestParam Instant to,
+      @RequestParam(required = false) Long userId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(defaultValue = "desc") String durationSort) {
+    auth.requireAnyRole(authorization, UserRole.ADMIN, UserRole.TEACHER);
+    validateRange(from, to);
+    return activities.cabinetHistory(cabinetId, from, to, userId, page, size,
+        "asc".equalsIgnoreCase(durationSort));
+  }
+
   private static void validateRange(Instant from, Instant to) {
     if (!from.isBefore(to)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "from 必须早于 to");

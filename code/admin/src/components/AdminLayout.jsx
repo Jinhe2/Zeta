@@ -18,6 +18,7 @@ const BUSINESS_NAV = [
       { to: '/admin/users/admins', label: '管理员' },
     ],
   },
+  { to: '/admin/student-monitor', label: '学员监控' },
   { to: '/admin/display', label: '屏柜学习' },
   { to: '/admin/drawing-learning', label: '图纸学习' },
   { to: '/admin/logic-learning', label: '逻辑学习' },

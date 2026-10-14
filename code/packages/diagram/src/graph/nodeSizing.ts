@@ -59,17 +59,13 @@ function visualTextWidth(text: string): number {
 }
 
 function adaptiveOutputWidth(node: GraphNode): number {
-  const channelRef = typeof node.data?.channelRef === 'string' ? node.data.channelRef : '-'
-  const widestLine = Math.max(visualTextWidth(node.name), visualTextWidth(channelRef))
-  return Math.max(OUTPUT_WIDTH, Math.min(440, Math.ceil(widestLine + 44)))
+  return Math.max(OUTPUT_WIDTH, Math.min(440, Math.ceil(visualTextWidth(node.name) + 44)))
 }
 
 function adaptiveOutputHeight(node: GraphNode): number {
-  const channelRef = typeof node.data?.channelRef === 'string' ? node.data.channelRef : '-'
   const contentWidth = adaptiveOutputWidth(node) - 32
   const labelLines = Math.max(1, Math.ceil(visualTextWidth(node.name) / contentWidth))
-  const refLines = Math.max(1, Math.ceil(visualTextWidth(channelRef) / contentWidth))
-  return Math.max(OUTPUT_HEIGHT, Math.ceil(26 + (labelLines + refLines) * 23 + 6))
+  return Math.max(OUTPUT_HEIGHT, Math.ceil(26 + labelLines * 23))
 }
 
 function adaptiveLogicWidth(node: GraphNode): number {

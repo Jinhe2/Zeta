@@ -12,7 +12,6 @@ export default function OutputNode({ data }: NodeProps) {
       <Handle type="target" position={Position.Left} className="v4-handle" />
       <div className="v4-node__text">
         <span className="v4-node__label">{d.label}</span>
-        <span className="v4-node__ref">{d.channelRef ?? '-'}</span>
       </div>
     </div>
   )

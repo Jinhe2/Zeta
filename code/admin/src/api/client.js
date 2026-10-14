@@ -1,3 +1,5 @@
+import { getDeviceBindId } from './deviceBinding'
+
 const ACCESS_TOKEN_KEY = 'zeta_access_token'
 const REFRESH_TOKEN_KEY = 'zeta_refresh_token'
 const API_BASE_URL_KEY = 'zeta_api_base_url'
@@ -156,6 +158,7 @@ async function ensureRefreshed() {
 }
 
 async function request(path, options = {}, retried = false) {
+  const { activity = true, ...fetchOptions } = options
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
@@ -163,9 +166,11 @@ async function request(path, options = {}, retried = false) {
   const accessToken = getAccessToken()
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`
+    headers['X-Device-Bind-Id'] = getDeviceBindId()
+    headers['X-Student-Activity'] = activity ? 'interactive' : 'passive'
   }
 
-  const res = await fetch(apiUrl(path), { ...options, headers })
+  const res = await fetch(apiUrl(path), { ...fetchOptions, headers })
   const data = await parseResponse(res)
 
   if (res.status === 401 && !retried && getRefreshToken() && !path.includes('/api/auth/')) {
@@ -186,11 +191,13 @@ async function uploadRequest(path, formData, retried = false) {
   return multipartRequest(path, 'POST', formData, retried)
 }
 
-async function multipartRequest(path, method, formData, retried = false) {
+async function multipartRequest(path, method, formData, retried = false, activity = true) {
   const headers = {}
   const accessToken = getAccessToken()
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`
+    headers['X-Device-Bind-Id'] = getDeviceBindId()
+    headers['X-Student-Activity'] = activity ? 'interactive' : 'passive'
   }
 
   const res = await fetch(apiUrl(path), { method, headers, body: formData })
@@ -198,7 +205,7 @@ async function multipartRequest(path, method, formData, retried = false) {
 
   if (res.status === 401 && !retried && getRefreshToken() && !path.includes('/api/auth/')) {
     await ensureRefreshed()
-    return multipartRequest(path, method, formData, true)
+    return multipartRequest(path, method, formData, true, activity)
   }
 
   if (!res.ok) {
@@ -207,14 +214,18 @@ async function multipartRequest(path, method, formData, retried = false) {
   return data
 }
 
-async function downloadRequest(path, retried = false) {
+async function downloadRequest(path, retried = false, activity = true) {
   const headers = {}
   const accessToken = getAccessToken()
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`
+    headers['X-Device-Bind-Id'] = getDeviceBindId()
+    headers['X-Student-Activity'] = activity ? 'interactive' : 'passive'
+  }
   const res = await fetch(apiUrl(path), { headers })
   if (res.status === 401 && !retried && getRefreshToken()) {
     await ensureRefreshed()
-    return downloadRequest(path, true)
+    return downloadRequest(path, true, activity)
   }
   if (!res.ok) {
     const data = await parseResponse(res)
@@ -246,6 +257,18 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
     })
+  },
+
+  endStudentActivity() {
+    return request('/api/student-activity/end', { method: 'POST', activity: false })
+  },
+
+  getStudentActivitySessions(params) {
+    return request(`/api/student-activity/sessions?${new URLSearchParams(params)}`)
+  },
+
+  getStudentActivitySummary(params) {
+    return request(`/api/student-activity/summary?${new URLSearchParams(params)}`)
   },
 
   changePassword(oldPassword, newPassword) {
@@ -296,6 +319,7 @@ export const api = {
     return request('/api/monitor/commands/virtual-circuit-status', {
       method: 'POST',
       body: JSON.stringify({ cabinetId, iedDeviceId }),
+      activity: false,
     })
   },
 
@@ -415,11 +439,12 @@ export const api = {
     return request('/api/monitor/commands/pressboard-status', {
       method: 'POST',
       body: JSON.stringify({ cabinetId }),
+      activity: false,
     })
   },
 
   getPressboardStatus(cabinetId) {
-    return request(`/api/monitor/pressboard-status/${cabinetId}`)
+    return request(`/api/monitor/pressboard-status/${cabinetId}`, { activity: false })
   },
 
   triggerTerminalStatus(cabinetId, options = {}) {
@@ -429,17 +454,19 @@ export const api = {
         cabinetId,
         ...(Array.isArray(options.terminalIds) ? { terminalIds: options.terminalIds } : {}),
       }),
+      activity: false,
     })
   },
 
   getTerminalStatus(cabinetId) {
-    return request(`/api/monitor/terminal-status/${cabinetId}`)
+    return request(`/api/monitor/terminal-status/${cabinetId}`, { activity: false })
   },
 
   triggerIedCommStatus(cabinetId) {
     return request('/api/monitor/commands/ied-comm-status', {
       method: 'POST',
       body: JSON.stringify({ cabinetId }),
+      activity: false,
     })
   },
 
@@ -612,6 +639,7 @@ export const api = {
     return request('/api/monitor/commands/logic-monitor', {
       method: 'POST',
       body: JSON.stringify({ action: 'heartbeat', taskUuid }),
+      activity: false,
     })
   },
 
@@ -661,6 +689,7 @@ export const api = {
   wholeExperimentMonitor(id, action, taskUuid) {
     return request(`/api/whole-experiments/${id}/monitor`, {
       method: 'POST', body: JSON.stringify({ action, taskUuid }),
+      activity: action !== 'heartbeat',
     })
   },
 
@@ -669,7 +698,7 @@ export const api = {
   },
 
   getWholeExperimentRun(taskUuid) {
-    return request(`/api/whole-experiment-runs/${taskUuid}`)
+    return request(`/api/whole-experiment-runs/${taskUuid}`, { activity: false })
   },
 
   listWholeExperimentRunMembers(taskUuid) {
@@ -684,6 +713,7 @@ export const api = {
     return request('/api/monitor/commands/logic-group-monitor', {
       method: 'POST',
       body: JSON.stringify({ action: 'heartbeat', taskUuid }),
+      activity: false,
     })
   },
 
@@ -718,7 +748,7 @@ export const api = {
   },
 
   getMonitorTaskResult(taskUuid) {
-    return request(`/api/monitor/tasks/${taskUuid}/result`)
+    return request(`/api/monitor/tasks/${taskUuid}/result`, { activity: false })
   },
 
   getMonitorTask(taskId) {
@@ -996,6 +1026,7 @@ export const api = {
     return request('/api/monitor/commands/sampling-signal-status', {
       method: 'POST',
       body: JSON.stringify({ cabinetId, iedDeviceId }),
+      activity: false,
     })
   },
 

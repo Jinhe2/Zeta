@@ -7,3 +7,9 @@ spring:
     name: zeta
   profiles:
     active: dev
+
+zeta:
+  student-activity:
+    idle-window-seconds: 300
+    write-throttle-seconds: 15
+    cleanup-interval-ms: 60000

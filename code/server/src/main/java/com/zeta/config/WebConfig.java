@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import com.zeta.web.StudentActivityInterceptor;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -15,9 +17,19 @@ public class WebConfig implements WebMvcConfigurer {
   private String allowedOrigins;
 
   private final UploadProperties uploadProperties;
+  private final StudentActivityInterceptor studentActivityInterceptor;
 
-  public WebConfig(UploadProperties uploadProperties) {
+  public WebConfig(UploadProperties uploadProperties, StudentActivityInterceptor studentActivityInterceptor) {
     this.uploadProperties = uploadProperties;
+    this.studentActivityInterceptor = studentActivityInterceptor;
+  }
+
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(studentActivityInterceptor)
+        .addPathPatterns("/api/**")
+        .excludePathPatterns("/api/auth/**", "/api/student-activity/**",
+            "/api/images/**", "/api/videos/**");
   }
 
   @Override

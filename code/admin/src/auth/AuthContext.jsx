@@ -106,6 +106,9 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
+      if (session?.role === 'STUDENT') {
+        await api.endStudentActivity()
+      }
       await api.logout()
     } catch {
       // ignore
@@ -113,7 +116,7 @@ export function AuthProvider({ children }) {
     clearTokens()
     writeSession(null)
     setSession(null)
-  }, [])
+  }, [session])
 
   const hasRole = useCallback((role) => session?.role === role, [session])
 

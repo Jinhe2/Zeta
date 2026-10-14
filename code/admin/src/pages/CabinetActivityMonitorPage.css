@@ -1,7 +1,7 @@
 @import './StudentActivityMonitorPage.css';
 
 .cabinet-monitor__toolbar { display: flex; align-items: stretch; gap: 12px; margin-bottom: 18px; }
-.cabinet-monitor__filters { display: grid; flex: 1; grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(140px, 1fr)); gap: 12px; }
+.cabinet-monitor__filters { display: grid; flex: 1; grid-template-columns: minmax(260px, 2fr) minmax(160px, 1fr); gap: 12px; }
 .cabinet-monitor__filters input, .cabinet-monitor__filters select { padding: 9px 10px; border: 1px solid rgba(255,255,255,.14); border-radius: 6px; background: #182230; color: #e8edf4; }
 .cabinet-monitor__view-switch { display: flex; flex: none; padding: 3px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: #182230; }
 .cabinet-monitor__view-switch button { min-width: 74px; border: 0; border-radius: 6px; background: transparent; color: #78909c; cursor: pointer; }

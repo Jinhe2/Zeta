@@ -63,8 +63,6 @@ export default function CabinetActivityMonitorPage() {
   const [error, setError] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [keyword, setKeyword] = useState('')
-  const [sortKey, setSortKey] = useState('todayDurationSeconds')
-  const [sortDirection, setSortDirection] = useState('desc')
   const [viewMode, setViewMode] = useState('album')
   const [selected, setSelected] = useState(null)
   const [fromDate, setFromDate] = useState(monthStart)
@@ -123,9 +121,10 @@ export default function CabinetActivityMonitorPage() {
     const text = `${cabinet.cabinetName || ''}`.toLowerCase()
     return text.includes(keyword.trim().toLowerCase())
   }).sort((left, right) => {
-    const difference = (Number(left[sortKey]) || 0) - (Number(right[sortKey]) || 0)
-    return sortDirection === 'asc' ? difference : -difference
-  }), [cabinets, statusFilter, keyword, sortKey, sortDirection])
+    const idDifference = (Number(left.cabinetId) || 0) - (Number(right.cabinetId) || 0)
+    if (idDifference !== 0) return idDifference
+    return String(left.cabinetName || '').localeCompare(String(right.cabinetName || ''), 'zh-CN', { numeric: true })
+  }), [cabinets, statusFilter, keyword])
 
   const onlineCount = cabinets.filter((cabinet) => cabinet.online).length
   const todaySeconds = cabinets.reduce((sum, cabinet) => sum + (Number(cabinet.todayDurationSeconds) || 0), 0)
@@ -141,7 +140,7 @@ export default function CabinetActivityMonitorPage() {
       <div className="activity-monitor__header"><div><h2>屏柜监控</h2><p>查看每个屏柜当前在线学员和历史使用记录，在线状态每 30 秒自动刷新。</p></div><button type="button" className="activity-monitor__refresh" onClick={() => loadOnline()} disabled={loading}>{loading ? '加载中…' : '立即刷新'}</button></div>
       <div className="activity-monitor__stats"><div><span>屏柜总数</span><strong>{cabinets.length}</strong></div><div><span>当前使用中</span><strong>{onlineCount}</strong></div><div><span>当前空闲</span><strong>{Math.max(0, cabinets.length - onlineCount)}</strong></div><div><span>今日累计使用</span><strong>{formatDuration(todaySeconds)}</strong></div></div>
       <div className="cabinet-monitor__toolbar">
-        <div className="cabinet-monitor__filters"><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="搜索屏柜" /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">全部状态</option><option value="online">使用中</option><option value="idle">空闲</option></select><select value={sortKey} onChange={(event) => setSortKey(event.target.value)}><option value="todayDurationSeconds">今日使用时长</option><option value="currentOnlineSeconds">当前在线时长</option></select><select value={sortDirection} onChange={(event) => setSortDirection(event.target.value)}><option value="desc">从高到低</option><option value="asc">从低到高</option></select></div>
+        <div className="cabinet-monitor__filters"><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="搜索屏柜" /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">全部状态</option><option value="online">使用中</option><option value="idle">空闲</option></select></div>
         <div className="cabinet-monitor__view-switch" aria-label="视图模式">
           <button type="button" className={viewMode === 'album' ? 'is-active' : ''} onClick={() => setViewMode('album')} aria-pressed={viewMode === 'album'}>▦ 画册</button>
           <button type="button" className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')} aria-pressed={viewMode === 'list'}>☷ 列表</button>

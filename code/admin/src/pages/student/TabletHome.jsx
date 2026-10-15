@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import AbilityChart from "./AbilityChart";
 import ExitConfirmDialog from "./ExitConfirmDialog";
 import IedCommunicationStatus from "../../components/IedCommunicationStatus";
+import { api } from "../../api/client";
 import "./TabletHome.css";
 
 const DIALOG_MESSAGES = {
@@ -31,14 +32,55 @@ const MODE_ENTRIES = [
   },
 ];
 
+function formatLearningDuration(seconds) {
+  const totalMinutes = Math.floor(Math.max(0, Number(seconds) || 0) / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0) return `${hours} 小时 ${minutes} 分钟`;
+  return `${minutes} 分钟`;
+}
+
 export default function TabletHome() {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
   const [resourceOpen, setResourceOpen] = useState(false);
   const [confirmType, setConfirmType] = useState(null);
+  const [activitySummary, setActivitySummary] = useState(null);
+  const [summaryLoadedAt, setSummaryLoadedAt] = useState(0);
+  const [clock, setClock] = useState(0);
 
   const displayName = session?.displayName || "学员";
   const levelLabel = "初级学员 Lv.1";
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const data = await api.getMyStudentActivitySummary();
+        if (!cancelled) {
+          setActivitySummary(data);
+          const loadedAt = Date.now();
+          setSummaryLoadedAt(loadedAt);
+          setClock(loadedAt);
+        }
+      } catch {
+        // 首页时长加载失败不影响学习功能。
+      }
+    };
+    load();
+    const refreshTimer = window.setInterval(load, 60000);
+    const clockTimer = window.setInterval(() => setClock(Date.now()), 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshTimer);
+      window.clearInterval(clockTimer);
+    };
+  }, []);
+
+  const currentSessionSeconds = activitySummary?.online
+    ? Number(activitySummary.currentSessionSeconds || 0)
+      + Math.max(0, Math.floor((clock - summaryLoadedAt) / 1000))
+    : 0;
 
   const handleLogout = async () => {
     await logout();
@@ -82,8 +124,10 @@ export default function TabletHome() {
             </div>
           </div>
           <div className="tablet-home__user-more info-block">
-            <span className="info-block__label">学习时长</span>
-            <span className="info-block__value">24.5 小时</span>
+            <span className="info-block__label">本次学习</span>
+            <span className="info-block__value">
+              {activitySummary ? formatLearningDuration(currentSessionSeconds) : '加载中…'}
+            </span>
           </div>
         </div>
         <div className="info__right">

@@ -55,6 +55,8 @@ import StudentResourcesPage from './pages/student/StudentResourcesPage'
 import SamplingCabinetListPage from './pages/admin/business/sampling/SamplingCabinetListPage'
 import SamplingItemsPage from './pages/admin/business/sampling/SamplingItemsPage'
 import SamplingTestPage from './pages/student/SamplingTestPage'
+import StudentActivityMonitorPage from './pages/StudentActivityMonitorPage'
+import CabinetActivityMonitorPage from './pages/CabinetActivityMonitorPage'
 import {
   CoachLearningAvailabilityProvider,
   PhysicalCircuitRouteGuard,
@@ -164,6 +166,8 @@ export default function App() {
           >
             <Route index element={<Navigate to="/teacher/students" replace />} />
             <Route path="students" element={<TeacherPage />} />
+            <Route path="student-monitor" element={<StudentActivityMonitorPage />} />
+            <Route path="cabinet-monitor" element={<CabinetActivityMonitorPage />} />
             <Route path="baselines" element={<TeacherBaselinePage />} />
             <Route path="baselines/cabinets/:cabinetId" element={<TeacherBaselinePage />} />
             <Route path="baselines/devices/:deviceId" element={<TeacherBaselinePage />} />
@@ -188,6 +192,8 @@ export default function App() {
             <Route path="profile" element={<AccountProfilePage />} />
             <Route path="users" element={<Navigate to="/admin/users/students" replace />} />
             <Route path="users/:roleKey" element={<UsersPage />} />
+            <Route path="student-monitor" element={<StudentActivityMonitorPage />} />
+            <Route path="cabinet-monitor" element={<CabinetActivityMonitorPage />} />
 
             <Route path="display" element={<DisplayCabinetListPage />} />
             <Route path="drawing-learning" element={<DrawingCabinetListPage />} />

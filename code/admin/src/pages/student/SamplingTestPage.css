@@ -9,8 +9,20 @@
 .sampling-page__media { display: block; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; }
 .sampling-page__strips { width: 100%; display: flex; flex-direction: column; gap: 18px; }
 .sampling-page__strip { padding: 16px; border: 1px solid rgba(142,197,248,.25); border-radius: 12px; background: rgba(7,16,29,.78); }
-.sampling-page__strip.terminal-wiring-status { flex: 0 0 auto; min-height: auto; overflow: visible; }
-.sampling-page__strip .terminal-wiring-status__list { flex: none; height: auto; overflow: visible; }
+.sampling-page__strip.terminal-wiring-status { flex: 0 0 auto; min-height: auto; overflow: visible; container-type: inline-size; }
+/* Include the left-hand wire and status label in the centered diagram's width. */
+.sampling-page__wiring-content {
+  --wiring-label-width: 110px;
+  --terminal-graphic-width: min(clamp(203px, 17.16vw, 250px), max(100px, calc((100cqw - var(--wiring-label-width)) / 1.42)));
+  --terminal-title-width: var(--terminal-graphic-width);
+  flex: none;
+  box-sizing: border-box;
+  width: calc(var(--wiring-label-width) + var(--terminal-graphic-width) * 1.42);
+  padding-left: calc(var(--wiring-label-width) + var(--terminal-graphic-width) * .42);
+  margin-inline: auto;
+}
+.sampling-page__strip .terminal-wiring-status__list { flex: none; height: auto; overflow: visible; padding: 2px 0 8px; }
+.sampling-page__strip .terminal-wiring-status__output { max-width: var(--wiring-label-width); white-space: normal; overflow-wrap: anywhere; }
 .sampling-page__text-panel h2 { margin: 0 0 12px; color: #fff; }
 .sampling-page__description { margin: 0; color: #c7d5e3; white-space: pre-wrap; line-height: 1.75; }
 .sampling-page__actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: auto; padding-top: 18px; }

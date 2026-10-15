@@ -236,6 +236,7 @@ export default function SamplingTestPage() {
             {groups.map((group) => {
               const channelByTerminalId = new Map(group.channels.map((channel) => [String(channel.terminalId), channel]))
               return <section key={group.key} className="sampling-page__strip terminal-wiring-status">
+                <div className="sampling-page__wiring-content">
                 <div className="terminal-wiring-status__header"><img className="terminal-wiring-status__tag" src={publicUrl('images/terminal/terminal_tag.svg')} alt={`端子排 ${group.prefix || group.name}`} /><span className="terminal-wiring-status__tag-label">{String(group.prefix || group.name).replace(/-+$/, '')}</span></div>
                 <div className="terminal-wiring-status__list">{group.terminals.map((terminal) => {
                   const channel = channelByTerminalId.get(String(terminal.id))
@@ -251,6 +252,7 @@ export default function SamplingTestPage() {
                     <span className="terminal-wiring-status__label">{terminalNumber(terminal.terminalLabel)}</span>
                   </div>
                 })}</div>
+                </div>
               </section>
             })}
           </div>}

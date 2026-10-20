@@ -1,6 +1,8 @@
 package com.zeta.business.service;
 
 import com.zeta.business.entities.monitor.MonitorTaskRepository;
+import com.zeta.business.entities.monitor.MonitorTask;
+import com.zeta.business.entities.snapshot.LogicSnapshot;
 import com.zeta.business.entities.snapshot.LogicSnapshotRepository;
 import com.zeta.integration.monitor.MonitorCommandService;
 import com.zeta.integration.queue.*;
@@ -8,11 +10,51 @@ import java.util.*;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class WholeExperimentMonitorProtocolTest {
+  @Test void 单逻辑完成结果应返回持久化历史快照标识() {
+    LogicSnapshotRepository snapshots = mock(LogicSnapshotRepository.class);
+    MonitorTaskRepository tasks = mock(MonitorTaskRepository.class);
+    MonitorTask task = new MonitorTask();
+    task.setId(42L);
+    task.setLogicDiagramId(9L);
+    task.setSnapshotJson("{\"version\":\"2.3\",\"effectiveValues\":[]}");
+    task.setTotalTransitions(3);
+    when(tasks.findById(42L)).thenReturn(Optional.of(task));
+    when(snapshots.save(any(LogicSnapshot.class))).thenAnswer((InvocationOnMock invocation) -> {
+      LogicSnapshot snapshot = invocation.getArgument(0);
+      snapshot.setId(88L);
+      return snapshot;
+    });
+    MonitorCommandService commands = new MonitorCommandService(
+        Optional.empty(), snapshots, tasks,
+        mock(LogicGroupSnapshotService.class), mock(WholeExperimentRunService.class));
+    try {
+      Map<String, Object> data = new LinkedHashMap<>();
+      data.put("result", "success");
+      data.put("snapshot_path", "42");
+      ScreenQueueMessage response = new ScreenQueueMessage(
+          "summon_logic_monitor", "任务标识", "7", data);
+      response.setSuccess(true);
+
+      commands.handleResponse(response);
+
+      Map<String, Object> result = commands.getMonitorTaskResult("任务标识");
+      assertEquals(88L, result.get("snapshot_id"));
+      ArgumentCaptor<LogicSnapshot> snapshot = ArgumentCaptor.forClass(LogicSnapshot.class);
+      verify(snapshots).save(snapshot.capture());
+      assertEquals(7L, snapshot.getValue().getUserId());
+      assertEquals(9L, snapshot.getValue().getLogicId());
+      assertEquals(task.getSnapshotJson(), snapshot.getValue().getSnapshotJson());
+    } finally {
+      ReflectionTestUtils.invokeMethod(commands, "shutdown");
+    }
+  }
+
   @Test void 整组复用命令且保留成员顺序和预分配任务标识() throws Exception {
     ScreenQueuePublisher publisher = mock(ScreenQueuePublisher.class);
     WholeExperimentRunService runs = mock(WholeExperimentRunService.class);

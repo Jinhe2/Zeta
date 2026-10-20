@@ -29,6 +29,7 @@ import com.zeta.business.storage.*;
 import com.zeta.screen.logicdiagram.ProtectionLogic;
 import com.zeta.screen.logicdiagram.ProtectionLogicRepository;
 import com.zeta.screen.logicdiagram.SectionSnapshotResponse;
+import com.zeta.screen.logicdiagram.SectionSnapshotResponse.EffectiveValue;
 import com.zeta.screen.logicdiagram.dto.*;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -222,6 +223,7 @@ public class LogicSnapshotService {
             List<SectionSnapshotResponse> sections = new ArrayList<>();
             for (int k = 0; k < timestamps.size(); k++) {
                 Map<String, Integer> states = new LinkedHashMap<>();
+                Map<String, EffectiveValue> effectiveValues = new LinkedHashMap<>();
                 for (int i = 0; i < nodes.size() && i < channels.size(); i++) {
                     String nodeId = String.valueOf(nodes.get(i).get("id"));
                     Map<String, Object> channel = channels.get(i);
@@ -232,6 +234,23 @@ public class LogicSnapshotService {
                     } else {
                         states.put(nodeId, 0);
                     }
+
+                    Object rawEffectiveValues = channel.get("effectiveValues");
+                    if (rawEffectiveValues instanceof List && k < ((List<?>) rawEffectiveValues).size()) {
+                        Object rawValue = ((List<?>) rawEffectiveValues).get(k);
+                        Double value = rawValue instanceof Number
+                                ? ((Number) rawValue).doubleValue()
+                                : null;
+                        String effectiveValueType = channel.get("effectiveValueType") instanceof String
+                                ? (String) channel.get("effectiveValueType")
+                                : null;
+                        String unit = channel.get("unit") instanceof String
+                                ? (String) channel.get("unit")
+                                : "";
+                        effectiveValues.put(
+                                nodeId,
+                                new EffectiveValue(value, effectiveValueType, unit));
+                    }
                 }
 
                 String timestamp = timestamps.get(k);
@@ -239,7 +258,7 @@ public class LogicSnapshotService {
                 String label = String.format("T = %.3f s", elapsedSec);
 
                 sections.add(new SectionSnapshotResponse(
-                        "section-" + k, label, elapsedSec, timestamp, states));
+                        "section-" + k, label, elapsedSec, timestamp, states, effectiveValues));
             }
             return sections;
         } catch (Exception e) {

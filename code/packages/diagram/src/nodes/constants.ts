@@ -6,8 +6,9 @@ export const GATE_SMALL_HEIGHT = 72
 /** gate 每增加一路连接时额外占用的高度 */
 export const GATE_CONN_SPACING = 18
 export const GATE_WIDTH = 64
-export const INPUT_WIDTH = 300
-export const INPUT_WIDE_WIDTH = 390
+/** 为节点名称及行内“有效值 + 数值 + 单位”预留展示空间。 */
+export const INPUT_WIDTH = 400
+export const INPUT_WIDE_WIDTH = 500
 export const TIMER_WIDTH = 205
 export const OUTPUT_WIDTH = 220
 export const INPUT_HEIGHT = 48

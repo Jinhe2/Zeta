@@ -245,15 +245,15 @@ public class MonitorCommandService {
 
   /** 从 monitor_task 读取断面数据，创建 logic_snapshot 记录到业务库。 */
   @Transactional("businessTransactionManager")
-  private void createLogicSnapshotFromTask(Long taskId, String userIdStr) {
+  private Long createLogicSnapshotFromTask(Long taskId, String userIdStr) {
     MonitorTask task = monitorTaskRepository.findById(taskId).orElse(null);
     if (task == null) {
       log.warn("monitor_task {} not found, skip snapshot creation", taskId);
-      return;
+      return null;
     }
     if (task.getSnapshotJson() == null || task.getSnapshotJson().isEmpty()) {
       log.warn("monitor_task {} has no snapshot_json, skip", taskId);
-      return;
+      return null;
     }
 
     Long userId = null;
@@ -283,6 +283,7 @@ public class MonitorCommandService {
         snapshot.getId(),
         taskId,
         userIdStr);
+    return snapshot.getId();
   }
 
   /** 从 monitor_task 读取 v3.0 组合断面，创建 logic_group_snapshot 记录到业务库。 */
@@ -332,15 +333,14 @@ public class MonitorCommandService {
     if ("summon_logic_monitor".equals(command) && data != null) {
       String result = String.valueOf(data.getOrDefault("result", ""));
       if ("success".equals(result) || "failed".equals(result)) {
+        Map<String, Object> cachedResult = new LinkedHashMap<>(data);
         // 合并顶层 error 字段到 data 缓存中
         if (message.getError() != null) {
-          data.put("error", message.getError());
+          cachedResult.put("error", message.getError());
         }
         if (message.getErrorMessage() != null) {
-          data.put("error_message", message.getErrorMessage());
+          cachedResult.put("error_message", message.getErrorMessage());
         }
-        monitorTaskResults.put(reqId, data);
-        log.info("Cached monitor task result for req_id={} result={}", reqId, result);
 
         // 成功且有 snapshot_path → 读取 monitor_task 创建 logic_snapshot
         if ("success".equals(result)) {
@@ -348,7 +348,11 @@ public class MonitorCommandService {
           String userIdStr = message.getUserData();
           if (!snapshotPath.isEmpty() && !snapshotPath.equals("null") && userIdStr != null) {
             try {
-              createLogicSnapshotFromTask(Long.parseLong(snapshotPath), userIdStr);
+              Long snapshotId = createLogicSnapshotFromTask(
+                  Long.parseLong(snapshotPath), userIdStr);
+              if (snapshotId != null) {
+                cachedResult.put("snapshot_id", snapshotId);
+              }
             } catch (Exception e) {
               log.error(
                   "Failed to create logic_snapshot from monitor_task {}: {}",
@@ -357,6 +361,12 @@ public class MonitorCommandService {
             }
           }
         }
+        monitorTaskResults.put(reqId, cachedResult);
+        log.info(
+            "Cached monitor task result for req_id={} result={} snapshot_id={}",
+            reqId,
+            result,
+            cachedResult.get("snapshot_id"));
       }
     }
 

@@ -47,6 +47,8 @@ export interface GraphViewProps {
   showDevInfo?: boolean
   /** 断面节点状态：1 满足，0 不满足，-1 无实际数据；为 null 时不展示断面状态 */
   nodeStates?: Record<string, boolean | number> | null
+  /** 按节点 ID 索引的有效值文本，仅注入输入节点。 */
+  nodeEffectiveValues?: Record<string, string> | null
   /** 编辑模式：允许拖拽连线、点击边删除 */
   editable?: boolean
   /** 受控选中节点（编辑模式） */
@@ -84,6 +86,7 @@ function GraphFlow({
   result,
   showDevInfo,
   nodeStates,
+  nodeEffectiveValues,
   editable = false,
   selectedNodeId,
   onNodeSelect,
@@ -94,6 +97,7 @@ function GraphFlow({
   result: ReactFlowLayoutResult
   showDevInfo: boolean
   nodeStates?: Record<string, boolean | number> | null
+  nodeEffectiveValues?: Record<string, string> | null
   editable?: boolean
   selectedNodeId?: string | null
   onNodeSelect?: (id: string | null) => void
@@ -139,6 +143,10 @@ function GraphFlow({
       const isRelated = selectedId != null && relatedIds.has(node.id) && !isSelected
       const sectionSatisfied =
         nodeStates != null && node.id in nodeStates ? nodeStates[node.id] : null
+      const effectiveValueText =
+        node.type === 'input' && nodeEffectiveValues != null && node.id in nodeEffectiveValues
+          ? nodeEffectiveValues[node.id]
+          : null
       const className = [
         isSelected ? 'v4-rf-node--selected' : '',
         isRelated ? 'v4-rf-node--related' : '',
@@ -157,11 +165,12 @@ function GraphFlow({
         data: {
           ...(node.data ?? {}),
           sectionSatisfied,
+          effectiveValueText,
         },
         zIndex: isSelected ? 2 : isRelated ? 1 : 0,
       }
     })
-  }, [result.nodes, selectedId, relatedIds, nodeStates, editable])
+  }, [result.nodes, selectedId, relatedIds, nodeStates, nodeEffectiveValues, editable])
 
   const displayEdges = useMemo((): Edge[] => {
     return result.edges.map((edge) => {
@@ -243,6 +252,7 @@ export default function GraphView({
   data,
   showDevInfo = true,
   nodeStates = null,
+  nodeEffectiveValues = null,
   editable = false,
   selectedNodeId,
   onNodeSelect,
@@ -304,6 +314,7 @@ export default function GraphView({
             result={result}
             showDevInfo={showDevInfo}
             nodeStates={nodeStates}
+            nodeEffectiveValues={nodeEffectiveValues}
             editable={editable}
             selectedNodeId={selectedNodeId}
             onNodeSelect={onNodeSelect}

@@ -15,6 +15,11 @@ import {
   buildExperimentStartConfirmDialog,
   canStartAfterExperimentPrecheck,
 } from '../utils/settingCheck'
+import {
+  formatNodeEffectiveValues,
+  mergeSnapshotEffectiveValues,
+  parseSnapshotSections,
+} from '../utils/snapshotSections'
 import './student/TabletShell.css'
 import './StudentPages.css'
 
@@ -27,50 +32,8 @@ const EXPERIMENT_SUCCESS_MESSAGE = '恭喜成功完成实验'
 const EXPERIMENT_FAILED_MESSAGE = '装置未正确动作，请结合逻辑框图分析学习'
 const EXPERIMENT_DIAGNOSIS_MESSAGE = '实验失败了，请重新学习逻辑框图和相关操作'
 
-/** 统一断面节点状态：1 满足，0 不满足，-1 表示节点无实际数据。 */
-function normalizeSectionState(value) {
-  const numericValue = Number(value)
-  if (numericValue === -1) return -1
-  return numericValue === 0 ? 0 : 1
-}
-
 function isSatisfiedSectionState(value) {
   return value === true || value === 1
-}
-
-/** 将 v2.3 snapshot JSON 解析为 sections 数组 */
-function parseSnapshotSections(snapshotJson) {
-  let data
-  if (typeof snapshotJson === 'string') {
-    try { data = JSON.parse(snapshotJson) } catch { return [] }
-  } else {
-    data = snapshotJson
-  }
-
-  const nodes = data.nodes ?? []
-  const timestamps = data.timestamps ?? []
-  const channels = data.channels ?? []
-
-  if (!timestamps.length || !nodes.length) return []
-
-  const baseTime = parseTimestampMs(timestamps[0])
-
-  return timestamps.map((ts, k) => {
-    const states = {}
-    for (let i = 0; i < nodes.length && i < channels.length; i++) {
-      const nodeId = nodes[i].id
-      const values = channels[i]?.values
-      states[nodeId] = values && k < values.length ? normalizeSectionState(values[k]) : 0
-    }
-    const elapsedSec = (parseTimestampMs(ts) - baseTime) / 1000
-    return {
-      id: `section-${k}`,
-      label: `T = ${elapsedSec.toFixed(3)} s`,
-      time: elapsedSec,
-      timestamp: ts,
-      states,
-    }
-  })
 }
 
 function pickDefaultSectionId(sections, outputNodeIds) {
@@ -95,17 +58,6 @@ function pickDefaultSectionId(sections, outputNodeIds) {
 
   const actionIndex = lastRisingActionIndex >= 0 ? lastRisingActionIndex : lastActionIndex
   return sections[actionIndex >= 0 ? actionIndex : 0]?.id ?? null
-}
-
-function parseTimestampMs(ts) {
-  const spaceIdx = ts.indexOf(' ')
-  const timePart = spaceIdx >= 0 ? ts.substring(spaceIdx + 1) : ts
-  const parts = timePart.split(/[:.]/)
-  const h = parseInt(parts[0]) || 0
-  const m = parseInt(parts[1]) || 0
-  const s = parseInt(parts[2]) || 0
-  const ms = parseInt(parts[3]) || 0
-  return ((h * 60 + m) * 60 + s) * 1000 + ms
 }
 
 function parseSnapshotMeta(snapshotJson) {
@@ -378,8 +330,12 @@ export default function StudentDiagramPage() {
       api.getSnapshotDetail(snapshotId),
     ])
       .then(([secs, snapshotDetail]) => {
-        setSections(secs)
-        setSelectedSectionId(pickDefaultSectionId(secs, outputNodeIds))
+        const mergedSections = mergeSnapshotEffectiveValues(
+          secs,
+          snapshotDetail?.snapshotJson,
+        )
+        setSections(mergedSections)
+        setSelectedSectionId(pickDefaultSectionId(mergedSections, outputNodeIds))
         setResultSettingValues(extractResultSettingValues(snapshotDetail?.snapshotJson))
       })
       .catch((err) => setError(err.message))
@@ -413,15 +369,19 @@ export default function StudentDiagramPage() {
         api.getSnapshotSections(result.id),
         api.getSnapshotDetail(result.id),
       ]).then(([secs, snapshotDetail]) => {
-        setSections(secs)
-        setSelectedSectionId(pickDefaultSectionId(secs, outputNodeIds))
+        const mergedSections = mergeSnapshotEffectiveValues(
+          secs,
+          snapshotDetail?.snapshotJson,
+        )
+        setSections(mergedSections)
+        setSelectedSectionId(pickDefaultSectionId(mergedSections, outputNodeIds))
         setResultSettingValues(extractResultSettingValues(snapshotDetail?.snapshotJson))
       })
     })
   }, [id, detail, outputNodeIds])
 
   // 加载 monitor task 结果并渲染断面
-  const loadMonitorTaskResult = useCallback(async (snapshotPath) => {
+  const loadMonitorTaskResult = useCallback(async (snapshotPath, historySnapshotId) => {
     try {
       const task = await api.getMonitorTask(snapshotPath)
       if (task.snapshotJson) {
@@ -430,21 +390,38 @@ export default function StudentDiagramPage() {
         setSelectedSectionId(pickDefaultSectionId(secs, outputNodeIds))
         setResultSettingValues(extractResultSettingValues(task.snapshotJson))
 
-        // 添加到快照列表（去重）
-        setSnapshots((prev) => {
-          if (prev.some((s) => s.id === task.id)) return prev
-          return [{
-            id: task.id,
-            status: task.state === 'COMPLETED' ? 'COMPLETED' : task.state,
+        if (historySnapshotId != null) {
+          const normalizedSnapshotId = Number(historySnapshotId)
+          const snapshotId = Number.isFinite(normalizedSnapshotId)
+            ? normalizedSnapshotId
+            : historySnapshotId
+          const fallbackSnapshot = {
+            id: snapshotId,
+            status: 'COMPLETED',
             source: 'MONITOR',
             totalTransitions: task.totalTransitions ?? 0,
             createdAt: task.createdAt,
             logicId: Number(id),
             logicCode: detail?.code,
             logicName: detail?.title,
-          }, ...prev]
-        })
-        setSelectedSnapshotId(task.id)
+          }
+          try {
+            const history = await api.listSnapshotsByLogic(id)
+            setSnapshots(history.some((snapshot) => snapshot.id === snapshotId)
+              ? history
+              : [fallbackSnapshot, ...history])
+          } catch {
+            // 历史列表刷新失败时仍使用真实 logic_snapshot ID，避免误用 monitor_task ID。
+            setSnapshots((prev) => {
+              if (prev.some((snapshot) => snapshot.id === snapshotId)) return prev
+              return [fallbackSnapshot, ...prev]
+            })
+          }
+          setSelectedSnapshotId(snapshotId)
+        } else {
+          // 未取得持久化快照 ID 时仅展示即时结果，不创建无法点击的伪历史记录。
+          setSelectedSnapshotId(null)
+        }
       }
       return task
     } catch (err) {
@@ -486,12 +463,15 @@ export default function StudentDiagramPage() {
         }
 
         const snapshotPath = result.snapshot_path ?? result.snapshotPath
+        const historySnapshotId = result.snapshot_id ?? result.snapshotId
 
         if (result.result === 'success') {
           setMonitorStatus('completed')
           setMonitoring(false)
           if (taskUuidRef.current === taskUuid) taskUuidRef.current = null
-          const task = snapshotPath ? await loadMonitorTaskResult(snapshotPath) : null
+          const task = snapshotPath
+            ? await loadMonitorTaskResult(snapshotPath, historySnapshotId)
+            : null
           await showExperimentResultDialog(result, task)
         } else if (result.result === 'failed') {
           setMonitorStatus('failed')
@@ -682,6 +662,11 @@ export default function StudentDiagramPage() {
   const nodeStates = useMemo(() => {
     const section = sections.find((s) => s.id === selectedSectionId)
     return section?.states ?? null
+  }, [sections, selectedSectionId])
+
+  const nodeEffectiveValues = useMemo(() => {
+    const section = sections.find((s) => s.id === selectedSectionId)
+    return formatNodeEffectiveValues(section?.effectiveValues)
   }, [sections, selectedSectionId])
 
   const diagramConfig = useMemo(
@@ -916,6 +901,7 @@ export default function StudentDiagramPage() {
                       config={diagramConfig}
                       showDevInfo={false}
                       nodeStates={nodeStates}
+                      nodeEffectiveValues={nodeEffectiveValues}
                       selectedNodeId={selectedLogicNodeId}
                       onNodeSelect={handleLogicNodeSelect}
                       toolbarBeforeZoom={nodeStates ? (

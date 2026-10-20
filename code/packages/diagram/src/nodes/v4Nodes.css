@@ -17,6 +17,24 @@
   padding: 0 16px;
 }
 
+.v4-node--input .v4-node__text {
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+}
+
+.v4-node__input-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v4-node__effective-value {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
 .v4-node--gate {
   background: #c9a227;
   display: flex;

@@ -206,6 +206,32 @@ public class LogicGroupSnapshotParser {
       }
       com.fasterxml.jackson.databind.node.ObjectNode normalizedChannel = channel.deepCopy();
       normalizedChannel.set("values", selectArray(values, selectedIndices));
+      boolean hasEffectiveValues = channel.has("effectiveValues");
+      boolean hasEffectiveValueType = channel.has("effectiveValueType");
+      boolean hasEffectiveValueUnit = channel.has("unit");
+      if (hasEffectiveValues || hasEffectiveValueType || hasEffectiveValueUnit) {
+        if (!hasEffectiveValues || !hasEffectiveValueType || !hasEffectiveValueUnit) {
+          throw invalidFormat("有效值字段 effectiveValues/effectiveValueType/unit 必须同时存在");
+        }
+        JsonNode effectiveValues = channel.path("effectiveValues");
+        if (!effectiveValues.isArray() || effectiveValues.size() != timelineSize) {
+          throw invalidFormat("通道 effectiveValues 必须与根级时间轴等长");
+        }
+        for (JsonNode value : effectiveValues) {
+          if (!value.isNull() && !value.isNumber()) {
+            throw invalidFormat("通道 effectiveValues 只能包含数值或 null");
+          }
+        }
+        if (!channel.path("effectiveValueType").isTextual()
+            || !"fundamental_rms".equals(channel.path("effectiveValueType").asText())) {
+          throw invalidFormat("通道 effectiveValueType 仅支持 fundamental_rms");
+        }
+        if (!channel.path("unit").isTextual()) {
+          throw invalidFormat("通道 unit 必须是字符串");
+        }
+        normalizedChannel.set(
+            "effectiveValues", selectArray(effectiveValues, selectedIndices));
+      }
       if (channel.has("elapsed")) {
         JsonNode elapsed = channel.path("elapsed");
         if (!elapsed.isArray() || elapsed.size() != timelineSize) {

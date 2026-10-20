@@ -127,6 +127,67 @@ class LogicGroupSnapshotServiceTest {
   }
 
   @Test
+  void 应按成员变位索引同步裁剪有效值数组() throws Exception {
+    JsonNode root = objectMapper.readTree(fixtureJson);
+    com.fasterxml.jackson.databind.node.ObjectNode channel =
+        (com.fasterxml.jackson.databind.node.ObjectNode) root.path("logics").get(0)
+            .path("channels").get(0);
+    com.fasterxml.jackson.databind.node.ArrayNode effectiveValues = objectMapper.createArrayNode();
+    for (int index = 0; index < root.path("timestamps").size(); index++) {
+      if (index == 0) effectiveValues.addNull();
+      else effectiveValues.add(index + 0.25);
+    }
+    channel.set("effectiveValues", effectiveValues);
+    channel.put("effectiveValueType", "fundamental_rms");
+    channel.put("unit", "A");
+
+    MemberDetailResponse result = serviceFor(root.toString(), realParser())
+        .getMember(USER_ID, SNAPSHOT_ID, 1L);
+
+    assertThat(result.getSections()).hasSize(5);
+    assertThat(result.getSections().get(0).getEffectiveValues().get("input_1").getValue())
+        .isNull();
+    assertThat(result.getSections().get(1).getEffectiveValues().get("input_1").getValue())
+        .isEqualTo(1.25);
+    assertThat(result.getSections().get(4).getEffectiveValues().get("input_1").getValue())
+        .isEqualTo(18.25);
+    assertThat(result.getSections().get(4).getEffectiveValues().get("input_1").getUnit())
+        .isEqualTo("A");
+  }
+
+  @Test
+  void 非法有效值字段应返回四二二() throws Exception {
+    JsonNode shortValues = withEffectiveValues();
+    ((com.fasterxml.jackson.databind.node.ArrayNode) shortValues.path("logics").get(0)
+        .path("channels").get(0).path("effectiveValues")).remove(0);
+    assertStatus(
+        () -> serviceFor(shortValues.toString(), realParser()).listMembers(USER_ID, SNAPSHOT_ID),
+        HttpStatus.UNPROCESSABLE_ENTITY);
+
+    JsonNode wrongElement = withEffectiveValues();
+    ((com.fasterxml.jackson.databind.node.ArrayNode) wrongElement.path("logics").get(0)
+        .path("channels").get(0).path("effectiveValues")).set(
+            0, objectMapper.getNodeFactory().textNode("无效"));
+    assertStatus(
+        () -> serviceFor(wrongElement.toString(), realParser()).listMembers(USER_ID, SNAPSHOT_ID),
+        HttpStatus.UNPROCESSABLE_ENTITY);
+
+    JsonNode wrongType = withEffectiveValues();
+    ((com.fasterxml.jackson.databind.node.ObjectNode) wrongType.path("logics").get(0)
+        .path("channels").get(0)).put("effectiveValueType", "rms");
+    assertStatus(
+        () -> serviceFor(wrongType.toString(), realParser()).listMembers(USER_ID, SNAPSHOT_ID),
+        HttpStatus.UNPROCESSABLE_ENTITY);
+
+    JsonNode wrongUnit = withEffectiveValues();
+    ((com.fasterxml.jackson.databind.node.ObjectNode) wrongUnit.path("logics").get(0)
+        .path("channels").get(0)).put("unit", 1);
+    assertStatus(
+        () -> serviceFor(wrongUnit.toString(), realParser()).listMembers(USER_ID, SNAPSHOT_ID),
+        HttpStatus.UNPROCESSABLE_ENTITY);
+  }
+
+  @Test
   void 失败成员应返回空断面和业务错误() throws Exception {
     JsonNode root = objectMapper.readTree(fixtureJson);
     com.fasterxml.jackson.databind.node.ObjectNode member =
@@ -244,6 +305,22 @@ class LogicGroupSnapshotServiceTest {
         mock(LogicSnapshotRepository.class),
         mock(ProtectionLogicRepository.class),
         objectMapper);
+  }
+
+  private JsonNode withEffectiveValues() throws Exception {
+    JsonNode root = objectMapper.readTree(fixtureJson);
+    com.fasterxml.jackson.databind.node.ObjectNode channel =
+        (com.fasterxml.jackson.databind.node.ObjectNode) root.path("logics").get(0)
+            .path("channels").get(0);
+    com.fasterxml.jackson.databind.node.ArrayNode values = objectMapper.createArrayNode();
+    for (int index = 0; index < root.path("timestamps").size(); index++) {
+      if (index == 0) values.addNull();
+      else values.add(index + 0.25);
+    }
+    channel.set("effectiveValues", values);
+    channel.put("effectiveValueType", "fundamental_rms");
+    channel.put("unit", "A");
+    return root;
   }
 
   private LogicGroupMember member(Long logicDiagramId, int order) {

@@ -10,7 +10,15 @@ export default function InputNode({ data }: NodeProps) {
     <div className={`v4-node v4-node--input${sectionStateClass(d.sectionSatisfied)}`}>
       <NodeSectionState satisfied={d.sectionSatisfied} />
       <div className="v4-node__text">
-        <span>{d.label}</span>
+        <span className="v4-node__input-label">{d.label}</span>
+        {d.effectiveValueText != null && (
+          <>
+            <span className="v4-node__sep" />
+            <span className="v4-node__value v4-node__effective-value">
+              有效值 {d.effectiveValueText}
+            </span>
+          </>
+        )}
       </div>
       <Handle type="source" position={Position.Right} className="v4-handle" />
     </div>

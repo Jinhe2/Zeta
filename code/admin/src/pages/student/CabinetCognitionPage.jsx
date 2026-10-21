@@ -7,6 +7,7 @@ import DeviceCognitionContent from './cabinet/DeviceCognitionContent'
 import PlateCognitionContent from './cabinet/PlateCognitionContent'
 import TerminalCognitionContent from './cabinet/TerminalCognitionContent'
 import { useCoachLearningAvailability } from './CoachLearningAvailability'
+import PressboardChangeStatus from '../../components/PressboardChangeStatus'
 import './TabletShell.css'
 import './CabinetCognitionPage.css'
 
@@ -409,6 +410,7 @@ export default function CabinetCognitionPage() {
           </div>
         )}
       </main>
+      <PressboardChangeStatus cabinetId={cabinetId} />
     </div>
   )
 }

@@ -463,6 +463,10 @@ export const api = {
     return request(`/api/monitor/pressboard-status/${cabinetId}`, { activity: false })
   },
 
+  listPressboardChanges(cabinetId) {
+    return request(`/api/pressboard-changes/${cabinetId}`, { activity: false })
+  },
+
   triggerTerminalStatus(cabinetId, options = {}) {
     return request('/api/monitor/commands/terminal-status', {
       method: 'POST',

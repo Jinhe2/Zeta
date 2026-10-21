@@ -1,0 +1,72 @@
+.pressboard-change-toggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(142, 197, 248, 0.45);
+  border-radius: 18px;
+  background: rgba(10, 22, 38, 0.94);
+  color: #e8f0f8;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.42);
+}
+
+.pressboard-change-toggle:hover { background: rgba(28, 55, 82, 0.97); }
+.pressboard-change-toggle__light { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; background: #52c41a; box-shadow: 0 0 7px #52c41a; }
+.pressboard-change-toggle__light--new { animation: pressboard-change-green-pulse 0.9s ease-in-out infinite; }
+
+@keyframes pressboard-change-green-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 5px #52c41a; }
+  50% { opacity: 0.22; box-shadow: 0 0 14px 4px rgba(82, 196, 26, 0.72); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressboard-change-toggle__light--new {
+    animation: none;
+    box-shadow: 0 0 12px 3px rgba(82, 196, 26, 0.72);
+  }
+}
+
+.pressboard-change-dialog { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; }
+.pressboard-change-dialog__mask { position: absolute; inset: 0; border: 0; background: rgba(0, 0, 0, 0.58); cursor: default; }
+.pressboard-change-dialog__panel { position: relative; width: min(820px, 100%); max-height: min(720px, 86vh); display: flex; flex-direction: column; border: 1px solid rgba(142, 197, 248, 0.42); border-radius: 12px; background: #101f31; color: #e8f0f8; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.58); overflow: hidden; }
+.pressboard-change-dialog__header { display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto; padding: 16px 20px; border-bottom: 1px solid rgba(142, 197, 248, 0.2); background: rgba(66, 132, 186, 0.13); }
+.pressboard-change-dialog__header h2 { margin: 0; font-size: 19px; }
+.pressboard-change-dialog__header p { margin: 5px 0 0; color: #9eb7cd; font-size: 13px; }
+.pressboard-change-dialog__actions { display: flex; gap: 8px; }
+.pressboard-change-dialog__actions button,
+.pressboard-change-dialog__message button { min-width: 32px; height: 30px; border: 1px solid rgba(142, 197, 248, 0.35); border-radius: 5px; background: rgba(255, 255, 255, 0.06); color: #d9e8f5; cursor: pointer; }
+.pressboard-change-dialog__actions button:hover,
+.pressboard-change-dialog__message button:hover { background: rgba(142, 197, 248, 0.2); }
+.pressboard-change-dialog__actions button:disabled { cursor: wait; opacity: 0.55; }
+.pressboard-change-dialog__message { margin: 0; padding: 40px 20px; color: #b5c6d5; text-align: center; }
+.pressboard-change-dialog__message--error { color: #ff8585; }
+.pressboard-change-dialog__message--error p { margin: 0 0 14px; }
+.pressboard-change-dialog__table-wrap { position: relative; min-height: 0; overflow: auto; }
+.pressboard-change-dialog__table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.pressboard-change-dialog__table th { position: sticky; top: 0; z-index: 1; padding: 11px 14px; background: #172b41; color: #a9c2d8; font-size: 12px; text-align: left; }
+.pressboard-change-dialog__table td { padding: 12px 14px; border-top: 1px solid rgba(142, 197, 248, 0.13); color: #dce9f5; }
+.pressboard-change-dialog__table tbody tr:hover { background: rgba(142, 197, 248, 0.07); }
+.pressboard-change-dialog__table th:first-child,
+.pressboard-change-dialog__table td:first-child { width: 68px; text-align: center; }
+.pressboard-change-dialog__table th:nth-child(3),
+.pressboard-change-dialog__table td:nth-child(3) { width: 92px; }
+.pressboard-change-dialog__table th:last-child,
+.pressboard-change-dialog__table td:last-child { width: 190px; white-space: nowrap; }
+.pressboard-change-dialog__state { display: inline-flex; min-width: 34px; justify-content: center; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+.pressboard-change-dialog__state--on { background: rgba(82, 196, 26, 0.16); color: #75dc42; }
+.pressboard-change-dialog__state--off { background: rgba(240, 180, 41, 0.16); color: #f4c45a; }
+.pressboard-change-dialog__refreshing { position: sticky; bottom: 8px; width: max-content; margin: -32px 12px 8px auto; padding: 4px 9px; border-radius: 10px; background: rgba(16, 31, 49, 0.9); color: #9eb7cd; font-size: 12px; }
+
+@media (max-width: 600px) {
+  .pressboard-change-dialog { padding: 12px; }
+  .pressboard-change-dialog__panel { max-height: 90vh; }
+  .pressboard-change-dialog__table { min-width: 600px; }
+}

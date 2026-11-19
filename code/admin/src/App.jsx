@@ -57,6 +57,7 @@ import SamplingItemsPage from './pages/admin/business/sampling/SamplingItemsPage
 import SamplingTestPage from './pages/student/SamplingTestPage'
 import StudentActivityMonitorPage from './pages/StudentActivityMonitorPage'
 import CabinetActivityMonitorPage from './pages/CabinetActivityMonitorPage'
+import LearningPathConfigPage from './pages/admin/business/LearningPathConfigPage'
 import {
   CoachLearningAvailabilityProvider,
   PhysicalCircuitRouteGuard,
@@ -194,6 +195,7 @@ export default function App() {
             <Route path="users/:roleKey" element={<UsersPage />} />
             <Route path="student-monitor" element={<StudentActivityMonitorPage />} />
             <Route path="cabinet-monitor" element={<CabinetActivityMonitorPage />} />
+            <Route path="learning-path" element={<LearningPathConfigPage />} />
 
             <Route path="display" element={<DisplayCabinetListPage />} />
             <Route path="drawing-learning" element={<DrawingCabinetListPage />} />

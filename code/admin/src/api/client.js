@@ -275,6 +275,13 @@ export const api = {
     return request(`/api/student-activity/summary?${new URLSearchParams(params)}`)
   },
 
+  getStudentLearningPath() { return request('/api/learning-path/student') },
+  visitStudentLearningModule(code) { return request(`/api/learning-path/student/modules/${encodeURIComponent(code)}/visit`, { method: 'POST' }) },
+  completeStudentLearningModule(code) { return request(`/api/learning-path/student/modules/${encodeURIComponent(code)}/complete`, { method: 'POST' }) },
+  getLearningPathConfig() { return request('/api/learning-path/config') },
+  saveLearningPathConfig(payload) { return request('/api/learning-path/config', { method: 'PUT', body: JSON.stringify(payload) }) },
+  getLearningProgressMonitor() { return request('/api/learning-path/monitor') },
+
   getCabinetOnlineStatus() {
     return request('/api/student-activity/cabinets/online')
   },

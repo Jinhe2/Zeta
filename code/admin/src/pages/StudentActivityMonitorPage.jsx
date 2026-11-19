@@ -51,6 +51,7 @@ function aggregateStudents(rows) {
 }
 
 export default function StudentActivityMonitorPage() {
+  const [view, setView] = useState('duration')
   const today = useMemo(() => localDateValue(new Date()), [])
   const [fromDate, setFromDate] = useState(today)
   const [toDate, setToDate] = useState(today)
@@ -60,6 +61,23 @@ export default function StudentActivityMonitorPage() {
   const [cabinets, setCabinets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [progressRows, setProgressRows] = useState([])
+  const [progressLoading, setProgressLoading] = useState(false)
+  const [progressError, setProgressError] = useState('')
+
+  const loadProgress = useCallback(async () => {
+    setProgressLoading(true)
+    setProgressError('')
+    try { setProgressRows(await api.getLearningProgressMonitor()) }
+    catch (err) { setProgressError(err.message || '学员学习进度加载失败') }
+    finally { setProgressLoading(false) }
+  }, [])
+
+  useEffect(() => {
+    if (view !== 'progress') return undefined
+    const timer = window.setTimeout(loadProgress, 0)
+    return () => window.clearTimeout(timer)
+  }, [loadProgress, view])
 
   const load = useCallback(async () => {
     if (!fromDate || !toDate) return
@@ -109,10 +127,21 @@ export default function StudentActivityMonitorPage() {
           <h2>学员监控</h2>
           <p>按照学员的有效接口交互统计在线时长，并归集到当前绑定屏柜。</p>
         </div>
-        <button type="button" className="activity-monitor__refresh" onClick={load} disabled={loading}>
-          {loading ? '加载中…' : '刷新'}
+        <button type="button" className="activity-monitor__refresh" onClick={view === 'progress' ? loadProgress : load} disabled={view === 'progress' ? progressLoading : loading}>
+          {(view === 'progress' ? progressLoading : loading) ? '加载中…' : '刷新'}
         </button>
       </div>
+
+      <div className="activity-monitor__tabs">
+        <button type="button" className={view === 'duration' ? 'active' : ''} onClick={() => setView('duration')}>在线时长</button>
+        <button type="button" className={view === 'progress' ? 'active' : ''} onClick={() => setView('progress')}>学习步骤</button>
+      </div>
+
+      {view === 'progress' ? <>
+        <div className="activity-monitor__stats"><div><span>学员总数</span><strong>{progressRows.length}</strong></div><div><span>已完成全部阶段</span><strong>{progressRows.filter((row) => row.completedCount === row.totalCount && row.totalCount > 0).length}</strong></div></div>
+        {progressError && <div className="activity-monitor__error">{progressError}</div>}
+        {progressLoading ? <p className="activity-monitor__empty">正在加载…</p> : progressRows.length === 0 ? <p className="activity-monitor__empty">暂无学员记录。</p> : <div className="users-page__table-wrap"><table className="users-page__table activity-monitor__table"><thead><tr><th>学号</th><th>学员姓名</th><th>当前步骤</th><th>总体进度</th><th>各阶段状态</th></tr></thead><tbody>{progressRows.map((student) => <tr key={student.userId}><td>{student.studentNo || '—'}</td><td>{student.studentName}</td><td className="activity-monitor__current-step">{student.currentStep}</td><td><strong>{student.completedCount}/{student.totalCount}</strong></td><td><div className="activity-monitor__steps">{student.modules.map((module) => <span key={module.code} className={`activity-monitor__step activity-monitor__step--${module.status.toLowerCase()}`} title={module.description}>{module.name}<i>{module.status === 'COMPLETED' ? '已完成' : module.status === 'IN_PROGRESS' ? '学习中' : module.status === 'AVAILABLE' ? '已解锁' : '未解锁'}</i></span>)}</div></td></tr>)}</tbody></table></div>}
+      </> : <>
 
       <div className="activity-monitor__filters">
         <label>开始日期<input type="date" value={fromDate} max={toDate} onChange={(event) => setFromDate(event.target.value)} /></label>
@@ -135,6 +164,7 @@ export default function StudentActivityMonitorPage() {
           </table>
         </div>
       )}
+      </>}
     </div>
   )
 }

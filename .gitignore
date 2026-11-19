@@ -126,6 +126,8 @@ temp/
 # =========================
 uploads/
 generated/
+video/
+pdf/
 
 # =========================
 # Database
